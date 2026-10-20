@@ -28,8 +28,8 @@ class BasicUXScanner(BaseScanner):
                     remediation="Add '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' inside <head>.",
                     risk_impact="On mobile devices, pages without a viewport meta tag render in desktop scaling mode, forcing users to pinch-zoom and horizontally scroll, drastically degrading mobile usability.",
                     code_example="<head>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n</head>",
-                    target_location="Page Template (HTML <head>)",
-                    line_number=getattr(head_tag, "sourceline", None),
+                    target_location="index.html",
+                    line_number=getattr(head_tag, "sourceline", 1),
                     problematic_code="<head>\n</head>"
                 )
             )
@@ -46,8 +46,8 @@ class BasicUXScanner(BaseScanner):
                     remediation="Provide a concise, context-rich <title> tag for every page.",
                     risk_impact="Users cannot identify tabs in browsers or bookmarks, and search engines fail to display relevant title snippets, causing severe SEO ranking loss.",
                     code_example="<head>\n  <title>Home - My Company</title>\n</head>",
-                    target_location="Page Template (HTML <head>)",
-                    line_number=getattr(head_tag, "sourceline", None),
+                    target_location="index.html",
+                    line_number=getattr(title_tag, "sourceline", getattr(head_tag, "sourceline", 1)),
                     problematic_code=str(title_tag) if title_tag else "<title></title>"
                 )
             )
@@ -66,7 +66,7 @@ class BasicUXScanner(BaseScanner):
                     evidence={"count": len(all_imgs_without_alt), "samples": [img.get("src", "unknown") for img in all_imgs_without_alt[:5]]},
                     risk_impact="Screen reader users cannot understand image content or context. When images fail to load due to network issues, no fallback text is rendered, and image SEO indexing is lost.",
                     code_example="<img src=\"/images/logo.png\" alt=\"Company Logo\" />",
-                    target_location="Page Template (HTML / <img>)",
+                    target_location="index.html",
                     line_number=getattr(first_img, "sourceline", None),
                     problematic_code=str(first_img)[:160]
                 )

@@ -58,7 +58,23 @@ export default function FindingCard({ finding }: { finding: Finding }) {
       >
         <span className={`finding-category-dot ${finding.category}`} aria-label={finding.category} />
         <span className={`severity-badge ${finding.severity}`}>{finding.severity}</span>
-        <span className="finding-title">{finding.title}</span>
+        
+        <div className="finding-title-group">
+          <span className="finding-title">{finding.title}</span>
+          {finding.target_location && (
+            <span
+              className="finding-location-pill"
+              title={`Target File: ${finding.target_location}${finding.line_number ? ` (Line ${finding.line_number})` : ""}`}
+            >
+              <span className="pill-icon">📄</span>
+              <span className="pill-path">{finding.target_location}</span>
+              {finding.line_number ? (
+                <span className="pill-line">:{finding.line_number}</span>
+              ) : null}
+            </span>
+          )}
+        </div>
+
         <span className={`finding-chevron ${open ? "open" : ""}`} aria-hidden>▾</span>
       </div>
 
@@ -90,11 +106,15 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                 <div className="ide-file-info">
                   <span className="ide-file-icon">📄</span>
                   <span className="ide-file-path">
-                    {finding.target_location || "index.html (Page Source)"}
+                    {finding.target_location || "index.html"}
                   </span>
-                  {finding.line_number && (
+                  {finding.line_number ? (
+                    <span className="ide-line-badge highlight">
+                      📍 Line: {finding.line_number}
+                    </span>
+                  ) : (
                     <span className="ide-line-badge">
-                      Line: {finding.line_number}
+                      Config File
                     </span>
                   )}
                 </div>

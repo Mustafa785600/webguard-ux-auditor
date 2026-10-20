@@ -20,33 +20,33 @@ class BrokenLinksScanner(BaseScanner):
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Extract links and critical assets
-        links_to_check: Set[str] = set()
-        assets_to_check: Set[str] = set()
+        # Extract links and critical assets with their source HTML tag
+        links_map: dict[str, any] = {}
+        assets_map: dict[str, any] = {}
 
         for a_tag in soup.find_all("a", href=True):
             cleaned = self._clean_url(target_url, a_tag["href"])
-            if cleaned:
-                links_to_check.add(cleaned)
+            if cleaned and cleaned not in links_map:
+                links_map[cleaned] = a_tag
 
         for img_tag in soup.find_all("img", src=True):
             cleaned = self._clean_url(target_url, img_tag["src"])
-            if cleaned:
-                assets_to_check.add(cleaned)
+            if cleaned and cleaned not in assets_map:
+                assets_map[cleaned] = img_tag
 
         for script_tag in soup.find_all("script", src=True):
             cleaned = self._clean_url(target_url, script_tag["src"])
-            if cleaned:
-                assets_to_check.add(cleaned)
+            if cleaned and cleaned not in assets_map:
+                assets_map[cleaned] = script_tag
 
         for link_tag in soup.find_all("link", rel=lambda r: r and "stylesheet" in r, href=True):
             cleaned = self._clean_url(target_url, link_tag["href"])
-            if cleaned:
-                assets_to_check.add(cleaned)
+            if cleaned and cleaned not in assets_map:
+                assets_map[cleaned] = link_tag
 
         # Cap checks for latency optimization
-        probe_assets = list(assets_to_check)[:MAX_PROBE_URLS]
-        probe_links = list(links_to_check)[:MAX_PROBE_URLS]
+        probe_assets = list(assets_map.keys())[:MAX_PROBE_URLS]
+        probe_links = list(links_map.keys())[:MAX_PROBE_URLS]
 
         asset_tasks = [self._probe_url(url, client) for url in probe_assets]
         link_tasks = [self._probe_url(url, client) for url in probe_links]
@@ -58,7 +58,9 @@ class BrokenLinksScanner(BaseScanner):
         broken_links = [res for res in link_results if isinstance(res, tuple) and res[1] >= 400]
 
         if broken_assets:
-            first_asset = broken_assets[0]
+            first_url, first_status = broken_assets[0]
+            first_tag = assets_map.get(first_url)
+            asset_line = getattr(first_tag, "sourceline", None) if first_tag else None
             findings.append(
                 Finding(
                     id="UX_BROKEN_ASSETS",
@@ -70,13 +72,16 @@ class BrokenLinksScanner(BaseScanner):
                     evidence={"broken_assets": [{"url": u, "status": s} for u, s in broken_assets[:5]]},
                     risk_impact="When CSS stylesheets, JS bundles, or key images fail to load, page layout breaks, client-side interactivity fails, and users quickly abandon the site.",
                     code_example="<link rel=\"stylesheet\" href=\"/css/main.min.css\" />\n<script src=\"/js/app.bundle.js\" defer></script>",
-                    target_location="HTML Source (<head> / <body> asset tags)",
-                    problematic_code=f"Failed Resource: {first_asset[0]} (HTTP {first_asset[1]})"
+                    target_location="index.html",
+                    line_number=asset_line,
+                    problematic_code=str(first_tag)[:160] if first_tag else f"Failed Resource: {first_url} (HTTP {first_status})"
                 )
             )
 
         if broken_links:
-            first_link = broken_links[0]
+            first_url, first_status = broken_links[0]
+            first_tag = links_map.get(first_url)
+            link_line = getattr(first_tag, "sourceline", None) if first_tag else None
             findings.append(
                 Finding(
                     id="UX_BROKEN_LINKS",
@@ -88,8 +93,9 @@ class BrokenLinksScanner(BaseScanner):
                     evidence={"broken_links": [{"url": u, "status": s} for u, s in broken_links[:5]]},
                     risk_impact="Visitors encountering 404/500 dead ends lose trust, conversion rates drop, and search engine crawlers waste crawl budget, degrading search rankings.",
                     code_example="<a href=\"/contact-us\">Contact Us</a>",
-                    target_location="Page Template (HTML <a> link)",
-                    problematic_code=f"Broken Link (Dead End): {first_link[0]} (HTTP {first_link[1]})"
+                    target_location="index.html",
+                    line_number=link_line,
+                    problematic_code=str(first_tag)[:160] if first_tag else f"Broken Link: {first_url} (HTTP {first_status})"
                 )
             )
 

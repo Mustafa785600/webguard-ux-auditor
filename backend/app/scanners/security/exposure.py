@@ -18,7 +18,8 @@ SENSITIVE_TARGETS = [
         ),
         "risk_impact": "Database passwords, secret API keys, and JWT signing secrets are exposed to the public internet, allowing attackers to dump backend databases or compromise the server.",
         "code_example": "location ~ /\\.(?!well-known).* {\n    deny all;\n    return 404;\n}",
-        "target_location": "Web Root / Web Server Configuration",
+        "target_location": ".env",
+        "line_number": 1,
         "problematic_code": "/.env (Publicly Accessible)"
     },
     {
@@ -31,7 +32,8 @@ SENSITIVE_TARGETS = [
         "validator": lambda text, ct: text.strip().startswith("ref: refs/"),
         "risk_impact": "Attackers can dump the complete Git repository, recovering full proprietary source code, commit history, and historical hardcoded credentials.",
         "code_example": "location ~ /\\.git {\n    deny all;\n    return 404;\n}",
-        "target_location": "Web Root / Web Server Configuration",
+        "target_location": ".git/HEAD",
+        "line_number": 1,
         "problematic_code": "/.git/HEAD (Publicly Accessible)"
     },
     {
@@ -44,7 +46,8 @@ SENSITIVE_TARGETS = [
         "validator": lambda text, ct: "swagger" in text[:200].lower() or "openapi" in text[:200].lower(),
         "risk_impact": "Internal API endpoints, schema definitions, and parameter structures are exposed, facilitating automated vulnerability discovery.",
         "code_example": "app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)",
-        "target_location": "FastAPI App Initialization (main.py)",
+        "target_location": "main.py",
+        "line_number": 1,
         "problematic_code": "/swagger.json (Publicly Accessible)"
     },
     {
@@ -57,7 +60,8 @@ SENSITIVE_TARGETS = [
         "validator": lambda text, ct: "openapi" in text[:200].lower(),
         "risk_impact": "Internal data models and authentication scopes are disclosed, aiding reconnaissance and targeted API exploitation.",
         "code_example": "app = FastAPI(openapi_url=None)",
-        "target_location": "FastAPI App Initialization (main.py)",
+        "target_location": "main.py",
+        "line_number": 1,
         "problematic_code": "/openapi.json (Publicly Accessible)"
     }
 ]
@@ -102,6 +106,7 @@ class ExposureScanner(BaseScanner):
                         risk_impact=target_spec.get("risk_impact"),
                         code_example=target_spec.get("code_example"),
                         target_location=target_spec.get("target_location", "Web Root"),
+                        line_number=target_spec.get("line_number"),
                         problematic_code=f"Accessible Resource: {probe_url}"
                     )
         except Exception:
@@ -114,27 +119,28 @@ class ExposureScanner(BaseScanner):
             resp = await client.get(robots_url, timeout=5.0)
             if resp.status_code == 200 and not resp.text.lstrip().startswith("<!DOCTYPE"):
                 sensitive_keywords = ["admin", "backup", "secret", "private", "internal", "dashboard", "portal"]
-                leaked_paths = []
-                for line in resp.text.splitlines():
+                leaked_entries = []
+                for line_idx, line in enumerate(resp.text.splitlines(), start=1):
                     clean_line = line.strip().lower()
                     if clean_line.startswith("disallow:"):
                         path = clean_line.split(":", 1)[1].strip()
                         if any(kw in path for kw in sensitive_keywords):
-                            leaked_paths.append(path)
+                            leaked_entries.append((path, line_idx))
 
-                if leaked_paths:
+                if leaked_entries:
                     return Finding(
                         id="SEC_ROBOTS_PATH_DISCLOSURE",
                         category=Category.SECURITY,
                         severity=Severity.MEDIUM,
                         title="Sensitive Directory Disclosure via robots.txt",
-                        description=f"robots.txt disallow directives advertise sensitive internal paths: {', '.join(leaked_paths[:5])}.",
+                        description=f"robots.txt disallow directives advertise sensitive internal paths: {', '.join([e[0] for e in leaked_entries[:5]])}.",
                         remediation="Do not rely on robots.txt for security; restrict access to sensitive paths using authentication and authorization controls.",
-                        evidence={"sensitive_paths": leaked_paths},
+                        evidence={"sensitive_paths": [e[0] for e in leaked_entries]},
                         risk_impact="robots.txt is public. Listing private administration or backup paths in Disallow directives exposes them to discovery by attackers.",
                         code_example="location /admin {\n    allow 192.168.1.0/24;\n    deny all;\n}",
-                        target_location="Web Server Configuration (nginx.conf / httpd.conf)",
-                        problematic_code="\n".join([f"Disallow: {p}" for p in leaked_paths[:3]])
+                        target_location="robots.txt",
+                        line_number=leaked_entries[0][1],
+                        problematic_code="\n".join([f"Disallow: {e[0]}" for e in leaked_entries[:3]])
                     )
         except Exception:
             pass
