@@ -347,135 +347,180 @@ body {
   margin: 0;
 }
 
-/* ── Issue Location Block ── */
-.location-block {
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-left: 3px solid #ef4444;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  padding: 12px 14px;
-}
-.location-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.location-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.location-pin {
-  font-size: 13px;
-}
-.location-title {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #f87171;
-}
-.location-tags {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.location-badge {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-primary);
-}
-.line-badge {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 4px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  color: #fca5a5;
-}
-.problematic-wrapper {
-  margin-top: 6px;
-}
-.problematic-sublabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-.problematic-pre {
-  margin: 0;
-  padding: 8px 10px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  font-family: 'JetBrains Mono', monospace;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 4px;
-  color: #fca5a5;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
+/* ── Mini IDE / Code Inspector Window ── */
+.ide-window {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* ── Code Example Block ── */
-.code-example-block {
-  background: #0d1117;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-.code-example-header {
+.ide-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 14px;
+  background: #161b22;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.code-example-title {
+
+.ide-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ide-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-red    { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green  { background: #27c93f; }
+
+.ide-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #e6edf3;
+  flex: 1;
+}
+.ide-file-icon {
+  font-size: 13px;
+}
+.ide-file-path {
+  font-weight: 600;
+  color: #58a6ff;
+}
+.ide-line-badge {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-.code-copy-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 1px 7px;
   border-radius: 4px;
-  color: var(--text-secondary);
+}
+
+.ide-copy-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  color: #c9d1d9;
   font-size: 11px;
   font-weight: 500;
-  padding: 3px 8px;
+  padding: 3px 9px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.code-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+.ide-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
-.code-copy-btn.copied {
+.ide-copy-btn.copied {
   background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 197, 94, 0.5);
   color: #4ade80;
 }
-.code-example-pre {
-  margin: 0;
-  padding: 12px 14px;
+
+/* IDE Bölümleri (Problem & Fix) */
+.ide-section {
+  padding: 10px 0;
+}
+.ide-section-problem {
+  background: rgba(239, 68, 68, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ide-section-fix {
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.ide-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 6px;
+  font-size: 11px;
+}
+.ide-tag-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.error-badge {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.fix-badge {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.ide-target-line {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Satır Numaralı Kod Tablosu */
+.ide-code-container {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   font-size: 12px;
-  line-height: 1.5;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  color: #7dd3fc;
-  overflow-x: auto;
+  line-height: 1.6;
+}
+
+.ide-code-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 1px 14px;
+  transition: background 0.1s ease;
+}
+.ide-code-row.error {
+  background: rgba(239, 68, 68, 0.09);
+  color: #fca5a5;
+}
+.ide-code-row.error:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+.ide-code-row.fix {
+  background: rgba(34, 197, 94, 0.09);
+  color: #86efac;
+}
+.ide-code-row.fix:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.ide-line-number {
+  width: 32px;
+  min-width: 32px;
+  color: #484f58;
+  text-align: right;
+  padding-right: 12px;
+  user-select: none;
+  font-size: 11px;
+}
+.ide-line-symbol {
+  width: 14px;
+  min-width: 14px;
+  user-select: none;
+  font-weight: 700;
+  font-size: 12px;
+}
+.ide-code-row.error .ide-line-symbol { color: #f87171; }
+.ide-code-row.fix .ide-line-symbol   { color: #4ade80; }
+
+.ide-line-content {
+  flex: 1;
   white-space: pre-wrap;
   word-break: break-all;
 }

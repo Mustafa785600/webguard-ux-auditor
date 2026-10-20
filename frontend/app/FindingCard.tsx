@@ -3,6 +3,33 @@
 import { useState } from "react";
 import type { Finding } from "@/types/scan";
 
+function CodeBlockWithLines({
+  code,
+  startLine = 1,
+  variant,
+}: {
+  code: string;
+  startLine?: number;
+  variant: "error" | "fix";
+}) {
+  const lines = code.trim().split("\n");
+
+  return (
+    <div className={`ide-code-container ${variant}`}>
+      {lines.map((lineText, idx) => {
+        const lineNum = startLine ? startLine + idx : idx + 1;
+        return (
+          <div key={idx} className={`ide-code-row ${variant}`}>
+            <span className="ide-line-number">{lineNum}</span>
+            <span className="ide-line-symbol">{variant === "error" ? "−" : "+"}</span>
+            <span className="ide-line-content">{lineText || " "}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function FindingCard({ finding }: { finding: Finding }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -15,8 +42,8 @@ export default function FindingCard({ finding }: { finding: Finding }) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const hasLocationInfo = Boolean(
-    finding.target_location || finding.line_number || finding.problematic_code
+  const hasLocationOrCode = Boolean(
+    finding.target_location || finding.line_number || finding.problematic_code || finding.code_example
   );
 
   return (
@@ -50,65 +77,79 @@ export default function FindingCard({ finding }: { finding: Finding }) {
             </div>
           )}
 
-          {/* 2. Düzeltilecek Bölüm & Konum (Target File, Line & Problematic Code) */}
-          {hasLocationInfo && (
-            <div className="location-block">
-              <div className="location-header">
-                <div className="location-left">
-                  <span className="location-pin">📍</span>
-                  <span className="location-title">DÜZELTİLECEK BÖLÜM &amp; KONUM</span>
+          {/* 2. Mini IDE Kod İnceleyicisi (Hatanın Yeri + Satır + Önceki / Sonraki Kod) */}
+          {hasLocationOrCode && (
+            <div className="ide-window">
+              {/* IDE Pencere Başlığı */}
+              <div className="ide-titlebar">
+                <div className="ide-dots">
+                  <span className="ide-dot dot-red" />
+                  <span className="ide-dot dot-yellow" />
+                  <span className="ide-dot dot-green" />
                 </div>
-                <div className="location-tags">
-                  {finding.target_location && (
-                    <span className="location-badge" title="Dosya / Yapılandırma">
-                      📄 {finding.target_location}
-                    </span>
-                  )}
+                <div className="ide-file-info">
+                  <span className="ide-file-icon">📄</span>
+                  <span className="ide-file-path">
+                    {finding.target_location || "index.html (Sayfa Kaynağı)"}
+                  </span>
                   {finding.line_number && (
-                    <span className="line-badge" title="Kaynak koddaki satır">
+                    <span className="ide-line-badge">
                       Satır: {finding.line_number}
                     </span>
                   )}
                 </div>
+                {finding.code_example && (
+                  <button
+                    type="button"
+                    className={`ide-copy-btn ${copied ? "copied" : ""}`}
+                    onClick={handleCopyCode}
+                    title="Çözüm kodunu kopyala"
+                  >
+                    {copied ? "✓ Kopyalandı" : "📋 Kodu Kopyala"}
+                  </button>
+                )}
               </div>
+
+              {/* Hatalı Kod (Mevcut Durum / Before) */}
               {finding.problematic_code && (
-                <div className="problematic-wrapper">
-                  <div className="problematic-sublabel">Mevcut / Hatalı Kod veya Durum:</div>
-                  <pre className="problematic-pre">
-                    <code>{finding.problematic_code}</code>
-                  </pre>
+                <div className="ide-section ide-section-problem">
+                  <div className="ide-section-header problem-header">
+                    <span className="ide-tag-badge error-badge">❌ DÜZELTİLECEK BÖLÜM (MEVCUT KOD)</span>
+                    {finding.line_number && (
+                      <span className="ide-target-line">Hedef Satır: ~{finding.line_number}</span>
+                    )}
+                  </div>
+                  <CodeBlockWithLines
+                    code={finding.problematic_code}
+                    startLine={finding.line_number ?? 1}
+                    variant="error"
+                  />
+                </div>
+              )}
+
+              {/* Düzeltilmiş Çözüm Kodu (Önerilen / After) */}
+              {finding.code_example && (
+                <div className="ide-section ide-section-fix">
+                  <div className="ide-section-header fix-header">
+                    <span className="ide-tag-badge fix-badge">✅ NASIL DÜZELTİLİR? (ÖNERİLEN KOD)</span>
+                  </div>
+                  <CodeBlockWithLines
+                    code={finding.code_example}
+                    startLine={finding.line_number ?? 1}
+                    variant="fix"
+                  />
                 </div>
               )}
             </div>
           )}
 
-          {/* 3. Çözüm Rehberi (Remediation) */}
+          {/* 3. Çözüm Rehberi (Metin Açıklaması) */}
           <div className="remediation-block">
-            <div className="remediation-label">ÇÖZÜM REHBERİ (REMEDIATION)</div>
+            <div className="remediation-label">ÇÖZÜM REHBERİ (REMEDIATION GUIDANCE)</div>
             <p className="remediation-text">{finding.remediation}</p>
           </div>
 
-          {/* 4. Nasıl Düzeltilir? Örnek Çözüm Kodu */}
-          {finding.code_example && (
-            <div className="code-example-block">
-              <div className="code-example-header">
-                <span className="code-example-title">🛠️ NASIL DÜZELTİLİR? (ÖRNEK ÇÖZÜM KODU)</span>
-                <button
-                  type="button"
-                  className={`code-copy-btn ${copied ? "copied" : ""}`}
-                  onClick={handleCopyCode}
-                  title="Kodu kopyala"
-                >
-                  {copied ? "✓ Kopyalandı" : "📋 Kodu Kopyala"}
-                </button>
-              </div>
-              <pre className="code-example-pre">
-                <code>{finding.code_example}</code>
-              </pre>
-            </div>
-          )}
-
-          {/* 5. Teknik Kanıt (Technical Evidence) */}
+          {/* 4. Teknik Kanıt (Technical Evidence Log) */}
           {finding.evidence && (
             <details className="evidence-details">
               <summary style={{ fontSize: "12px", color: "var(--text-muted)", cursor: "pointer" }}>
