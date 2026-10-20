@@ -40,9 +40,9 @@ class FormsA11yScanner(BaseScanner):
                 description="Forms without an 'action' attribute submit to the current URL by default, which may cause unexpected behavior and confuse users.",
                 remediation="Define explicit 'action' attributes on all <form> elements to ensure predictable submission routing.",
                 evidence={"count": len(forms_without_action)},
-                risk_impact="Form nereye gideceğini bilmediği için mevcut sayfayı parametrelerle yeniden yükler. Bu durum kullanıcı verilerinin kaybolmasına ve çift form gönderimlerine sebep olabilir.",
-                code_example="<!-- Formun gideceği uç noktayı açıkça belirtin -->\n<form action=\"/api/auth/login\" method=\"POST\">\n  <!-- Form bileşenleri -->\n</form>",
-                target_location="Sayfa Şablonu (HTML / Form)",
+                risk_impact="Without an explicit action attribute, the form submits to the current URL with query parameters by default. This can cause duplicate submissions, state confusion, or accidental data loss.",
+                code_example="<form action=\"/api/auth/login\" method=\"POST\">\n  <input type=\"text\" name=\"username\" />\n  <button type=\"submit\">Submit</button>\n</form>",
+                target_location="Page Template (HTML / <form>)",
                 line_number=getattr(sample_form, "sourceline", None) if sample_form else None,
                 problematic_code=str(sample_form)[:160] if sample_form else None
             )
@@ -72,9 +72,9 @@ class FormsA11yScanner(BaseScanner):
                     description="Form inputs without associated <label> elements or aria-label attributes prevent screen readers and assistive technologies from conveying field purpose.",
                     remediation="Associate every input with a <label for='inputId'>, or use aria-label/aria-labelledby attributes.",
                     evidence={"unlabeled_count": len(unlabeled_inputs)},
-                    risk_impact="Görme engelli ve ekran okuyucu kullanan bireyler giriş alanının ne amaçla kullanıldığını anlayamaz (WCAG 2.1 Başarı Kriteri 1.3.1 ihlali). Ayrıca tarayıcı otomatik doldurucuları alanı tanıyamaz.",
-                    code_example="<!-- Doğru ve Erişilebilir Input & Label Kullanımı -->\n<label for=\"kullanici-eposta\">E-posta Adresiniz</label>\n<input type=\"email\" id=\"kullanici-eposta\" name=\"email\" required />",
-                    target_location="Sayfa Şablonu (HTML / Input)",
+                    risk_impact="Screen reader and assistive technology users cannot determine the input purpose (violating WCAG 2.1 Success Criterion 1.3.1). Browser autofill and password managers also fail to detect the field.",
+                    code_example="<label for=\"user-email\">Email Address</label>\n<input type=\"email\" id=\"user-email\" name=\"email\" required />",
+                    target_location="Page Template (HTML / <input>)",
                     line_number=getattr(first_unlabeled, "sourceline", None),
                     problematic_code=str(first_unlabeled)[:160]
                 )
@@ -105,9 +105,9 @@ class FormsA11yScanner(BaseScanner):
                     description="Buttons without text content, aria-label, or title attributes are inaccessible to screen reader users and fail WCAG 2.1 Success Criterion 4.1.2.",
                     remediation="Add descriptive text content or an aria-label attribute to all interactive buttons.",
                     evidence={"samples": [str(b)[:80] for b in empty_buttons[:3]]},
-                    risk_impact="Yalnızca ikon barındıran butonlarda metin veya aria-label bulunmadığında ekran okuyucu 'isimsiz buton' uyarısı verir. Kullanıcı düğmenin arama mı, silme mi yoksa onay mı olduğunu anlayamaz.",
-                    code_example="<!-- İkon Butonlarında aria-label Kullanımı -->\n<button type=\"submit\" aria-label=\"Arama Yap\">\n  <svg aria-hidden=\"true\" ...></svg>\n</button>",
-                    target_location="Sayfa Şablonu (HTML / Button)",
+                    risk_impact="Buttons containing only icons without text or aria-label cause screen readers to announce 'unlabeled button', leaving visually impaired users unable to identify button action (violating WCAG 2.1 SC 4.1.2).",
+                    code_example="<button type=\"submit\" aria-label=\"Search\">\n  <svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"></svg>\n</button>",
+                    target_location="Page Template (HTML / <button>)",
                     line_number=getattr(first_btn, "sourceline", None),
                     problematic_code=str(first_btn)[:160]
                 )
@@ -140,9 +140,9 @@ class FormsA11yScanner(BaseScanner):
                     description="Inputs collecting personal data (name, email, address, etc.) without 'autocomplete' attributes prevent browser autofill, increasing user friction.",
                     remediation="Add appropriate autocomplete tokens (e.g., autocomplete='email', 'name', 'tel') per WCAG 2.1 SC 1.3.5.",
                     evidence={"fields": [(i.get("name") or i.get("id")) for i in missing_autocomplete_inputs[:5]]},
-                    risk_impact="Kullanıcılar her seferinde telefon, adres veya e-postalarını baştan yazmak zorunda kalır; form terk etme oranları (drop-off) artar ve mobil UX kalitesi düşer.",
-                    code_example="<!-- Tarayıcı ve Şifre Yöneticileri İçin Otomatik Doldurma -->\n<input type=\"email\" name=\"email\" autocomplete=\"email\" />\n<input type=\"password\" name=\"password\" autocomplete=\"current-password\" />",
-                    target_location="Sayfa Şablonu (HTML / Input)",
+                    risk_impact="Users must repeatedly re-type contact and identity details manually, increasing friction, lowering form completion rates, and degrading mobile user experience.",
+                    code_example="<input type=\"email\" name=\"email\" autocomplete=\"email\" />\n<input type=\"password\" name=\"password\" autocomplete=\"current-password\" />",
+                    target_location="Page Template (HTML / <input>)",
                     line_number=getattr(first_auto, "sourceline", None),
                     problematic_code=str(first_auto)[:160]
                 )
@@ -170,9 +170,9 @@ class FormsA11yScanner(BaseScanner):
                     description="Forms containing password, email, or phone inputs using the GET method expose credentials in the URL, browser history, and server logs.",
                     remediation="Use method='POST' for all forms containing sensitive or personal data.",
                     evidence={"count": len(get_forms_with_sensitive)},
-                    risk_impact="Şifreler ve kimlik bilgileri URL parametresi olarak gönderilir (?password=123). Bu durum kullanıcının ekranında, tarayıcı geçmişinde, proxy sunucularında ve erişim loglarında şifrenin açıkça kaydedilmesine yol açar.",
-                    code_example="<!-- Hassas Bilgi İçeren Tüm Formlarda POST Kullanın -->\n<form action=\"/login\" method=\"POST\">\n  <input type=\"password\" name=\"password\" />\n  <button type=\"submit\">Giriş Yap</button>\n</form>",
-                    target_location="Sayfa Şablonu (HTML / Form)",
+                    risk_impact="Sensitive credentials and personal details are transmitted as URL query parameters, exposing them in browser history, proxy caches, server access logs, and referrer headers.",
+                    code_example="<form action=\"/login\" method=\"POST\">\n  <input type=\"password\" name=\"password\" />\n  <button type=\"submit\">Log In</button>\n</form>",
+                    target_location="Page Template (HTML / <form>)",
                     line_number=getattr(first_sens_form, "sourceline", None),
                     problematic_code=str(first_sens_form)[:160]
                 )

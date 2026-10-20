@@ -26,11 +26,11 @@ class BasicUXScanner(BaseScanner):
                     title="Missing Mobile Viewport Meta Tag",
                     description="The page lacks a responsive viewport meta tag, causing degraded layout and readability on mobile devices.",
                     remediation="Add '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' inside <head>.",
-                    risk_impact="Mobil cihazlarda sayfa masaüstü gibi minik görünür, kullanıcı zoom yapmak zorunda kalır ve mobil kullanıcı deneyimi çöker.",
+                    risk_impact="On mobile devices, pages without a viewport meta tag render in desktop scaling mode, forcing users to pinch-zoom and horizontally scroll, drastically degrading mobile usability.",
                     code_example="<head>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n</head>",
-                    target_location="Sayfa Şablonu (<head> bölümü)",
+                    target_location="Page Template (HTML <head>)",
                     line_number=getattr(head_tag, "sourceline", None),
-                    problematic_code="<head>\n  <!-- Viewport meta etiketi bulunamadı -->\n</head>"
+                    problematic_code="<head>\n</head>"
                 )
             )
 
@@ -44,11 +44,11 @@ class BasicUXScanner(BaseScanner):
                     title="Missing or Empty Page Title",
                     description="The document lacks a descriptive <title> element, hampering navigation, tab management, and search UX.",
                     remediation="Provide a concise, context-rich <title> tag for every page.",
-                    risk_impact="Kullanıcı tarayıcı sekmelerinde hangi sitede olduğunu göremez, yer imlerine eklerken başlık çıkmaz ve arama motorlarında (SEO) ciddi sıralama kaybı yaşanır.",
-                    code_example="<head>\n  <title>Sayfa Başlığı | Marka Adı</title>\n</head>",
-                    target_location="Sayfa Şablonu (<head> bölümü)",
+                    risk_impact="Users cannot identify tabs in browsers or bookmarks, and search engines fail to display relevant title snippets, causing severe SEO ranking loss.",
+                    code_example="<head>\n  <title>Home - My Company</title>\n</head>",
+                    target_location="Page Template (HTML <head>)",
                     line_number=getattr(head_tag, "sourceline", None),
-                    problematic_code=str(title_tag) if title_tag else "<title> (Etiket eksik veya içi boş)</title>"
+                    problematic_code=str(title_tag) if title_tag else "<title></title>"
                 )
             )
 
@@ -64,9 +64,9 @@ class BasicUXScanner(BaseScanner):
                     description="Images without alt attributes prevent screen reader accessibility and degrade UX when images fail to load.",
                     remediation="Add descriptive 'alt' text to all informational images or 'alt=\"\"' for decorative elements.",
                     evidence={"count": len(all_imgs_without_alt), "samples": [img.get("src", "unknown") for img in all_imgs_without_alt[:5]]},
-                    risk_impact="Ekran okuyucu kullanan görme engelli bireyler resmin ne olduğunu anlayamaz. Ayrıca görsel yüklenemediğinde yerine açıklayıcı metin çıkmaz ve görsel arama SEO'su kaybolur.",
-                    code_example="<!-- Bilgi verici görsellerde -->\n<img src=\"/logo.png\" alt=\"Şirket Logosu\" />\n\n<!-- Sadece süs/dekoratif görsellerde -->\n<img src=\"/bg-pattern.svg\" alt=\"\" aria-hidden=\"true\" />",
-                    target_location="Sayfa Şablonu (HTML / <img>)",
+                    risk_impact="Screen reader users cannot understand image content or context. When images fail to load due to network issues, no fallback text is rendered, and image SEO indexing is lost.",
+                    code_example="<img src=\"/images/logo.png\" alt=\"Company Logo\" />",
+                    target_location="Page Template (HTML / <img>)",
                     line_number=getattr(first_img, "sourceline", None),
                     problematic_code=str(first_img)[:160]
                 )

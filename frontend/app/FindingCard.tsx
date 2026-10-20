@@ -66,21 +66,21 @@ export default function FindingCard({ finding }: { finding: Finding }) {
         <div className="finding-body">
           <p className="finding-desc">{finding.description}</p>
 
-          {/* 1. Risk Açıklaması (Risk & Impact) */}
+          {/* 1. Risk & Impact Analysis */}
           {finding.risk_impact && (
             <div className="risk-impact-block">
               <div className="risk-impact-header">
                 <span className="risk-icon">⚠️</span>
-                <span className="risk-label">RİSK AÇIKLAMASI &amp; ETKİ ANALİZİ</span>
+                <span className="risk-label">RISK &amp; IMPACT ANALYSIS</span>
               </div>
               <p className="risk-text">{finding.risk_impact}</p>
             </div>
           )}
 
-          {/* 2. Mini IDE Kod İnceleyicisi (Hatanın Yeri + Satır + Önceki / Sonraki Kod) */}
+          {/* 2. Mini IDE Code Inspector (Source + Line + Before / After Code) */}
           {hasLocationOrCode && (
             <div className="ide-window">
-              {/* IDE Pencere Başlığı */}
+              {/* IDE Window Titlebar */}
               <div className="ide-titlebar">
                 <div className="ide-dots">
                   <span className="ide-dot dot-red" />
@@ -90,11 +90,11 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                 <div className="ide-file-info">
                   <span className="ide-file-icon">📄</span>
                   <span className="ide-file-path">
-                    {finding.target_location || "index.html (Sayfa Kaynağı)"}
+                    {finding.target_location || "index.html (Page Source)"}
                   </span>
                   {finding.line_number && (
                     <span className="ide-line-badge">
-                      Satır: {finding.line_number}
+                      Line: {finding.line_number}
                     </span>
                   )}
                 </div>
@@ -103,20 +103,20 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                     type="button"
                     className={`ide-copy-btn ${copied ? "copied" : ""}`}
                     onClick={handleCopyCode}
-                    title="Çözüm kodunu kopyala"
+                    title="Copy solution code"
                   >
-                    {copied ? "✓ Kopyalandı" : "📋 Kodu Kopyala"}
+                    {copied ? "✓ Copied" : "📋 Copy Code"}
                   </button>
                 )}
               </div>
 
-              {/* Hatalı Kod (Mevcut Durum / Before) */}
+              {/* Deficient Code (Current / Before) */}
               {finding.problematic_code && (
                 <div className="ide-section ide-section-problem">
                   <div className="ide-section-header problem-header">
-                    <span className="ide-tag-badge error-badge">❌ DÜZELTİLECEK BÖLÜM (MEVCUT KOD)</span>
+                    <span className="ide-tag-badge error-badge">❌ CURRENT DEFICIENT CODE</span>
                     {finding.line_number && (
-                      <span className="ide-target-line">Hedef Satır: ~{finding.line_number}</span>
+                      <span className="ide-target-line">Target Line: ~{finding.line_number}</span>
                     )}
                   </div>
                   <CodeBlockWithLines
@@ -127,11 +127,11 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                 </div>
               )}
 
-              {/* Düzeltilmiş Çözüm Kodu (Önerilen / After) */}
+              {/* Solution Code (Recommended Fix / After) */}
               {finding.code_example && (
                 <div className="ide-section ide-section-fix">
                   <div className="ide-section-header fix-header">
-                    <span className="ide-tag-badge fix-badge">✅ NASIL DÜZELTİLİR? (ÖNERİLEN KOD)</span>
+                    <span className="ide-tag-badge fix-badge">✅ RECOMMENDED FIX (SOLUTION)</span>
                   </div>
                   <CodeBlockWithLines
                     code={finding.code_example}
@@ -143,17 +143,17 @@ export default function FindingCard({ finding }: { finding: Finding }) {
             </div>
           )}
 
-          {/* 3. Çözüm Rehberi (Metin Açıklaması) */}
+          {/* 3. Remediation Guidance */}
           <div className="remediation-block">
-            <div className="remediation-label">ÇÖZÜM REHBERİ (REMEDIATION GUIDANCE)</div>
+            <div className="remediation-label">REMEDIATION GUIDANCE</div>
             <p className="remediation-text">{finding.remediation}</p>
           </div>
 
-          {/* 4. Teknik Kanıt (Technical Evidence Log) */}
+          {/* 4. Technical Evidence Log */}
           {finding.evidence && (
             <details className="evidence-details">
               <summary style={{ fontSize: "12px", color: "var(--text-muted)", cursor: "pointer" }}>
-                Teknik Kanıt (Evidence Log)
+                Technical Evidence (Raw Log)
               </summary>
               <pre style={{
                 marginTop: "8px",

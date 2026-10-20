@@ -68,10 +68,10 @@ class BrokenLinksScanner(BaseScanner):
                     description="Essential assets (images, stylesheets, or scripts) failed to load, degrading page appearance and functionality.",
                     remediation="Verify resource paths, ensure CDN availability, and remove obsolete asset references.",
                     evidence={"broken_assets": [{"url": u, "status": s} for u, s in broken_assets[:5]]},
-                    risk_impact="Stil dosyaları (CSS), JS kütüphaneleri veya kritik resimler yüklenemediğinde sayfa tasarımı parçalanır, butonlar çalışmaz ve kullanıcılar siteyi bozuk sanıp terk eder.",
-                    code_example="<!-- Bozuk dosya yolunu güncelleyin veya doğru CDN URL'si verin -->\n<link rel=\"stylesheet\" href=\"/css/main.min.css\" />\n<script src=\"/js/app.bundle.js\" defer></script>",
-                    target_location="HTML (<head> veya <body> varlık linkleri)",
-                    problematic_code=f"Yüklenemeyen Dosya: {first_asset[0]} (HTTP {first_asset[1]})"
+                    risk_impact="When CSS stylesheets, JS bundles, or key images fail to load, page layout breaks, client-side interactivity fails, and users quickly abandon the site.",
+                    code_example="<link rel=\"stylesheet\" href=\"/css/main.min.css\" />\n<script src=\"/js/app.bundle.js\" defer></script>",
+                    target_location="HTML Source (<head> / <body> asset tags)",
+                    problematic_code=f"Failed Resource: {first_asset[0]} (HTTP {first_asset[1]})"
                 )
             )
 
@@ -86,10 +86,10 @@ class BrokenLinksScanner(BaseScanner):
                     description="Hyperlinks directing to 4xx/5xx dead ends degrade user experience and harm SEO.",
                     remediation="Update or remove dead URLs and configure proper 301 redirects.",
                     evidence={"broken_links": [{"url": u, "status": s} for u, s in broken_links[:5]]},
-                    risk_impact="Kullanıcılar tıkladıklarında 404/500 hata sayfalarıyla karşılaşır. Bu durum kullanıcı güvenini zedeler ve Google botlarının tarama bütçesini tüketerek arama sıralamalarına (SEO) darbe vurur.",
-                    code_example="<!-- Linki güncelleyin veya sunucuda 301 yönlendirmesi tanımlayın -->\n<a href=\"/guncel-sayfa\">Aktif Sayfaya Git</a>",
-                    target_location="Sayfa Şablonu (HTML / <a>)",
-                    problematic_code=f"Kırık Bağlantı (Ölü Link): {first_link[0]} (HTTP {first_link[1]})"
+                    risk_impact="Visitors encountering 404/500 dead ends lose trust, conversion rates drop, and search engine crawlers waste crawl budget, degrading search rankings.",
+                    code_example="<a href=\"/contact-us\">Contact Us</a>",
+                    target_location="Page Template (HTML <a> link)",
+                    problematic_code=f"Broken Link (Dead End): {first_link[0]} (HTTP {first_link[1]})"
                 )
             )
 

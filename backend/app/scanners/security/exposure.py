@@ -16,8 +16,10 @@ SENSITIVE_TARGETS = [
         "validator": lambda text, ct: not text.lstrip().startswith("<!DOCTYPE") and not text.lstrip().startswith("<html") and any(
             k in text for k in ("APP_KEY=", "DB_PASSWORD=", "DATABASE_URL=", "SECRET_KEY=", "AWS_ACCESS_KEY")
         ),
-        "risk_impact": "Veritabanı bağlantı şifreleri, API gizli anahtarları ve JWT imzalama anahtarları internete sızar. Saldırganlar tüm veritabanını indirebilir veya sunucuya sızabilir.",
-        "code_example": "# Nginx - Gizli dosyalara (. ile başlayan) erişimi engelleme\nlocation ~ /\\.(?!well-known).* {\n    deny all;\n    return 404;\n}"
+        "risk_impact": "Database passwords, secret API keys, and JWT signing secrets are exposed to the public internet, allowing attackers to dump backend databases or compromise the server.",
+        "code_example": "location ~ /\\.(?!well-known).* {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root / Web Server Configuration",
+        "problematic_code": "/.env (Publicly Accessible)"
     },
     {
         "path": "/.git/HEAD",
@@ -27,8 +29,10 @@ SENSITIVE_TARGETS = [
         "description": "The .git directory is publicly accessible, allowing attackers to download and reconstruct entire source code repositories.",
         "remediation": "Block HTTP/HTTPS access to all '.git' directories and files in your web server configuration.",
         "validator": lambda text, ct: text.strip().startswith("ref: refs/"),
-        "risk_impact": "Saldırganlar git-dumper gibi araçlarla tüm kaynak kod geçmişinizi, commit kayıtlarınızı ve geçmişte koda gömülmüş tüm gizli şifreleri indirip yeniden oluşturabilir.",
-        "code_example": "# Nginx - .git dizinini tamamen bloke et\nlocation ~ /\\.git {\n    deny all;\n    return 404;\n}"
+        "risk_impact": "Attackers can dump the complete Git repository, recovering full proprietary source code, commit history, and historical hardcoded credentials.",
+        "code_example": "location ~ /\\.git {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root / Web Server Configuration",
+        "problematic_code": "/.git/HEAD (Publicly Accessible)"
     },
     {
         "path": "/swagger.json",
@@ -38,8 +42,10 @@ SENSITIVE_TARGETS = [
         "description": "Detailed API schema definition is exposed publicly, detailing endpoints, parameters, and authentication schemes.",
         "remediation": "Restrict API documentation access behind authentication or disable schema exposure in production.",
         "validator": lambda text, ct: "swagger" in text[:200].lower() or "openapi" in text[:200].lower(),
-        "risk_impact": "Sitenin tüm gizli API endpoint'leri ve parametreleri saldırganlar için saldırı yüzeyini haritalandıran açık bir rehber haline gelir.",
-        "code_example": "# FastAPI - Canlı ortamda docs_url ve openapi_url'i kapatın\napp = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)"
+        "risk_impact": "Internal API endpoints, schema definitions, and parameter structures are exposed, facilitating automated vulnerability discovery.",
+        "code_example": "app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)",
+        "target_location": "FastAPI App Initialization (main.py)",
+        "problematic_code": "/swagger.json (Publicly Accessible)"
     },
     {
         "path": "/openapi.json",
@@ -49,8 +55,10 @@ SENSITIVE_TARGETS = [
         "description": "API contract is exposed publicly, aiding reconnaissance of internal data models and endpoints.",
         "remediation": "Disable automated OpenAPI schema endpoints in production environments.",
         "validator": lambda text, ct: "openapi" in text[:200].lower(),
-        "risk_impact": "Dahili veri modelleri ve yetkilendirme şemaları ifşa olarak API istismarını kolaylaştırır.",
-        "code_example": "# FastAPI - Canlı ortamda openapi_url=None yapın\napp = FastAPI(openapi_url=None)"
+        "risk_impact": "Internal data models and authentication scopes are disclosed, aiding reconnaissance and targeted API exploitation.",
+        "code_example": "app = FastAPI(openapi_url=None)",
+        "target_location": "FastAPI App Initialization (main.py)",
+        "problematic_code": "/openapi.json (Publicly Accessible)"
     }
 ]
 
@@ -93,8 +101,8 @@ class ExposureScanner(BaseScanner):
                         evidence={"exposed_url": probe_url, "content_snippet": body_text[:150]},
                         risk_impact=target_spec.get("risk_impact"),
                         code_example=target_spec.get("code_example"),
-                        target_location="Web Root (Sunucu Döküman Kök Dizini)",
-                        problematic_code=f"Açıkta Kalan Dosya/Dizin: {target_path}\nErişilebilir URL: {probe_url}"
+                        target_location=target_spec.get("target_location", "Web Root"),
+                        problematic_code=f"Accessible Resource: {probe_url}"
                     )
         except Exception:
             pass
@@ -123,8 +131,10 @@ class ExposureScanner(BaseScanner):
                         description=f"robots.txt disallow directives advertise sensitive internal paths: {', '.join(leaked_paths[:5])}.",
                         remediation="Do not rely on robots.txt for security; restrict access to sensitive paths using authentication and authorization controls.",
                         evidence={"sensitive_paths": leaked_paths},
-                        risk_impact="robots.txt dosyası halka açıktır. 'Disallow' direktifine yazılan gizli yönetici ve yedek dizinleri saldırganlar tarafından ilk taranan adresler olur.",
-                        code_example="# Hassas dizinleri robots.txt ile gizlemek yerine Nginx/Apache seviyesinde parola veya IP kısıtlaması koyun:\nlocation /admin {\n    allow 192.168.1.0/24;\n    deny all;\n}"
+                        risk_impact="robots.txt is public. Listing private administration or backup paths in Disallow directives exposes them to discovery by attackers.",
+                        code_example="location /admin {\n    allow 192.168.1.0/24;\n    deny all;\n}",
+                        target_location="Web Server Configuration (nginx.conf / httpd.conf)",
+                        problematic_code="\n".join([f"Disallow: {p}" for p in leaked_paths[:3]])
                     )
         except Exception:
             pass
