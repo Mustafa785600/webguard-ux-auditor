@@ -12,6 +12,7 @@ from app.scanners.security.technologies import TechnologyScanner
 from app.scanners.ux.basic_ux import BasicUXScanner
 from app.scanners.ux.links import BrokenLinksScanner
 from app.scanners.ux.forms_a11y import FormsA11yScanner
+from app.scanners.ux.playwright_qa import PlaywrightQAScanner
 from app.services.scorer import calculate_category_score
 
 SCANNERS = [
@@ -22,6 +23,7 @@ SCANNERS = [
     BasicUXScanner(),
     BrokenLinksScanner(),
     FormsA11yScanner(),
+    PlaywrightQAScanner(),
 ]
 
 async def execute_scan(target_url: str) -> ScanResult:
