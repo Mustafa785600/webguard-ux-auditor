@@ -15,16 +15,24 @@ from app.scanners.ux.forms_a11y import FormsA11yScanner
 from app.scanners.ux.playwright_qa import PlaywrightQAScanner
 from app.services.scorer import calculate_category_score
 
+# ==============================================================================
+# MILESTONE 1: Phase 1 Prototype (Core 25% Scope)
+# Active Scanners:
+#   1. SecurityHeadersScanner (HTTP Security Headers analysis)
+#   2. BasicUXScanner (Core DOM Viewport, Title, Image Alt attributes)
+# ==============================================================================
 SCANNERS = [
     SecurityHeadersScanner(),
-    SSLTLSScanner(),
-    ExposureScanner(),
-    TechnologyScanner(),
     BasicUXScanner(),
-    BrokenLinksScanner(),
-    FormsA11yScanner(),
-    PlaywrightQAScanner(),
 ]
+
+# Planned for Future Milestones (Phase 2 & Phase 3):
+# - SSLTLSScanner()          -> Transport Layer Security & Cert Validation
+# - TechnologyScanner()      -> Component Fingerprinting & Known CVEs
+# - FormsA11yScanner()       -> Accessible Inputs, Labels & Form Method Security
+# - BrokenLinksScanner()     -> Hyperlink & Critical Asset Probe
+# - ExposureScanner()        -> Sensitive File (.env, .git, robots.txt) Audits
+# - PlaywrightQAScanner()    -> Autonomous Headless Chromium E2E Testing
 
 async def execute_scan(target_url: str) -> ScanResult:
     scan_id = str(uuid.uuid4())

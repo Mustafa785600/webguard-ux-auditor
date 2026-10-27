@@ -104,7 +104,7 @@ export default function ScanDashboard() {
   return (
     <>
       <header className="hero">
-        <div className="hero-badge">🛡️ Security &amp; UX Audit Platform</div>
+        <div className="hero-badge">🛡️ WebGuard — Phase 1 Prototype (Core Security &amp; UX Audit)</div>
         <h1>Scan. Detect. Remediate.</h1>
         <p>
           Instantly audit any website for security vulnerabilities, UX
