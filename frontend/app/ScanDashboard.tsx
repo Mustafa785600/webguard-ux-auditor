@@ -37,8 +37,8 @@ export default function ScanDashboard() {
   const [severityFilter, setSeverityFilter] = useState<"ALL" | Severity>("ALL");
   const [rcaFilter, setRcaFilter] = useState<"ALL" | RCACategory>("ALL");
 
-  // Autonomous Crawler state
-  const [enableCrawler, setEnableCrawler] = useState<boolean>(false);
+  // Autonomous Crawler state (enabled by default for multi-page audits)
+  const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");

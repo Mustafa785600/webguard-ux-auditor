@@ -18,20 +18,26 @@ IGNORE_EXTENSIONS = (
 
 def normalize_url(url: str) -> str:
     parsed = urlparse(url)
-    cleaned = parsed._replace(fragment="").geturl()
-    if cleaned.endswith("/") and len(parsed.path) > 1:
-        cleaned = cleaned[:-1]
+    path = parsed.path.rstrip("/")
+    if not path:
+        path = "/"
+    cleaned = parsed._replace(fragment="", path=path).geturl()
     return cleaned
+
+def get_base_domain(netloc: str) -> str:
+    parts = netloc.lower().split(":")[0].split(".")
+    if len(parts) >= 2:
+        return ".".join(parts[-2:])
+    return netloc.lower()
 
 def is_same_domain(url: str, seed_domain: str) -> bool:
     try:
-        netloc = urlparse(url).netloc.lower()
-        seed = seed_domain.lower()
-        if netloc == seed:
+        netloc = urlparse(url).netloc.lower().split(":")[0]
+        seed = seed_domain.lower().split(":")[0]
+        if netloc == seed or netloc == f"www.{seed}" or seed == f"www.{netloc}":
             return True
-        if netloc.replace("www.", "") == seed.replace("www.", ""):
-            return True
-        return False
+        # Allow same base domain for subdomains (e.g., app.site.com, docs.site.com)
+        return get_base_domain(netloc) == get_base_domain(seed)
     except Exception:
         return False
 
@@ -74,14 +80,20 @@ class AutonomousCrawler:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
                     headless=True,
-                    args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-blink-features=AutomationControlled",
+                    ]
                 )
                 context = await browser.new_context(
                     viewport={"width": 1280, "height": 800},
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebGuard-AutonomousCrawler/3.0",
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 WebGuard/3.0",
                     ignore_https_errors=True
                 )
                 page = await context.new_page()
+                await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
                 while queue and len(visited) < max_pages:
                     current_url, current_depth = queue.popleft()
@@ -108,9 +120,13 @@ class AutonomousCrawler:
                     buttons_count = 0
 
                     try:
-                        resp = await page.goto(current_clean, timeout=10000, wait_until="domcontentloaded")
+                        resp = await page.goto(current_clean, timeout=12000, wait_until="domcontentloaded")
                         if resp:
                             status_code = resp.status
+                        try:
+                            await page.wait_for_timeout(1000)
+                        except Exception:
+                            pass
                         title = await page.title()
                         load_time_ms = round((time.time() - start_time) * 1000, 1)
 
@@ -124,7 +140,7 @@ class AutonomousCrawler:
                         # Extract internal links for crawler queue
                         hrefs = await page.eval_on_selector_all(
                             "a[href]",
-                            "elements => elements.map(el => el.getAttribute('href'))"
+                            "elements => elements.map(el => el.href || el.getAttribute('href'))"
                         )
                         for raw_href in hrefs:
                             if not raw_href:
@@ -236,3 +252,4 @@ class AutonomousCrawler:
                 )
 
         return crawl_nodes, crawler_findings
+

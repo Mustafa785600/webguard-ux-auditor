@@ -32,3 +32,4 @@ async def test_crawler_fallback_on_unreachable():
     nodes, findings = await crawler.crawl_and_explore("http://unreachable-test-domain-xyz.local", max_pages=1)
     assert len(nodes) >= 1
     assert isinstance(nodes[0], CrawlNode)
+
