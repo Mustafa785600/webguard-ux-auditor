@@ -7,14 +7,26 @@ import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
 import NetworkWaterfallCard from "./NetworkWaterfallCard";
 import PrdIntelligenceCard from "./PrdIntelligenceCard";
+import {
+  type Language,
+  UI_STRINGS,
+  CATEGORY_LABELS,
+  SEVERITY_LABELS,
+  RCA_LABELS,
+} from "@/lib/i18n";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
-  CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4,
+  CRITICAL: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+  INFO: 4,
 };
 
 const STORAGE_KEY = "webguard_recent_scans";
 
 export default function ScanDashboard() {
+  const [lang, setLang] = useState<Language>("tr");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -23,6 +35,8 @@ export default function ScanDashboard() {
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | Category>("ALL");
   const [severityFilter, setSeverityFilter] = useState<"ALL" | Severity>("ALL");
   const [rcaFilter, setRcaFilter] = useState<"ALL" | RCACategory>("ALL");
+
+  const t = UI_STRINGS[lang];
 
   useEffect(() => {
     try {
@@ -39,7 +53,6 @@ export default function ScanDashboard() {
       runScan(initialUrl);
     }
   }, []);
-
 
   function saveToHistory(target: string) {
     try {
@@ -61,6 +74,7 @@ export default function ScanDashboard() {
     setLoading(true);
     setResult(null);
     setError(null);
+
     try {
       const data = await startScan(targetUrl.trim());
       if (data.status === "FAILED") {
@@ -108,37 +122,66 @@ export default function ScanDashboard() {
   return (
     <>
       <header className="hero">
-        <div className="hero-badge">🛡️ Security &amp; UX Audit Platform</div>
-        <h1>Scan. Detect. Remediate.</h1>
-        <p>
-          Instantly audit any website for security vulnerabilities, UX
-          deficiencies, and accessibility issues.
-        </p>
+        {/* Top Bar with Language Switcher */}
+        <div className="hero-topbar">
+          <div className="hero-badge">{t.heroBadge}</div>
+          <div className="lang-switcher">
+            <button
+              type="button"
+              className={`lang-btn ${lang === "tr" ? "active" : ""}`}
+              onClick={() => setLang("tr")}
+              title="Türkçe arayüz"
+            >
+              🇹🇷 TR
+            </button>
+            <button
+              type="button"
+              className={`lang-btn ${lang === "en" ? "active" : ""}`}
+              onClick={() => setLang("en")}
+              title="English interface"
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
+
+        <h1>{t.heroTitle}</h1>
+        <p>{t.heroSubtitle}</p>
+
         <form className="scan-form" onSubmit={handleScan} id="scan-form">
-          <label htmlFor="url-input" style={{ display: "none" }}>Target URL</label>
+          <label htmlFor="url-input" style={{ display: "none" }}>
+            Target URL
+          </label>
           <input
             id="url-input"
             className="scan-input"
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com"
+            placeholder={t.urlPlaceholder}
             disabled={loading}
             autoComplete="url"
             spellCheck={false}
           />
-          <button className="btn-scan" type="submit" disabled={loading || !url.trim()} id="btn-scan">
-            {loading ? "Scanning…" : "Scan"}
+          <button
+            className="btn-scan"
+            type="submit"
+            disabled={loading || !url.trim()}
+            id="btn-scan"
+          >
+            {loading ? t.btnScanning : t.btnScan}
           </button>
         </form>
 
         <div className="history-section">
           <div className="history-header">
             <span className="history-title">
-              {recentScans.length > 0 ? "Recent Audits" : "Quick Test Targets"}
+              {recentScans.length > 0 ? t.recentAudits : t.quickTargets}
             </span>
             {recentScans.length > 0 && (
-              <button className="history-clear-btn" onClick={clearHistory}>Clear</button>
+              <button className="history-clear-btn" onClick={clearHistory}>
+                {t.clear}
+              </button>
             )}
           </div>
           <div className="history-list">
@@ -160,21 +203,21 @@ export default function ScanDashboard() {
           </div>
         </div>
 
-
         {error && <div className="scan-error" role="alert">{error}</div>}
       </header>
 
       <main className="container">
-        {!result && !loading && (
-          <PrdIntelligenceCard targetUrl={url} />
-        )}
+        {!result && !loading && <PrdIntelligenceCard targetUrl={url} />}
 
         {loading && (
           <div className="scan-loading" aria-live="polite">
             <div className="spinner" role="status" aria-label="Scanning" />
-            <p>Scanning <strong>{url}</strong>…</p>
+            <p>
+              {lang === "tr" ? "Denetleniyor: " : "Scanning "}
+              <strong>{url}</strong>…
+            </p>
             <p style={{ fontSize: "13px", marginTop: "6px", color: "var(--text-muted)" }}>
-              Running all security and UX checks in parallel
+              {t.scanningMsg}
             </p>
           </div>
         )}
@@ -182,21 +225,21 @@ export default function ScanDashboard() {
         {result && (
           <>
             <div className="results-bar">
-              <span className="results-bar-label">Scanned:</span>
+              <span className="results-bar-label">{t.scanned}</span>
               <span className="results-bar-url">{result.target_url}</span>
               <div className="results-actions">
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
-                  📥 Export JSON
+                  {t.exportJson}
                 </button>
                 <button className="btn-action" onClick={() => window.print()} title="Print / PDF">
-                  🖨️ Print / PDF
+                  {t.printPdf}
                 </button>
               </div>
             </div>
 
             <div className="scores-grid">
-              <ScoreCard label="Security Score" score={result.security_score} color="#6366f1" />
-              <ScoreCard label="UX Score" score={result.ux_score} color="#34d399" />
+              <ScoreCard label={t.securityScore} score={result.security_score} color="#6366f1" />
+              <ScoreCard label={t.uxScore} score={result.ux_score} color="#34d399" />
             </div>
 
             {result.network_traces && result.network_traces.length > 0 && (
@@ -210,60 +253,62 @@ export default function ScanDashboard() {
 
             <div className="filters-bar">
               <div className="filter-group">
-                <span className="filter-label">Category:</span>
+                <span className="filter-label">{t.filterCategory}</span>
                 {(["ALL", "SECURITY", "UX"] as const).map((cat) => (
                   <button
                     key={cat}
                     className={`filter-pill ${categoryFilter === cat ? "active" : ""}`}
                     onClick={() => setCategoryFilter(cat)}
                   >
-                    {cat}
+                    {CATEGORY_LABELS[lang][cat]}
                   </button>
                 ))}
               </div>
 
               <div className="filter-group">
-                <span className="filter-label">Severity:</span>
+                <span className="filter-label">{t.filterSeverity}</span>
                 {(["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const).map((sev) => (
                   <button
                     key={sev}
                     className={`filter-pill ${severityFilter === sev ? "active" : ""}`}
                     onClick={() => setSeverityFilter(sev)}
                   >
-                    {sev}
+                    {SEVERITY_LABELS[lang][sev]}
                   </button>
                 ))}
               </div>
 
               <div className="filter-group">
-                <span className="filter-label">Root Cause (RCA):</span>
-                {(["ALL", "REAL_BUG", "TEST_FRAGILITY", "ENV_ISSUE", "EXPECTED_BEHAVIOR"] as const).map((rca) => (
-                  <button
-                    key={rca}
-                    className={`filter-pill ${rcaFilter === rca ? "active" : ""}`}
-                    onClick={() => setRcaFilter(rca)}
-                  >
-                    {rca === "ALL" ? "ALL" : rca.replace("_", " ")}
-                  </button>
-                ))}
+                <span className="filter-label">{t.filterRca}</span>
+                {(["ALL", "REAL_BUG", "TEST_FRAGILITY", "ENV_ISSUE", "EXPECTED_BEHAVIOR"] as const).map(
+                  (rca) => (
+                    <button
+                      key={rca}
+                      className={`filter-pill ${rcaFilter === rca ? "active" : ""}`}
+                      onClick={() => setRcaFilter(rca)}
+                    >
+                      {RCA_LABELS[lang][rca]}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
             <div className="section-header">
-              <span className="section-title">Findings</span>
+              <span className="section-title">{t.findingsSection}</span>
               <span className="findings-count">
-                Showing {filteredFindings.length} of {result.findings.length} issue{result.findings.length !== 1 ? "s" : ""}
+                {t.showing} {filteredFindings.length} {t.of} {result.findings.length} {t.issues}
               </span>
             </div>
 
             {filteredFindings.length === 0 ? (
               <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "40px 0" }}>
-                No issues match the selected filters.
+                {t.noIssues}
               </p>
             ) : (
               <div className="findings-list" id="findings-list">
                 {filteredFindings.map((f) => (
-                  <FindingCard key={f.id} finding={f} />
+                  <FindingCard key={f.id} finding={f} lang={lang} />
                 ))}
               </div>
             )}
@@ -273,4 +318,3 @@ export default function ScanDashboard() {
     </>
   );
 }
-

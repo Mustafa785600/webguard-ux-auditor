@@ -33,9 +33,9 @@ class SecurityHeadersScanner(BaseScanner):
                     description="The web server does not enforce HTTPS connections via the Strict-Transport-Security header.",
                     remediation="Add the Strict-Transport-Security header to all server responses to enforce HTTPS and prevent protocol downgrade attacks.",
                     risk_impact="Without HSTS, attackers on the local network (e.g., public Wi-Fi) can perform SSL stripping attacks, downgrading connections to plaintext HTTP and intercepting session cookies and passwords.",
-                    code_example="add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;",
-                    target_location="nginx.conf (server block) or .htaccess",
-                    problematic_code="Strict-Transport-Security: <header missing in response>"
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
                 )
             )
 
@@ -49,9 +49,9 @@ class SecurityHeadersScanner(BaseScanner):
                     description="No Content Security Policy header defined, increasing vulnerability to Cross-Site Scripting (XSS) and data injection.",
                     remediation="Define a restrictive Content-Security-Policy header specifying allowed origins for scripts, styles, and other resources.",
                     risk_impact="Without CSP, the browser executes any script injected into the page, dramatically increasing the impact of XSS vulnerabilities, session hijacking, and unauthorized data exfiltration.",
-                    code_example="add_header Content-Security-Policy \"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self';\" always;",
-                    target_location="nginx.conf (server block) or .htaccess",
-                    problematic_code="Content-Security-Policy: <header missing in response>"
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header Content-Security-Policy \"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:;\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
                 )
             )
 
@@ -65,9 +65,9 @@ class SecurityHeadersScanner(BaseScanner):
                     description="Neither X-Frame-Options nor CSP frame-ancestors directive is configured to prevent iframe embedding.",
                     remediation="Set the X-Frame-Options header to DENY or SAMEORIGIN, or configure frame-ancestors in CSP.",
                     risk_impact="Attackers can embed this website inside a transparent <iframe> on a malicious domain, tricking users into clicking hidden buttons or executing unintended actions (UI Redressing).",
-                    code_example="add_header X-Frame-Options \"SAMEORIGIN\" always;",
-                    target_location="nginx.conf (server block) or .htaccess",
-                    problematic_code="X-Frame-Options: <header missing in response>"
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header X-Frame-Options \"SAMEORIGIN\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
                 )
             )
 
@@ -81,9 +81,9 @@ class SecurityHeadersScanner(BaseScanner):
                     description="Missing or misconfigured 'nosniff' directive allows MIME-type sniffing attacks.",
                     remediation="Set X-Content-Type-Options to 'nosniff' to instruct browsers to honor declared MIME types strictly.",
                     risk_impact="Browsers may attempt to infer the MIME type of a file based on its contents, causing non-executable uploads (e.g. images) to be interpreted and executed as malicious JavaScript.",
-                    code_example="add_header X-Content-Type-Options \"nosniff\" always;",
-                    target_location="nginx.conf (server block) or .htaccess",
-                    problematic_code="X-Content-Type-Options: <header missing in response>"
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header X-Content-Type-Options \"nosniff\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}"
                 )
             )
 
@@ -99,9 +99,9 @@ class SecurityHeadersScanner(BaseScanner):
                     remediation="Suppress or obfuscate 'Server' and 'X-Powered-By' headers in the web server configuration.",
                     evidence={"header_value": server_header},
                     risk_impact="Exposing detailed server software and version numbers helps automated scanners and attackers identify and target unpatched CVE vulnerabilities.",
-                    code_example="server_tokens off;",
-                    target_location="nginx.conf (http block) or Apache security.conf",
-                    problematic_code=f"Server: {server_header}"
+                    code_example="http {\n    server_tokens off;\n    include mime.types;\n    default_type application/octet-stream;\n}",
+                    target_location="nginx.conf (http block)",
+                    problematic_code=f"http {{\n    server_tokens on;\n    include mime.types;\n    default_type application/octet-stream;\n}}"
                 )
             )
 

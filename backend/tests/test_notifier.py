@@ -53,3 +53,4 @@ async def test_dispatch_webhook_graceful_on_invalid_url():
 
     result_empty = await dispatch_webhook("", scan)
     assert result_empty is False
+

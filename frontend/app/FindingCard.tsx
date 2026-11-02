@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Finding } from "@/types/scan";
+import { type Language, UI_STRINGS, localizeFinding } from "@/lib/i18n";
 
 function CodeBlockWithLines({
   code,
@@ -30,19 +31,30 @@ function CodeBlockWithLines({
   );
 }
 
-const RCA_META: Record<string, { label: string; color: string; icon: string }> = {
-  REAL_BUG:          { label: "Real Bug",          color: "#ef4444", icon: "🔴" },
-  TEST_FRAGILITY:    { label: "Test Fragility",     color: "#f59e0b", icon: "🟡" },
-  ENV_ISSUE:         { label: "Environment Issue",  color: "#3b82f6", icon: "🔵" },
-  EXPECTED_BEHAVIOR: { label: "Expected Behavior",  color: "#6b7280", icon: "⚪" },
+const RCA_META: Record<string, { labelEn: string; labelTr: string; color: string; icon: string }> = {
+  REAL_BUG:          { labelEn: "Real Bug",          labelTr: "Gerçek Hata",         color: "#ef4444", icon: "🔴" },
+  TEST_FRAGILITY:    { labelEn: "Test Fragility",     labelTr: "Test Kırılganlığı",    color: "#f59e0b", icon: "🟡" },
+  ENV_ISSUE:         { labelEn: "Environment Issue",  labelTr: "Ortam / Sunucu",      color: "#3b82f6", icon: "🔵" },
+  EXPECTED_BEHAVIOR: { labelEn: "Expected Behavior",  labelTr: "Beklenen Davranış",   color: "#6b7280", icon: "⚪" },
 };
 
-export default function FindingCard({ finding }: { finding: Finding }) {
+export default function FindingCard({
+  finding: rawFinding,
+  lang = "en",
+}: {
+  finding: Finding;
+  lang?: Language;
+}) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [screenshotTab, setScreenshotTab] = useState<"before" | "after">("before");
 
-  const rca = finding.rca_category ? RCA_META[finding.rca_category] : null;
+  const finding = localizeFinding(rawFinding, lang);
+  const t = UI_STRINGS[lang] || UI_STRINGS.en;
+
+  const rcaMeta = finding.rca_category ? RCA_META[finding.rca_category] : null;
+  const rcaLabel = rcaMeta ? (lang === "tr" ? rcaMeta.labelTr : rcaMeta.labelEn) : "";
+
   const hasScreenshots = Boolean(finding.screenshot_before_b64 || finding.screenshot_after_b64);
 
   function handleCopyCode(e: React.MouseEvent) {
@@ -69,13 +81,13 @@ export default function FindingCard({ finding }: { finding: Finding }) {
       >
         <span className={`finding-category-dot ${finding.category}`} aria-label={finding.category} />
         <span className={`severity-badge ${finding.severity}`}>{finding.severity}</span>
-        {rca && (
+        {rcaMeta && (
           <span
             className="rca-badge"
-            style={{ borderColor: rca.color, color: rca.color }}
-            title={`RCA: ${rca.label}`}
+            style={{ borderColor: rcaMeta.color, color: rcaMeta.color }}
+            title={`RCA: ${rcaLabel}`}
           >
-            {rca.icon} {rca.label}
+            {rcaMeta.icon} {rcaLabel}
           </span>
         )}
         
@@ -84,7 +96,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
           {finding.target_location && (
             <span
               className="finding-location-pill"
-              title={`Target File: ${finding.target_location}${finding.line_number ? ` (Line ${finding.line_number})` : ""}`}
+              title={`${t.targetFile}: ${finding.target_location}${finding.line_number ? ` (${t.line} ${finding.line_number})` : ""}`}
             >
               <span className="pill-icon">📄</span>
               <span className="pill-path">{finding.target_location}</span>
@@ -107,7 +119,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
             <div className="risk-impact-block">
               <div className="risk-impact-header">
                 <span className="risk-icon">⚠️</span>
-                <span className="risk-label">RISK &amp; IMPACT ANALYSIS</span>
+                <span className="risk-label">{t.riskLabel}</span>
               </div>
               <p className="risk-text">{finding.risk_impact}</p>
             </div>
@@ -130,11 +142,11 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                   </span>
                   {finding.line_number ? (
                     <span className="ide-line-badge highlight">
-                      📍 Line: {finding.line_number}
+                      📍 {t.line}: {finding.line_number}
                     </span>
                   ) : (
                     <span className="ide-line-badge">
-                      Config File
+                      ⚙️ {t.serverBlock}
                     </span>
                   )}
                 </div>
@@ -145,7 +157,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                     onClick={handleCopyCode}
                     title="Copy solution code"
                   >
-                    {copied ? "✓ Copied" : "📋 Copy Code"}
+                    {copied ? t.copied : t.copyCode}
                   </button>
                 )}
               </div>
@@ -154,9 +166,9 @@ export default function FindingCard({ finding }: { finding: Finding }) {
               {finding.problematic_code && (
                 <div className="ide-section ide-section-problem">
                   <div className="ide-section-header problem-header">
-                    <span className="ide-tag-badge error-badge">❌ CURRENT DEFICIENT CODE</span>
+                    <span className="ide-tag-badge error-badge">❌ {t.deficientLabel}</span>
                     {finding.line_number && (
-                      <span className="ide-target-line">Target Line: ~{finding.line_number}</span>
+                      <span className="ide-target-line">{t.line}: ~{finding.line_number}</span>
                     )}
                   </div>
                   <CodeBlockWithLines
@@ -171,7 +183,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
               {finding.code_example && (
                 <div className="ide-section ide-section-fix">
                   <div className="ide-section-header fix-header">
-                    <span className="ide-tag-badge fix-badge">✅ RECOMMENDED FIX (SOLUTION)</span>
+                    <span className="ide-tag-badge fix-badge">✅ {t.fixLabel}</span>
                   </div>
                   <CodeBlockWithLines
                     code={finding.code_example}
@@ -185,7 +197,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
 
           {/* 3. Remediation Guidance */}
           <div className="remediation-block">
-            <div className="remediation-label">REMEDIATION GUIDANCE</div>
+            <div className="remediation-label">{t.remediationLabel}</div>
             <p className="remediation-text">{finding.remediation}</p>
           </div>
 
@@ -193,7 +205,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
           {finding.evidence && (
             <details className="evidence-details">
               <summary style={{ fontSize: "12px", color: "var(--text-muted)", cursor: "pointer" }}>
-                Technical Evidence (Raw Log)
+                {t.rawLog}
               </summary>
               <pre style={{
                 marginTop: "8px",
@@ -216,7 +228,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
           {finding.interaction_log && finding.interaction_log.length > 0 && (
             <details className="evidence-details">
               <summary style={{ fontSize: "12px", color: "var(--text-muted)", cursor: "pointer" }}>
-                🤖 Autonomous Agent Interaction Log ({finding.interaction_log.length} steps)
+                🤖 {t.interactionLog} ({finding.interaction_log.length} steps)
               </summary>
               <ol style={{
                 marginTop: "8px",
@@ -244,7 +256,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                     className={`screenshot-tab ${screenshotTab === "before" ? "active" : ""}`}
                     onClick={() => setScreenshotTab("before")}
                   >
-                    📸 Before Interaction
+                    {t.beforeInteraction}
                   </button>
                 )}
                 {finding.screenshot_after_b64 && (
@@ -252,7 +264,7 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                     className={`screenshot-tab ${screenshotTab === "after" ? "active" : ""}`}
                     onClick={() => setScreenshotTab("after")}
                   >
-                    📸 After Interaction
+                    {t.afterInteraction}
                   </button>
                 )}
               </div>

@@ -27,3 +27,4 @@ def test_self_healing_engine_formulate_findings():
     assert finding.rca_category == RCACategory.TEST_FRAGILITY
     assert finding.evidence["original_selector"] == "#btn-submit-old"
     assert finding.evidence["healed_selector"] == "button[data-testid='submit-btn']"
+

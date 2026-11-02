@@ -91,3 +91,4 @@ async def dispatch_webhook(webhook_url: str, scan_result: ScanResult) -> bool:
             return resp.status_code in (200, 204)
     except Exception:
         return False
+

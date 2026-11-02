@@ -1,0 +1,282 @@
+import type { Finding, Severity, Category, RCACategory } from "@/types/scan";
+
+export type Language = "en" | "tr";
+
+export const UI_STRINGS: Record<Language, Record<string, string>> = {
+  en: {
+    heroBadge: "🛡️ Security & UX Audit Platform",
+    heroTitle: "Scan. Detect. Remediate.",
+    heroSubtitle:
+      "Instantly audit any website for security vulnerabilities, UX deficiencies, accessibility issues, and autonomous E2E workflows.",
+    urlPlaceholder: "https://example.com",
+    btnScan: "Scan",
+    btnScanning: "Scanning…",
+    recentAudits: "Recent Audits",
+    quickTargets: "Quick Test Targets",
+    clear: "Clear",
+    scanningMsg: "Running all security, UX and network checks in parallel",
+    scanned: "Scanned:",
+    exportJson: "📥 Export JSON",
+    printPdf: "🖨️ Print / PDF",
+    securityScore: "Security Score",
+    uxScore: "UX Score",
+    filterCategory: "Category:",
+    filterSeverity: "Severity:",
+    filterRca: "Root Cause (RCA):",
+    findingsSection: "Findings",
+    showing: "Showing",
+    of: "of",
+    issues: "issue(s)",
+    noIssues: "No issues match the selected filters.",
+    // FindingCard
+    riskLabel: "RISK & IMPACT ANALYSIS",
+    deficientLabel: "CURRENT DEFICIENT CODE",
+    fixLabel: "RECOMMENDED FIX (SOLUTION)",
+    remediationLabel: "REMEDIATION GUIDANCE",
+    rawLog: "Technical Evidence (Raw Log)",
+    copyCode: "📋 Copy Code",
+    copied: "✓ Copied",
+    serverBlock: "Server Block Context",
+    line: "Line",
+    targetFile: "Target File",
+    interactionLog: "Autonomous Agent Interaction Log",
+    beforeInteraction: "📸 Before Interaction",
+    afterInteraction: "📸 After Interaction",
+    // PRD Card
+    prdTitle: "TestSprite PRD-Driven AI Test Intelligence",
+    prdSubtitle: "Synthesize user roles, edge cases, and executable Playwright test suites directly from specifications.",
+    generateSuite: "✨ Generate Playwright E2E Suite",
+    generatingSuite: "Synthesizing AI Scenarios…",
+    // Network Waterfall
+    waterfallTitle: "Network Activity & API Contract Waterfall",
+    requests: "Requests",
+    avgLatency: "Avg:",
+    slow: "Slow",
+    failed: "Failed",
+  },
+  tr: {
+    heroBadge: "🛡️ Güvenlik & UX Denetim Platformu",
+    heroTitle: "Tara. Tespit Et. Çöz.",
+    heroSubtitle:
+      "Herhangi bir web sitesini güvenlik açıkları, kullanıcı deneyimi (UX) eksiklikleri, erişilebilirlik ve otonom E2E testleri için anında denetleyin.",
+    urlPlaceholder: "https://ornek-site.com",
+    btnScan: "Taramayı Başlat",
+    btnScanning: "Taranıyor…",
+    recentAudits: "Son Denetimler",
+    quickTargets: "Hızlı Test Hedefleri",
+    clear: "Temizle",
+    scanningMsg: "Tüm güvenlik, UX ve ağ denetimleri eş zamanlı çalıştırılıyor",
+    scanned: "Taranan:",
+    exportJson: "📥 JSON Olarak İndir",
+    printPdf: "🖨️ Yazdır / PDF",
+    securityScore: "Güvenlik Skoru",
+    uxScore: "UX Skoru",
+    filterCategory: "Kategori:",
+    filterSeverity: "Önem Derecesi:",
+    filterRca: "Kök Neden (RCA):",
+    findingsSection: "Bulgular ve Açıklar",
+    showing: "Gösterilen:",
+    of: "/",
+    issues: "bulgu",
+    noIssues: "Seçili filtrelere uygun bulgu bulunamadı.",
+    // FindingCard
+    riskLabel: "RİSK VE ETKİ ANALİZİ",
+    deficientLabel: "MEVCUT EKSİK / HATALI KOD",
+    fixLabel: "ÖNERİLEN DÜZELTME (ÇÖZÜM)",
+    remediationLabel: "ÇÖZÜM VE İYİLEŞTİRME REHBERİ",
+    rawLog: "Teknik Kanıt (Ham Log Kaydı)",
+    copyCode: "📋 Kodu Kopyala",
+    copied: "✓ Kopyalandı",
+    serverBlock: "Sunucu Yapılandırma Bloğu",
+    line: "Satır",
+    targetFile: "Hedef Dosya",
+    interactionLog: "Otonom Ajan Etkileşim Günlüğü",
+    beforeInteraction: "📸 Etkileşim Öncesi",
+    afterInteraction: "📸 Etkileşim Sonrası",
+    // PRD Card
+    prdTitle: "TestSprite PRD Destekli Yapay Zeka Test Zekası",
+    prdSubtitle: "İş gereksinimlerinden (PRD) kullanıcı rollerini, uç durumları ve çalıştırılabilir Playwright test paketlerini otonom üretin.",
+    generateSuite: "✨ Playwright E2E Test Paketini Üret",
+    generatingSuite: "Yapay Zeka Senaryoları Derleniyor…",
+    // Network Waterfall
+    waterfallTitle: "Ağ İletişimi & API Sözleşme Şelalesi (Waterfall)",
+    requests: "İstek",
+    avgLatency: "Ortalama:",
+    slow: "Yavaş",
+    failed: "Hatalı",
+  },
+};
+
+export const CATEGORY_LABELS: Record<Language, Record<"ALL" | Category, string>> = {
+  en: { ALL: "ALL", SECURITY: "SECURITY", UX: "UX" },
+  tr: { ALL: "TÜMÜ", SECURITY: "GÜVENLİK", UX: "KULLANICI DENEYİMİ (UX)" },
+};
+
+export const SEVERITY_LABELS: Record<Language, Record<"ALL" | Severity, string>> = {
+  en: { ALL: "ALL", CRITICAL: "CRITICAL", HIGH: "HIGH", MEDIUM: "MEDIUM", LOW: "LOW", INFO: "INFO" },
+  tr: { ALL: "TÜMÜ", CRITICAL: "KRİTİK", HIGH: "YÜKSEK", MEDIUM: "ORTA", LOW: "DÜŞÜK", INFO: "BİLGİ" },
+};
+
+export const RCA_LABELS: Record<Language, Record<"ALL" | RCACategory, string>> = {
+  en: {
+    ALL: "ALL",
+    REAL_BUG: "REAL BUG",
+    TEST_FRAGILITY: "TEST FRAGILITY",
+    ENV_ISSUE: "ENV ISSUE",
+    EXPECTED_BEHAVIOR: "EXPECTED BEHAVIOR",
+  },
+  tr: {
+    ALL: "TÜMÜ",
+    REAL_BUG: "GERÇEK UYGULAMA HATASI",
+    TEST_FRAGILITY: "TEST KIRILGANLIĞI",
+    ENV_ISSUE: "ORTAM / SUNUCU SORUNU",
+    EXPECTED_BEHAVIOR: "BEKLENEN DAVRANIŞ",
+  },
+};
+
+// Turkish Translations for Scan Findings
+interface FindingTranslation {
+  title: string;
+  description: string;
+  risk_impact?: string;
+  remediation: string;
+}
+
+const FINDING_TRANSLATIONS_TR: Record<string, FindingTranslation> = {
+  SEC_HSTS_MISSING: {
+    title: "Eksik HTTP Sıkı Aktarım Güvenliği (HSTS)",
+    description: "Web sunucusu, Strict-Transport-Security başlığı aracılığıyla HTTPS bağlantılarını zorunlu kılmıyor.",
+    risk_impact:
+      "HSTS olmadan yerel ağdaki (örneğin halka açık Wi-Fi) saldırganlar SSL stripping saldırısı yaparak bağlantıyı şifresiz HTTP'ye düşürebilir ve oturum çerezleri ile kullanıcı parolalarını ele geçirebilir.",
+    remediation:
+      "HTTPS kullanımını zorunlu kılmak ve protokol düşürme saldırılarını önlemek için tüm sunucu yanıtlarına Strict-Transport-Security başlığını ekleyin.",
+  },
+  SEC_CSP_MISSING: {
+    title: "Eksik İçerik Güvenlik Politikası (CSP)",
+    description: "İçerik Güvenlik Politikası (CSP) başlığı tanımlanmamış; bu durum XSS ve veri enjeksiyonu açıklarının etkisini artırır.",
+    risk_impact:
+      "CSP olmadan tarayıcı sayfaya enjekte edilen tüm betikleri çalıştırır, bu da XSS açıklarının etkisini, oturum hırsızlığını ve veri sızıntısı riskini katlar.",
+    remediation:
+      "Betiklerin, stillerin ve diğer kaynakların hangi güvenilir kaynaklardan yüklenebileceğini belirten kısıtlayıcı bir Content-Security-Policy başlığı tanımlayın.",
+  },
+  SEC_CLICKJACKING_RISK: {
+    title: "Eksik Clickjacking Koruması",
+    description: "Sayfanın iframe içine gömülmesini önleyecek X-Frame-Options veya CSP frame-ancestors direktifi yapılandırılmamış.",
+    risk_impact:
+      "Saldırganlar bu siteyi kötü niyetli bir etki alanında şeffaf bir <iframe> içine gömerek kullanıcıları gizli butonlara tıklatabilir veya istem dışı işlemler yaptırabilir (UI Redressing).",
+    remediation:
+      "X-Frame-Options başlığını DENY veya SAMEORIGIN olarak ayarlayın ya da CSP içinde frame-ancestors direktifini tanımlayın.",
+  },
+  SEC_NOSNIFF_MISSING: {
+    title: "Eksik X-Content-Type-Options Başlığı",
+    description: "Eksik veya hatalı yapılandırılmış 'nosniff' direktifi, MIME türü koklama (sniffing) saldırılarına izin verir.",
+    risk_impact:
+      "Tarayıcılar dosyanın içeriğine bakarak MIME türünü tahmin etmeye çalışabilir ve çalıştırılamaz dosyaları (örneğin resimleri) zararlı JavaScript olarak yorumlayıp çalıştırabilir.",
+    remediation:
+      "Tarayıcıların bildirilen MIME türlerine kesinlikle uymasını sağlamak için X-Content-Type-Options başlığını 'nosniff' olarak ayarlayın.",
+  },
+  SEC_SERVER_INFO_LEAK: {
+    title: "Sunucu Sürümü / Teknoloji Sızıntısı",
+    description: "Sunucu, yanıt başlıklarında teknoloji ve sürüm imzalarını ifşa ediyor.",
+    risk_impact:
+      "Sunucu yazılımı ve kesin sürüm numaralarının ifşa edilmesi, otomatik tarayıcıların ve saldırganların yamalanmamış CVE açıklarını tespit edip hedef almasını kolaylaştırır.",
+    remediation: "Web sunucusu yapılandırmasında 'Server' ve 'X-Powered-By' başlıklarını gizleyin veya kaldırın.",
+  },
+  QA_SLOW_API_ENDPOINT: {
+    title: "Yavaş API Yanıtı Tespit Edildi (> 2000ms)",
+    description: "Arka plan API isteği 2000ms eşiğini aşarak kullanıcı deneyiminde gecikmeye yol açtı.",
+    risk_impact:
+      "Yavaş API yanıtları kullanıcı arayüzünde donmalara, tamamlanmayan işlemlere ve yüksek terk oranlarına (bounce rate) neden olur.",
+    remediation:
+      "Sunucu tarafı önbelleğe alma (Redis), veritabanı sorgu indeksleme ve ağır hesaplamaları arka plan işçilerine devretme yöntemlerini uygulayın.",
+  },
+  QA_INSECURE_CORS_POLICY: {
+    title: "API Yolunda Joker (*) Access-Control-Allow-Origin İzni",
+    description:
+      "API rotası 'Access-Control-Allow-Origin: *' ile yanıt vererek herhangi bir üçüncü taraf etki alanının çapraz istek yapmasına olanak tanıyor.",
+    risk_impact:
+      "Aşırı izinli CORS başlıkları, kullanıcı oturum açmışken zararlı sitelerin kullanıcının özel verilerini API'den okumasına yol açabilir.",
+    remediation: "Joker '*' yerine yalnızca güvenilir etki alanlarını beyaz listeye alın.",
+  },
+  QA_RUNTIME_JS_CRASH: {
+    title: "Tarayıcıda İşlenmemiş Çalışma Zamanı JavaScript Hatası",
+    description: "Sayfa yürütülürken işlenmemiş bir JavaScript istisnası meydana geldi.",
+    risk_impact: "Çalışma zamanı hataları istemci tarafı durumunu çökertir, butonları ve form gönderimlerini dondurur.",
+    remediation: "Değişkenlere erişmeden önce null kontrolleri ekleyin ve React Error Boundary / try-catch blokları kullanın.",
+  },
+  QA_BROWSER_CONSOLE_ERRORS: {
+    title: "Kritik Tarayıcı Konsol Hataları Kaydedildi",
+    description: "Sayfa yüklenirken tarayıcı konsoluna kritik hata mesajları yazıldı.",
+    risk_impact: "Sürekli konsol hataları bozuk alt modüllere ve sessiz arayüz çökmelerine işaret eder.",
+    remediation: "İstemci betiklerini bozuk içe aktarmalar ve işlenmemiş Promise retleri açısından inceleyin.",
+  },
+  QA_FAILED_API_ENDPOINT: {
+    title: "Dahili API İsteği Başarısız Oldu (5xx / 4xx)",
+    description: "Arka planda yapılan fetch/XHR isteği sunucu hatasıyla sonuçlandı.",
+    risk_impact: "API çağrıları başarısız olduğunda kullanıcılar sonsuz yüklenme çarkları veya bozuk tablolar görür.",
+    remediation: "Başarısız uç nokta için arka plan sunucu günlüklerini inceleyin ve veritabanı bağlantılarını kontrol edin.",
+  },
+  QA_PLAYWRIGHT_E2E_SUITE: {
+    title: "Otonom Playwright E2E Test Paketi Üretildi",
+    description: "Otonom QA ajanı sayfayı keşfederek kullanıma hazır bir Playwright E2E test betiği üretti.",
+    risk_impact: "Otomatik E2E testleri olmadan sonraki güncellemeler ve sürümler kullanıcı akışlarını sessizce bozabilir.",
+    remediation: "Bu test dosyasını e2e test paketinize kaydedin ve CI/CD hattınızda 'npx playwright test' ile çalıştırın.",
+  },
+  QA_NETWORK_WATERFALL_SUMMARY: {
+    title: "Ağ İletişimi Waterfall Analizi Tamamlandı",
+    description: "Sayfadaki tüm ağ istekleri analiz edildi, ortalama gecikme ve başarısız istekler profillendi.",
+    risk_impact: "Optimize edilmemiş ağ zincirleri sayfa yüklenme süresini (LCP) ve etkileşim hızını (TTI) geciktirir.",
+    remediation: "Yüksek gecikmeli istekleri inceleyin, HTTP/2/3 çoğullamayı etkinleştirin ve kritik kaynakları önceden bağlayın.",
+  },
+  QA_SELF_HEALING_REPAIRED: {
+    title: "Self-Healing: Kırılgan Seçici Otomatik Onarıldı",
+    description: "Orijinal seçici DOM'da bulunamadı; otonom onarım motoru alternatif bir seçici ile testi başarıyla sürdürdü.",
+    risk_impact: "Kırılgan seçiciler küçük CSS/tasarım değişikliklerinde CI/CD testlerinin yanlış alarmla kırılmasına neden olur.",
+    remediation: "Bileşen işaretlemenize kalıcı data-testid veya aria-label öznitelikleri ekleyin.",
+  },
+  UX_VIEWPORT_MISSING: {
+    title: "Eksik Viewport Meta Etiketi",
+    description: "Mobil uyumlu duyarlı tasarımı sağlayan <meta name='viewport'> etiketi eksik.",
+    risk_impact: "Mobil cihazlarda sayfa masaüstü ölçeğinde küçülerek okunamaz ve tıklanamaz hale gelir.",
+    remediation: "HTML belgesinin <head> kısmına <meta name='viewport' content='width=device-width, initial-scale=1.0'> ekleyin.",
+  },
+  UX_TITLE_MISSING: {
+    title: "Eksik Sayfa Başlığı (<title>)",
+    description: "HTML belgesinde <title> etiketi bulunamadı.",
+    risk_impact: "Eksik başlık, SEO sıralamalarını düşürür ve tarayıcı sekmelerinde sitenin tanınmasını zorlaştırır.",
+    remediation: "<head> etiketi içine açıklayıcı bir <title> etiketi ekleyin.",
+  },
+  UX_IMG_ALT_MISSING: {
+    title: "Görsellerde Eksik Alt Açıklama Etiketi",
+    description: "Sayfadaki görsellerde görme engelliler ve SEO için gerekli alt='' özniteliği eksik.",
+    risk_impact: "Ekran okuyucu kullanan engelli kullanıcılar görselin içeriğini anlayamaz ve WCAG erişilebilirlik standartları ihlal edilir.",
+    remediation: "Tüm <img> etiketlerine anlamlı 'alt' öznitelikleri ekleyin.",
+  },
+  UX_BUTTON_EMPTY: {
+    title: "Erişilebilirlik: İsimsiz / Boş Buton",
+    description: "Ekran okuyucuların anlayabileceği metin veya aria-label içermeyen buton bulundu.",
+    risk_impact: "Görme engelli kullanıcılar butonun ne işe yaradığını bilemez.",
+    remediation: "Butonun içine metin veya 'aria-label' özniteliği ekleyin.",
+  },
+  UX_BROKEN_LINKS: {
+    title: "Kırık Bağlantı / Yüklenemeyen Varlık",
+    description: "Sayfada 404 dönen veya ulaşılamayan bağlantılar tespit edildi.",
+    risk_impact: "Kırık bağlantılar kullanıcıların sitede kaybolmasına ve arama motoru puanlarının düşmesine neden olur.",
+    remediation: "Tüm köprüleri ve resim kaynaklarını kontrol ederek geçerli URL'ler ile güncelleyin.",
+  },
+};
+
+export function localizeFinding(finding: Finding, lang: Language): Finding {
+  if (lang === "en") return finding;
+
+  const tr = FINDING_TRANSLATIONS_TR[finding.id];
+  if (!tr) return finding;
+
+  return {
+    ...finding,
+    title: tr.title,
+    description: tr.description,
+    risk_impact: tr.risk_impact || finding.risk_impact,
+    remediation: tr.remediation,
+  };
+}
