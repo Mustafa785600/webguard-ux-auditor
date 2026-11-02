@@ -26,6 +26,15 @@ class RCACategory(str, Enum):
     ENV_ISSUE = "ENV_ISSUE"
     EXPECTED_BEHAVIOR = "EXPECTED_BEHAVIOR"
 
+class NetworkRequestTrace(BaseModel):
+    url: str
+    method: str
+    status: int
+    resource_type: str
+    duration_ms: float
+    size_bytes: Optional[int] = None
+    cors_allowed: Optional[bool] = None
+
 class Finding(BaseModel):
     id: str
     category: Category
@@ -56,6 +65,7 @@ class ScanResult(BaseModel):
     security_score: int = 100
     ux_score: int = 100
     findings: List[Finding] = []
+    network_traces: List[NetworkRequestTrace] = []
     error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None

@@ -1,10 +1,11 @@
 import asyncio
 import base64
 import re
+import time
 from typing import List, Optional, Dict, Any
 import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
-from app.models.schema import Finding, Category, Severity, RCACategory
+from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace
 from app.scanners.base import BaseScanner
 
 # ---------------------------------------------------------------------------
@@ -24,12 +25,16 @@ AD_DOMAINS = ("google-analytics", "doubleclick", "facebook", "googlesyndication"
 
 class PlaywrightQAScanner(BaseScanner):
     """
-    Phase 2 Autonomous E2E Playwright QA Scanner (TestSprite style)
+    Phase 2 & Phase 3 Autonomous E2E Playwright QA Scanner (TestSprite style)
 
     Capabilities:
     - Runtime JS crash detection (pageerror + unhandledrejection)
     - Browser console error capture
-    - Failed background API / network request detection (5xx)
+    - Network & API Contract Validation: Fetch/XHR interception, timing & status
+    - Slow endpoint detection (>2000ms latency)
+    - Insecure CORS detection (Access-Control-Allow-Origin: *)
+    - Failed background API / network request detection (4xx/5xx)
+    - Network waterfall profiling
     - Autonomous form fill with Boundary Value Analysis payloads
     - Before / after screenshot evidence (base64)
     - Infinite loading spinner detection (> 8 s)
@@ -37,6 +42,9 @@ class PlaywrightQAScanner(BaseScanner):
     - RCA Classification: REAL_BUG / TEST_FRAGILITY / ENV_ISSUE / EXPECTED_BEHAVIOR
     - Ready-to-run Playwright .spec.ts script generation
     """
+
+    def __init__(self):
+        self.network_traces: List[NetworkRequestTrace] = []
 
     # ------------------------------------------------------------------ #
     #  Main entry point                                                    #
@@ -52,6 +60,12 @@ class PlaywrightQAScanner(BaseScanner):
         screenshot_initial_b64: Optional[str] = None
         interactive_elements_tested: int = 0
 
+        # Phase 3 Network tracking structures
+        request_start_times: Dict[Any, float] = {}
+        captured_traces: List[NetworkRequestTrace] = []
+        slow_endpoints: List[dict] = []
+        cors_issues: List[dict] = []
+
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -60,7 +74,7 @@ class PlaywrightQAScanner(BaseScanner):
                 )
                 context = await browser.new_context(
                     viewport={"width": 1280, "height": 800},
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebGuard-AutonomousQA/2.0",
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebGuard-AutonomousQA/3.0",
                     ignore_https_errors=True
                 )
                 page = await context.new_page()
@@ -88,6 +102,9 @@ class PlaywrightQAScanner(BaseScanner):
                     if msg.type == "error":
                         console_errors.append(msg.text[:200])
 
+                def handle_request(req):
+                    request_start_times[req] = time.perf_counter()
+
                 def handle_request_failed(req):
                     if not any(ad in req.url for ad in AD_DOMAINS):
                         failed_requests.append({
@@ -97,11 +114,48 @@ class PlaywrightQAScanner(BaseScanner):
                         })
 
                 def handle_response(resp):
+                    req = resp.request
+                    start_t = request_start_times.get(req)
+                    duration_ms = (time.perf_counter() - start_t) * 1000 if start_t else 0.0
+                    headers = resp.headers
+                    cors_header = headers.get("access-control-allow-origin")
+                    res_type = req.resource_type
+
+                    trace = NetworkRequestTrace(
+                        url=req.url[:250],
+                        method=req.method,
+                        status=resp.status,
+                        resource_type=res_type,
+                        duration_ms=round(duration_ms, 1),
+                        cors_allowed=cors_header is not None,
+                    )
+                    captured_traces.append(trace)
+
+                    # Check slow endpoints (>2000ms)
+                    if duration_ms > 2000 and not any(ad in req.url for ad in AD_DOMAINS):
+                        slow_endpoints.append({
+                            "url": req.url[:150],
+                            "method": req.method,
+                            "status": resp.status,
+                            "duration_ms": round(duration_ms, 1),
+                            "resource_type": res_type,
+                        })
+
+                    # Check Wildcard CORS on API/JSON responses
+                    is_api = "/api/" in req.url or "json" in headers.get("content-type", "").lower()
+                    if is_api and cors_header == "*":
+                        cors_issues.append({
+                            "url": req.url[:150],
+                            "cors": cors_header,
+                            "credentials": headers.get("access-control-allow-credentials", "false"),
+                        })
+
                     if resp.status >= 500:
                         server_errors.append({"url": resp.url[:120], "status": resp.status})
 
                 page.on("pageerror",      handle_page_error)
                 page.on("console",        handle_console)
+                page.on("request",        handle_request)
                 page.on("requestfailed",  handle_request_failed)
                 page.on("response",       handle_response)
 
@@ -288,6 +342,121 @@ class PlaywrightQAScanner(BaseScanner):
             screenshot_before_b64=screenshot_initial_b64,
             rca_category=RCACategory.EXPECTED_BEHAVIOR,
         ))
+
+        # ── Phase 3: Network & API Contract Findings ───────────────────────
+
+        # Finding: Slow API Endpoints
+        if slow_endpoints:
+            worst_slow = max(slow_endpoints, key=lambda x: x["duration_ms"])
+            findings.append(Finding(
+                id="QA_SLOW_API_ENDPOINT",
+                category=Category.UX,
+                severity=Severity.HIGH if worst_slow["duration_ms"] > 5000 else Severity.MEDIUM,
+                title=f"Slow API Response Detected ({worst_slow['duration_ms']}ms Latency)",
+                description=(
+                    f"Background request to '{worst_slow['url'][:100]}' took {worst_slow['duration_ms']}ms, "
+                    f"exceeding the 2000ms threshold for responsive user experiences."
+                ),
+                remediation=(
+                    "Implement server-side caching (e.g. Redis), optimize database queries and indexes, "
+                    "minify JSON payload sizes, and offload CPU-heavy computation to asynchronous workers."
+                ),
+                evidence={"slow_endpoints": slow_endpoints[:5], "total_slow": len(slow_endpoints)},
+                risk_impact=(
+                    "Slow API endpoints introduce UI freezes, broken spinners, and increased bounce rates, "
+                    "diminishing user conversion and engagement."
+                ),
+                code_example=(
+                    "const cached = await cache.get(cacheKey);\n"
+                    "if (cached) return JSON.parse(cached);\n"
+                    "const freshData = await fetchQuery();\n"
+                    "await cache.set(cacheKey, JSON.stringify(freshData), { ttl: 60 });"
+                ),
+                target_location="API Route / Backend Performance",
+                problematic_code=f"{worst_slow['method']} {worst_slow['url'][:80]} ({worst_slow['duration_ms']}ms)",
+                screenshot_before_b64=screenshot_initial_b64,
+                rca_category=RCACategory.REAL_BUG,
+            ))
+
+        # Finding: Insecure Wildcard CORS
+        if cors_issues:
+            issue = cors_issues[0]
+            findings.append(Finding(
+                id="QA_INSECURE_CORS_POLICY",
+                category=Category.SECURITY,
+                severity=Severity.HIGH,
+                title="Wildcard Access-Control-Allow-Origin on API Route",
+                description=(
+                    f"API route '{issue['url'][:100]}' responded with 'Access-Control-Allow-Origin: *', "
+                    f"allowing any arbitrary third-party origin to make cross-origin reads."
+                ),
+                remediation=(
+                    "Explicitly restrict Access-Control-Allow-Origin to trusted application domains. "
+                    "Never combine wildcard origins with credentials or sensitive endpoints."
+                ),
+                evidence={"cors_issue": issue, "total_cors_issues": len(cors_issues)},
+                risk_impact=(
+                    "Overly permissive CORS headers expose internal API responses to malicious third-party "
+                    "scripts executing inside an authenticated user's browser."
+                ),
+                code_example=(
+                    "res.setHeader('Access-Control-Allow-Origin', 'https://app.yourdomain.com');\n"
+                    "res.setHeader('Vary', 'Origin');"
+                ),
+                target_location="API Gateway / CORS Middleware",
+                problematic_code="Access-Control-Allow-Origin: *",
+                screenshot_before_b64=screenshot_initial_b64,
+                rca_category=RCACategory.REAL_BUG,
+            ))
+
+        # Finding: Network Waterfall Profile Summary
+        if captured_traces:
+            self.network_traces = captured_traces
+            total_reqs = len(captured_traces)
+            avg_latency = round(sum(t.duration_ms for t in captured_traces) / max(total_reqs, 1), 1)
+            slow_count = len(slow_endpoints)
+            failed_count = sum(1 for t in captured_traces if t.status >= 400)
+
+            findings.append(Finding(
+                id="QA_NETWORK_WATERFALL_SUMMARY",
+                category=Category.UX,
+                severity=Severity.INFO,
+                title=f"Network Waterfall Analyzed: {total_reqs} Request(s) Profiled",
+                description=(
+                    f"Profiled {total_reqs} network requests. Average response latency was {avg_latency}ms "
+                    f"with {slow_count} slow endpoint(s) and {failed_count} HTTP failure(s)."
+                ),
+                remediation=(
+                    "Audit high-latency requests, enable HTTP/2 or HTTP/3 multiplexing, compress text assets "
+                    "with gzip/brotli, and preconnect to critical API origins."
+                ),
+                evidence={
+                    "total_requests": total_reqs,
+                    "avg_duration_ms": avg_latency,
+                    "slow_count": slow_count,
+                    "failed_count": failed_count,
+                    "top_slowest": [
+                        {
+                            "url": t.url,
+                            "method": t.method,
+                            "status": t.status,
+                            "duration_ms": t.duration_ms,
+                            "resource_type": t.resource_type,
+                        }
+                        for t in sorted(captured_traces, key=lambda x: x.duration_ms, reverse=True)[:5]
+                    ],
+                },
+                risk_impact=(
+                    "Unoptimized network waterfalls directly increase Time-to-Interactive (TTI) "
+                    "and Largest Contentful Paint (LCP)."
+                ),
+                code_example="<link rel='preconnect' href='https://api.yourdomain.com'>",
+                target_location="Network Waterfall Profile",
+                line_number=1,
+                problematic_code=f"// Total requests: {total_reqs}, Avg: {avg_latency}ms",
+                screenshot_before_b64=screenshot_initial_b64,
+                rca_category=RCACategory.EXPECTED_BEHAVIOR,
+            ))
 
         return findings
 

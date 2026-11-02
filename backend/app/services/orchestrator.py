@@ -57,6 +57,11 @@ async def execute_scan(target_url: str) -> ScanResult:
         if isinstance(res, list):
             all_findings.extend(res)
 
+    network_traces = []
+    for scanner in SCANNERS:
+        if hasattr(scanner, "network_traces") and scanner.network_traces:
+            network_traces.extend(scanner.network_traces)
+
     security_score = calculate_category_score(all_findings, Category.SECURITY)
     ux_score = calculate_category_score(all_findings, Category.UX)
 
@@ -67,6 +72,7 @@ async def execute_scan(target_url: str) -> ScanResult:
         security_score=security_score,
         ux_score=ux_score,
         findings=all_findings,
+        network_traces=network_traces,
         started_at=started_at,
         completed_at=datetime.utcnow()
     )

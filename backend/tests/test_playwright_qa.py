@@ -66,3 +66,30 @@ async def test_playwright_qa_screenshot_captured_on_valid_domain():
             # evidence should record screenshot_captured
             assert suite_finding.evidence is not None
             assert "screenshot_captured" in suite_finding.evidence
+
+
+
+@pytest.mark.asyncio
+async def test_playwright_qa_network_traces_captured():
+    """Phase 3: Scanner must profile network requests into network_traces."""
+    scanner = PlaywrightQAScanner()
+    async with httpx.AsyncClient() as client:
+        await scanner.scan("https://example.com", client)
+        assert hasattr(scanner, "network_traces")
+        assert len(scanner.network_traces) > 0
+        first_trace = scanner.network_traces[0]
+        assert first_trace.status >= 200
+        assert first_trace.duration_ms >= 0
+
+
+@pytest.mark.asyncio
+async def test_playwright_qa_network_summary_finding_present():
+    """Phase 3: Scanner must generate QA_NETWORK_WATERFALL_SUMMARY finding."""
+    scanner = PlaywrightQAScanner()
+    async with httpx.AsyncClient() as client:
+        findings = await scanner.scan("https://example.com", client)
+        summary_finding = next((f for f in findings if f.id == "QA_NETWORK_WATERFALL_SUMMARY"), None)
+        assert summary_finding is not None
+        assert summary_finding.evidence is not None
+        assert "total_requests" in summary_finding.evidence
+        assert summary_finding.evidence["total_requests"] > 0

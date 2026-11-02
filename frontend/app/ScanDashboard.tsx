@@ -5,6 +5,7 @@ import { startScan } from "@/lib/api";
 import type { ScanResult, Severity, Category, RCACategory } from "@/types/scan";
 import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
+import NetworkWaterfallCard from "./NetworkWaterfallCard";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
   CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4,
@@ -192,6 +193,10 @@ export default function ScanDashboard() {
               <ScoreCard label="Security Score" score={result.security_score} color="#6366f1" />
               <ScoreCard label="UX Score" score={result.ux_score} color="#34d399" />
             </div>
+
+            {result.network_traces && result.network_traces.length > 0 && (
+              <NetworkWaterfallCard traces={result.network_traces} />
+            )}
 
             <div className="filters-bar">
               <div className="filter-group">

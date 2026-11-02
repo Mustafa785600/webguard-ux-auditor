@@ -7,6 +7,16 @@ export type RCACategory =
   | "ENV_ISSUE"
   | "EXPECTED_BEHAVIOR";
 
+export interface NetworkRequestTrace {
+  url: string;
+  method: string;
+  status: number;
+  resource_type: string;
+  duration_ms: number;
+  size_bytes?: number;
+  cors_allowed?: boolean;
+}
+
 export interface Finding {
   id: string;
   category: Category;
@@ -34,6 +44,7 @@ export interface ScanResult {
   security_score: number;
   ux_score: number;
   findings: Finding[];
+  network_traces?: NetworkRequestTrace[];
   error_message?: string;
   started_at: string;
   completed_at?: string;

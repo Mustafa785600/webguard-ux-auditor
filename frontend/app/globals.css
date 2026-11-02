@@ -782,3 +782,281 @@ body {
   border: 1px solid var(--border);
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   Phase 3 — Network & API Contract Waterfall Styles
+   ══════════════════════════════════════════════════════════════ */
+.waterfall-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease;
+}
+
+.waterfall-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.waterfall-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: var(--bg-surface);
+  user-select: none;
+  gap: 16px;
+}
+
+.waterfall-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.waterfall-badge-icon {
+  font-size: 18px;
+}
+
+.waterfall-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.waterfall-count-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.waterfall-summary-chips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summary-chip {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.summary-chip.chip-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.summary-chip.chip-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.waterfall-body {
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+
+.waterfall-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.waterfall-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.waterfall-tab-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.waterfall-tab-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-glow);
+}
+
+.waterfall-tab-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.waterfall-search-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.waterfall-search-input:focus {
+  border-color: var(--accent);
+}
+
+.waterfall-empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.waterfall-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.waterfall-row {
+  display: grid;
+  grid-template-columns: 55px 50px 75px 1fr 180px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  transition: background 0.15s ease;
+}
+
+.waterfall-row:hover {
+  background: var(--bg-elevated);
+}
+
+.method-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 10.5px;
+  text-align: center;
+  font-family: "JetBrains Mono", monospace;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-light);
+}
+
+.method-post { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.method-put { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.method-delete { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 10.5px;
+  text-align: center;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.status-2xx { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.status-3xx { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.status-4xx { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.status-5xx { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+.type-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.waterfall-col-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.cors-pill {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  font-size: 9.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.waterfall-col-gantt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gantt-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.gantt-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.duration-text {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  width: 58px;
+  text-align: right;
+  flex-shrink: 0;
+}
