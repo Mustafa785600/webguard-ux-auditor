@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { startScan } from "@/lib/api";
-import type { ScanResult, Severity, Category } from "@/types/scan";
+import type { ScanResult, Severity, Category, RCACategory } from "@/types/scan";
 import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
 
@@ -20,6 +20,7 @@ export default function ScanDashboard() {
   const [recentScans, setRecentScans] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | Category>("ALL");
   const [severityFilter, setSeverityFilter] = useState<"ALL" | Severity>("ALL");
+  const [rcaFilter, setRcaFilter] = useState<"ALL" | RCACategory>("ALL");
 
   useEffect(() => {
     try {
@@ -97,9 +98,10 @@ export default function ScanDashboard() {
     return result.findings.filter((f) => {
       const matchCat = categoryFilter === "ALL" || f.category === categoryFilter;
       const matchSev = severityFilter === "ALL" || f.severity === severityFilter;
-      return matchCat && matchSev;
+      const matchRca = rcaFilter === "ALL" || f.rca_category === rcaFilter;
+      return matchCat && matchSev && matchRca;
     });
-  }, [result, categoryFilter, severityFilter]);
+  }, [result, categoryFilter, severityFilter, rcaFilter]);
 
   return (
     <>
@@ -214,6 +216,19 @@ export default function ScanDashboard() {
                     onClick={() => setSeverityFilter(sev)}
                   >
                     {sev}
+                  </button>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <span className="filter-label">Root Cause (RCA):</span>
+                {(["ALL", "REAL_BUG", "TEST_FRAGILITY", "ENV_ISSUE", "EXPECTED_BEHAVIOR"] as const).map((rca) => (
+                  <button
+                    key={rca}
+                    className={`filter-pill ${rcaFilter === rca ? "active" : ""}`}
+                    onClick={() => setRcaFilter(rca)}
+                  >
+                    {rca === "ALL" ? "ALL" : rca.replace("_", " ")}
                   </button>
                 ))}
               </div>

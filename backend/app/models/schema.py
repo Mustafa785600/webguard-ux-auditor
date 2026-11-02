@@ -20,6 +20,12 @@ class ScanStatus(str, Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
+class RCACategory(str, Enum):
+    REAL_BUG = "REAL_BUG"
+    TEST_FRAGILITY = "TEST_FRAGILITY"
+    ENV_ISSUE = "ENV_ISSUE"
+    EXPECTED_BEHAVIOR = "EXPECTED_BEHAVIOR"
+
 class Finding(BaseModel):
     id: str
     category: Category
@@ -33,6 +39,12 @@ class Finding(BaseModel):
     target_location: Optional[str] = None
     line_number: Optional[int] = None
     problematic_code: Optional[str] = None
+    # Phase 2: Autonomous interaction evidence
+    screenshot_before_b64: Optional[str] = None
+    screenshot_after_b64: Optional[str] = None
+    interaction_log: Optional[List[str]] = None
+    # Phase 2: RCA Classification (TestSprite style)
+    rca_category: Optional[RCACategory] = None
 
 class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")

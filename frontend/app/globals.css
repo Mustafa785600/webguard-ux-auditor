@@ -706,3 +706,79 @@ body {
   color: var(--text-primary);
 }
 
+
+
+/* ══════════════════════════════════════════════════════════════
+   Phase 2 — RCA Badge
+   ══════════════════════════════════════════════════════════════ */
+.rca-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", monospace;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Phase 2 — Screenshot Evidence Viewer
+   ══════════════════════════════════════════════════════════════ */
+.screenshot-viewer {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.screenshot-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.screenshot-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  font-family: "Inter", sans-serif;
+}
+
+.screenshot-tab:hover {
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+
+.screenshot-tab.active {
+  color: var(--accent-light);
+  background: var(--bg-elevated);
+  border-bottom: 2px solid var(--accent);
+}
+
+.screenshot-frame {
+  padding: 12px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-img {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}

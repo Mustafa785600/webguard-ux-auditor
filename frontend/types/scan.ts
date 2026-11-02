@@ -1,6 +1,11 @@
 export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
 export type Category = "SECURITY" | "UX";
 export type ScanStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+export type RCACategory =
+  | "REAL_BUG"
+  | "TEST_FRAGILITY"
+  | "ENV_ISSUE"
+  | "EXPECTED_BEHAVIOR";
 
 export interface Finding {
   id: string;
@@ -15,6 +20,11 @@ export interface Finding {
   target_location?: string;
   line_number?: number;
   problematic_code?: string;
+  // Phase 2 — Autonomous interaction evidence
+  screenshot_before_b64?: string;
+  screenshot_after_b64?: string;
+  interaction_log?: string[];
+  rca_category?: RCACategory;
 }
 
 export interface ScanResult {

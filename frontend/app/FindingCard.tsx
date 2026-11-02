@@ -30,9 +30,20 @@ function CodeBlockWithLines({
   );
 }
 
+const RCA_META: Record<string, { label: string; color: string; icon: string }> = {
+  REAL_BUG:          { label: "Real Bug",          color: "#ef4444", icon: "🔴" },
+  TEST_FRAGILITY:    { label: "Test Fragility",     color: "#f59e0b", icon: "🟡" },
+  ENV_ISSUE:         { label: "Environment Issue",  color: "#3b82f6", icon: "🔵" },
+  EXPECTED_BEHAVIOR: { label: "Expected Behavior",  color: "#6b7280", icon: "⚪" },
+};
+
 export default function FindingCard({ finding }: { finding: Finding }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [screenshotTab, setScreenshotTab] = useState<"before" | "after">("before");
+
+  const rca = finding.rca_category ? RCA_META[finding.rca_category] : null;
+  const hasScreenshots = Boolean(finding.screenshot_before_b64 || finding.screenshot_after_b64);
 
   function handleCopyCode(e: React.MouseEvent) {
     e.stopPropagation();
@@ -58,6 +69,15 @@ export default function FindingCard({ finding }: { finding: Finding }) {
       >
         <span className={`finding-category-dot ${finding.category}`} aria-label={finding.category} />
         <span className={`severity-badge ${finding.severity}`}>{finding.severity}</span>
+        {rca && (
+          <span
+            className="rca-badge"
+            style={{ borderColor: rca.color, color: rca.color }}
+            title={`RCA: ${rca.label}`}
+          >
+            {rca.icon} {rca.label}
+          </span>
+        )}
         
         <div className="finding-title-group">
           <span className="finding-title">{finding.title}</span>
@@ -190,6 +210,69 @@ export default function FindingCard({ finding }: { finding: Finding }) {
                 {JSON.stringify(finding.evidence, null, 2)}
               </pre>
             </details>
+          )}
+
+          {/* 5. Interaction Log (Phase 2) */}
+          {finding.interaction_log && finding.interaction_log.length > 0 && (
+            <details className="evidence-details">
+              <summary style={{ fontSize: "12px", color: "var(--text-muted)", cursor: "pointer" }}>
+                🤖 Autonomous Agent Interaction Log ({finding.interaction_log.length} steps)
+              </summary>
+              <ol style={{
+                marginTop: "8px",
+                fontSize: "11.5px",
+                color: "var(--text-secondary)",
+                fontFamily: "'JetBrains Mono', monospace",
+                background: "var(--bg-elevated)",
+                borderRadius: "6px",
+                padding: "10px 12px 10px 28px",
+                lineHeight: "1.8",
+              }}>
+                {finding.interaction_log.map((entry, i) => (
+                  <li key={i}>{entry}</li>
+                ))}
+              </ol>
+            </details>
+          )}
+
+          {/* 6. Screenshot Evidence Viewer (Phase 2) */}
+          {hasScreenshots && (
+            <div className="screenshot-viewer">
+              <div className="screenshot-tabs">
+                {finding.screenshot_before_b64 && (
+                  <button
+                    className={`screenshot-tab ${screenshotTab === "before" ? "active" : ""}`}
+                    onClick={() => setScreenshotTab("before")}
+                  >
+                    📸 Before Interaction
+                  </button>
+                )}
+                {finding.screenshot_after_b64 && (
+                  <button
+                    className={`screenshot-tab ${screenshotTab === "after" ? "active" : ""}`}
+                    onClick={() => setScreenshotTab("after")}
+                  >
+                    📸 After Interaction
+                  </button>
+                )}
+              </div>
+              <div className="screenshot-frame">
+                {screenshotTab === "before" && finding.screenshot_before_b64 && (
+                  <img
+                    src={finding.screenshot_before_b64}
+                    alt="Browser state before interaction"
+                    className="screenshot-img"
+                  />
+                )}
+                {screenshotTab === "after" && finding.screenshot_after_b64 && (
+                  <img
+                    src={finding.screenshot_after_b64}
+                    alt="Browser state after interaction"
+                    className="screenshot-img"
+                  />
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
