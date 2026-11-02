@@ -16,6 +16,7 @@ from app.scanners.ux.forms_a11y import FormsA11yScanner
 from app.scanners.ux.playwright_qa import PlaywrightQAScanner
 from app.services.scorer import calculate_category_score
 from app.services.prd_agent import analyze_prd_and_generate_tests
+from app.services.notifier import dispatch_webhook
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -28,7 +29,11 @@ SCANNERS = [
     PlaywrightQAScanner(),
 ]
 
-async def execute_scan(target_url: str, prd_content: Optional[str] = None) -> ScanResult:
+async def execute_scan(
+    target_url: str,
+    prd_content: Optional[str] = None,
+    webhook_url: Optional[str] = None,
+) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
     
@@ -74,7 +79,7 @@ async def execute_scan(target_url: str, prd_content: Optional[str] = None) -> Sc
     security_score = calculate_category_score(all_findings, Category.SECURITY)
     ux_score = calculate_category_score(all_findings, Category.UX)
 
-    return ScanResult(
+    result = ScanResult(
         scan_id=scan_id,
         target_url=sanitized_url,
         status=ScanStatus.COMPLETED,
@@ -86,3 +91,11 @@ async def execute_scan(target_url: str, prd_content: Optional[str] = None) -> Sc
         started_at=started_at,
         completed_at=datetime.utcnow()
     )
+
+    if webhook_url:
+        try:
+            asyncio.create_task(dispatch_webhook(webhook_url, result))
+        except Exception:
+            pass
+
+    return result

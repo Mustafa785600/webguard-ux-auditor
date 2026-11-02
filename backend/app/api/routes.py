@@ -15,7 +15,7 @@ async def health_check():
 
 @router.post("/scan", response_model=ScanResult)
 async def run_scan(request: ScanRequest):
-    result = await execute_scan(request.url, request.prd_content)
+    result = await execute_scan(request.url, request.prd_content, request.webhook_url)
     if result.status == ScanStatus.FAILED and "SSRF Protection" in (result.error_message or ""):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.error_message)
     return result

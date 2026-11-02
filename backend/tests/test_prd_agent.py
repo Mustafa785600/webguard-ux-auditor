@@ -67,3 +67,4 @@ async def test_prd_analyze_ssrf_blocked():
         )
         assert response.status_code == 400
         assert "SSRF Protection" in response.json().get("detail", "")
+

@@ -77,6 +77,7 @@ class PRDAnalyzeRequest(BaseModel):
 class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")
     prd_content: Optional[str] = None
+    webhook_url: Optional[str] = None
 
 class ScanResult(BaseModel):
     scan_id: str
@@ -87,6 +88,7 @@ class ScanResult(BaseModel):
     findings: List[Finding] = []
     network_traces: List[NetworkRequestTrace] = []
     prd_analysis: Optional[PRDAnalysisResponse] = None
+    self_healing_events: Optional[List[Dict[str, Any]]] = None
     error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None

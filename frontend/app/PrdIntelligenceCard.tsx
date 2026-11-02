@@ -287,3 +287,4 @@ export default function PrdIntelligenceCard({ targetUrl, initialAnalysis }: PrdI
     </section>
   );
 }
+

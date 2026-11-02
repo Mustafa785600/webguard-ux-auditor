@@ -63,6 +63,7 @@ export interface ScanResult {
   findings: Finding[];
   network_traces?: NetworkRequestTrace[];
   prd_analysis?: PRDAnalysisResponse;
+  self_healing_events?: Record<string, unknown>[];
   error_message?: string;
   started_at: string;
   completed_at?: string;
