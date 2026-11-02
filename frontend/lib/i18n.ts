@@ -53,6 +53,21 @@ export const UI_STRINGS: Record<Language, Record<string, string>> = {
     avgLatency: "Avg:",
     slow: "Slow",
     failed: "Failed",
+    // Crawler & Site Graph
+    crawlerToggle: "🕸️ Autonomous Deep Crawler",
+    crawlerSubtitle: "Multi-page route discovery, form interaction & site graph",
+    pageBudget: "Page Budget",
+    crawlDepth: "Depth",
+    tabFindings: "Findings & Issues",
+    tabPrd: "TestSprite PRD Intelligence",
+    tabCrawlGraph: "Site Map & Route Graph",
+    pagesExplored: "Pages Explored",
+    routesDiscovered: "Internal Routes",
+    formsButtonsTested: "Forms & Controls Tested",
+    routeFailures: "Route Failures",
+    filterByRoute: "Filter findings for this route",
+    allRoutes: "All Routes",
+    crawlEmptyNotice: "Autonomous Deep Crawler was not enabled for this scan. Toggle 'Autonomous Deep Crawler' before scanning to explore multiple pages and generate a live route graph.",
   },
   tr: {
     heroBadge: "🛡️ Güvenlik & UX Denetim Platformu",
@@ -104,6 +119,21 @@ export const UI_STRINGS: Record<Language, Record<string, string>> = {
     avgLatency: "Ortalama:",
     slow: "Yavaş",
     failed: "Hatalı",
+    // Crawler & Site Graph
+    crawlerToggle: "🕸️ Otonom Site Gezgini (Deep Crawler)",
+    crawlerSubtitle: "Çok sayfalı gezinme, form etkileşimleri ve rota haritası analizi",
+    pageBudget: "Sayfa Limiti",
+    crawlDepth: "Derinlik",
+    tabFindings: "Bulgular & Açıklar",
+    tabPrd: "TestSprite PRD Zekası",
+    tabCrawlGraph: "Site Haritası & Rota Ağacı",
+    pagesExplored: "Taranan Sayfa",
+    routesDiscovered: "Dahili Rota",
+    formsButtonsTested: "Test Edilen Form & Buton",
+    routeFailures: "Kritik Rota Hatası",
+    filterByRoute: "Bu rotadaki bulguları filtrele",
+    allRoutes: "Tüm Rotalar",
+    crawlEmptyNotice: "Otonom Gezgin bu taramada etkinleştirilmedi. Sitedeki çok sayfalı rotaları keşfetmek ve interaktif site haritası çıkarmak için tarama öncesi 'Otonom Site Gezgini' seçeneğini işaretleyiniz.",
   },
 };
 
@@ -280,3 +310,4 @@ export function localizeFinding(finding: Finding, lang: Language): Finding {
     remediation: tr.remediation,
   };
 }
+

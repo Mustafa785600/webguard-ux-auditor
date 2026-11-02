@@ -7,6 +7,7 @@ import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
 import NetworkWaterfallCard from "./NetworkWaterfallCard";
 import PrdIntelligenceCard from "./PrdIntelligenceCard";
+import CrawlGraphView from "./CrawlGraphView";
 import {
   type Language,
   UI_STRINGS,
@@ -35,6 +36,12 @@ export default function ScanDashboard() {
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | Category>("ALL");
   const [severityFilter, setSeverityFilter] = useState<"ALL" | Severity>("ALL");
   const [rcaFilter, setRcaFilter] = useState<"ALL" | RCACategory>("ALL");
+
+  // Autonomous Crawler state
+  const [enableCrawler, setEnableCrawler] = useState<boolean>(false);
+  const [maxPages, setMaxPages] = useState<number>(5);
+  const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");
 
   const t = UI_STRINGS[lang];
 
@@ -74,9 +81,13 @@ export default function ScanDashboard() {
     setLoading(true);
     setResult(null);
     setError(null);
+    setSelectedRouteUrl(null);
 
     try {
-      const data = await startScan(targetUrl.trim());
+      const data = await startScan(targetUrl.trim(), undefined, {
+        enableCrawler,
+        maxPages,
+      });
       if (data.status === "FAILED") {
         setError(data.error_message ?? "Scan failed.");
       } else {
@@ -115,9 +126,10 @@ export default function ScanDashboard() {
       const matchCat = categoryFilter === "ALL" || f.category === categoryFilter;
       const matchSev = severityFilter === "ALL" || f.severity === severityFilter;
       const matchRca = rcaFilter === "ALL" || f.rca_category === rcaFilter;
-      return matchCat && matchSev && matchRca;
+      const matchRoute = !selectedRouteUrl || f.page_url === selectedRouteUrl;
+      return matchCat && matchSev && matchRca && matchRoute;
     });
-  }, [result, categoryFilter, severityFilter, rcaFilter]);
+  }, [result, categoryFilter, severityFilter, rcaFilter, selectedRouteUrl]);
 
   return (
     <>
@@ -172,6 +184,38 @@ export default function ScanDashboard() {
             {loading ? t.btnScanning : t.btnScan}
           </button>
         </form>
+
+        {/* Autonomous Crawler Config Option */}
+        <div className="crawler-options-bar">
+          <label className="crawler-toggle-label">
+            <input
+              type="checkbox"
+              checked={enableCrawler}
+              onChange={(e) => setEnableCrawler(e.target.checked)}
+              disabled={loading}
+              className="crawler-checkbox"
+            />
+            <span className="crawler-toggle-title">{t.crawlerToggle}</span>
+            <span className="crawler-toggle-subtitle">({t.crawlerSubtitle})</span>
+          </label>
+
+          {enableCrawler && (
+            <div className="crawler-budget-selector">
+              <span className="budget-label">{t.pageBudget}:</span>
+              {[3, 5, 10].map((count) => (
+                <button
+                  type="button"
+                  key={count}
+                  className={`budget-pill ${maxPages === count ? "active" : ""}`}
+                  onClick={() => setMaxPages(count)}
+                  disabled={loading}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="history-section">
           <div className="history-header">
@@ -246,71 +290,133 @@ export default function ScanDashboard() {
               <NetworkWaterfallCard traces={result.network_traces} />
             )}
 
-            <PrdIntelligenceCard
-              targetUrl={result.target_url}
-              initialAnalysis={result.prd_analysis}
-            />
+            {/* View Switcher Tabs: Findings | PRD | Site Route Graph */}
+            <div className="view-tabs-bar">
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "FINDINGS" ? "active" : ""}`}
+                onClick={() => setActiveTab("FINDINGS")}
+              >
+                📋 {t.tabFindings} ({filteredFindings.length})
+              </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "PRD" ? "active" : ""}`}
+                onClick={() => setActiveTab("PRD")}
+              >
+                🧠 {t.tabPrd}
+              </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "CRAWL_GRAPH" ? "active" : ""}`}
+                onClick={() => setActiveTab("CRAWL_GRAPH")}
+              >
+                🗺️ {t.tabCrawlGraph} ({result.crawl_graph?.length ?? result.crawled_pages_count ?? 1})
+              </button>
+            </div>
 
-            <div className="filters-bar">
-              <div className="filter-group">
-                <span className="filter-label">{t.filterCategory}</span>
-                {(["ALL", "SECURITY", "UX"] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    className={`filter-pill ${categoryFilter === cat ? "active" : ""}`}
-                    onClick={() => setCategoryFilter(cat)}
-                  >
-                    {CATEGORY_LABELS[lang][cat]}
-                  </button>
-                ))}
-              </div>
+            {/* TAB 1: TestSprite PRD Intelligence */}
+            {activeTab === "PRD" && (
+              <PrdIntelligenceCard
+                targetUrl={result.target_url}
+                initialAnalysis={result.prd_analysis}
+              />
+            )}
 
-              <div className="filter-group">
-                <span className="filter-label">{t.filterSeverity}</span>
-                {(["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const).map((sev) => (
-                  <button
-                    key={sev}
-                    className={`filter-pill ${severityFilter === sev ? "active" : ""}`}
-                    onClick={() => setSeverityFilter(sev)}
-                  >
-                    {SEVERITY_LABELS[lang][sev]}
-                  </button>
-                ))}
-              </div>
+            {/* TAB 2: Autonomous Crawler & Route Graph */}
+            {activeTab === "CRAWL_GRAPH" && (
+              <CrawlGraphView
+                nodes={result.crawl_graph}
+                lang={lang}
+                selectedRouteUrl={selectedRouteUrl}
+                onSelectRoute={(route) => {
+                  setSelectedRouteUrl(route);
+                  if (route) setActiveTab("FINDINGS");
+                }}
+              />
+            )}
 
-              <div className="filter-group">
-                <span className="filter-label">{t.filterRca}</span>
-                {(["ALL", "REAL_BUG", "TEST_FRAGILITY", "ENV_ISSUE", "EXPECTED_BEHAVIOR"] as const).map(
-                  (rca) => (
+            {/* TAB 3: Main Findings List */}
+            {activeTab === "FINDINGS" && (
+              <>
+                {selectedRouteUrl && (
+                  <div className="active-route-filter-bar">
+                    <span>
+                      {lang === "tr" ? "Filtrelenen Rota:" : "Filtered Route:"}{" "}
+                      <strong>{selectedRouteUrl}</strong>
+                    </span>
                     <button
-                      key={rca}
-                      className={`filter-pill ${rcaFilter === rca ? "active" : ""}`}
-                      onClick={() => setRcaFilter(rca)}
+                      type="button"
+                      className="clear-route-filter-btn"
+                      onClick={() => setSelectedRouteUrl(null)}
                     >
-                      {RCA_LABELS[lang][rca]}
+                      ✕ {t.allRoutes}
                     </button>
-                  )
+                  </div>
                 )}
-              </div>
-            </div>
 
-            <div className="section-header">
-              <span className="section-title">{t.findingsSection}</span>
-              <span className="findings-count">
-                {t.showing} {filteredFindings.length} {t.of} {result.findings.length} {t.issues}
-              </span>
-            </div>
+                <div className="filters-bar">
+                  <div className="filter-group">
+                    <span className="filter-label">{t.filterCategory}</span>
+                    {(["ALL", "SECURITY", "UX"] as const).map((cat) => (
+                      <button
+                        key={cat}
+                        className={`filter-pill ${categoryFilter === cat ? "active" : ""}`}
+                        onClick={() => setCategoryFilter(cat)}
+                      >
+                        {CATEGORY_LABELS[lang][cat]}
+                      </button>
+                    ))}
+                  </div>
 
-            {filteredFindings.length === 0 ? (
-              <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "40px 0" }}>
-                {t.noIssues}
-              </p>
-            ) : (
-              <div className="findings-list" id="findings-list">
-                {filteredFindings.map((f) => (
-                  <FindingCard key={f.id} finding={f} lang={lang} />
-                ))}
-              </div>
+                  <div className="filter-group">
+                    <span className="filter-label">{t.filterSeverity}</span>
+                    {(["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const).map((sev) => (
+                      <button
+                        key={sev}
+                        className={`filter-pill ${severityFilter === sev ? "active" : ""}`}
+                        onClick={() => setSeverityFilter(sev)}
+                      >
+                        {SEVERITY_LABELS[lang][sev]}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="filter-group">
+                    <span className="filter-label">{t.filterRca}</span>
+                    {(["ALL", "REAL_BUG", "TEST_FRAGILITY", "ENV_ISSUE", "EXPECTED_BEHAVIOR"] as const).map(
+                      (rca) => (
+                        <button
+                          key={rca}
+                          className={`filter-pill ${rcaFilter === rca ? "active" : ""}`}
+                          onClick={() => setRcaFilter(rca)}
+                        >
+                          {RCA_LABELS[lang][rca]}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div className="section-header">
+                  <span className="section-title">{t.findingsSection}</span>
+                  <span className="findings-count">
+                    {t.showing} {filteredFindings.length} {t.of} {result.findings.length} {t.issues}
+                  </span>
+                </div>
+
+                {filteredFindings.length === 0 ? (
+                  <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "40px 0" }}>
+                    {t.noIssues}
+                  </p>
+                ) : (
+                  <div className="findings-list" id="findings-list">
+                    {filteredFindings.map((f) => (
+                      <FindingCard key={f.id} finding={f} lang={lang} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

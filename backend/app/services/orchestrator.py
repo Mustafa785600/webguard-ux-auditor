@@ -16,6 +16,7 @@ from app.scanners.ux.forms_a11y import FormsA11yScanner
 from app.scanners.ux.playwright_qa import PlaywrightQAScanner
 from app.services.scorer import calculate_category_score
 from app.services.prd_agent import analyze_prd_and_generate_tests
+from app.services.crawler import AutonomousCrawler
 from app.services.notifier import dispatch_webhook
 
 SCANNERS = [
@@ -33,6 +34,9 @@ async def execute_scan(
     target_url: str,
     prd_content: Optional[str] = None,
     webhook_url: Optional[str] = None,
+    enable_crawler: bool = False,
+    max_pages: int = 5,
+    crawl_depth: int = 1,
 ) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
@@ -76,6 +80,22 @@ async def execute_scan(
         if hasattr(scanner, "network_traces") and scanner.network_traces:
             network_traces.extend(scanner.network_traces)
 
+    crawl_graph = None
+    crawled_pages_count = 1
+    if enable_crawler:
+        try:
+            crawler = AutonomousCrawler()
+            crawl_nodes, crawler_findings = await crawler.crawl_and_explore(
+                sanitized_url,
+                max_pages=max_pages,
+                max_depth=crawl_depth
+            )
+            crawl_graph = crawl_nodes
+            crawled_pages_count = len(crawl_nodes)
+            all_findings.extend(crawler_findings)
+        except Exception:
+            pass
+
     security_score = calculate_category_score(all_findings, Category.SECURITY)
     ux_score = calculate_category_score(all_findings, Category.UX)
 
@@ -88,6 +108,8 @@ async def execute_scan(
         findings=all_findings,
         network_traces=network_traces,
         prd_analysis=prd_analysis,
+        crawl_graph=crawl_graph,
+        crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()
     )

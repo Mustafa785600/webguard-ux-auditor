@@ -35,6 +35,21 @@ export interface Finding {
   screenshot_after_b64?: string;
   interaction_log?: string[];
   rca_category?: RCACategory;
+  page_url?: string;
+}
+
+export interface CrawlNode {
+  url: string;
+  route: string;
+  title?: string;
+  depth: number;
+  status_code: number;
+  forms_count: number;
+  buttons_count: number;
+  links_found: string[];
+  page_issues_count: number;
+  screenshot_b64?: string;
+  load_time_ms?: number;
 }
 
 export interface PRDScenario {
@@ -64,6 +79,8 @@ export interface ScanResult {
   network_traces?: NetworkRequestTrace[];
   prd_analysis?: PRDAnalysisResponse;
   self_healing_events?: Record<string, unknown>[];
+  crawl_graph?: CrawlNode[];
+  crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
   completed_at?: string;

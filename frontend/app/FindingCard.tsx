@@ -93,6 +93,23 @@ export default function FindingCard({
         
         <div className="finding-title-group">
           <span className="finding-title">{finding.title}</span>
+          {finding.page_url && (
+            <span
+              className="finding-location-pill route-pill"
+              title={`Page Route: ${finding.page_url}`}
+            >
+              <span className="pill-icon">🌐</span>
+              <span className="pill-path">
+                {(() => {
+                  try {
+                    return new URL(finding.page_url).pathname || "/";
+                  } catch {
+                    return finding.page_url;
+                  }
+                })()}
+              </span>
+            </span>
+          )}
           {finding.target_location && (
             <span
               className="finding-location-pill"

@@ -2,11 +2,25 @@ import { ScanResult, PRDAnalysisResponse } from "@/types/scan";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
-export async function startScan(url: string, prdContent?: string): Promise<ScanResult> {
+export async function startScan(
+  url: string,
+  prdContent?: string,
+  crawlerOptions?: {
+    enableCrawler?: boolean;
+    maxPages?: number;
+    crawlDepth?: number;
+  }
+): Promise<ScanResult> {
   const res = await fetch(`${API_BASE}/scan`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, prd_content: prdContent }),
+    body: JSON.stringify({
+      url,
+      prd_content: prdContent,
+      enable_crawler: crawlerOptions?.enableCrawler ?? false,
+      max_pages: crawlerOptions?.maxPages ?? 5,
+      crawl_depth: crawlerOptions?.crawlDepth ?? 1,
+    }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

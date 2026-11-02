@@ -54,6 +54,21 @@ class Finding(BaseModel):
     interaction_log: Optional[List[str]] = None
     # Phase 2: RCA Classification (TestSprite style)
     rca_category: Optional[RCACategory] = None
+    # Multi-page Autonomous Crawler: URL or route where finding was discovered
+    page_url: Optional[str] = None
+
+class CrawlNode(BaseModel):
+    url: str
+    route: str
+    title: Optional[str] = None
+    depth: int = 0
+    status_code: int = 200
+    forms_count: int = 0
+    buttons_count: int = 0
+    links_found: List[str] = []
+    page_issues_count: int = 0
+    screenshot_b64: Optional[str] = None
+    load_time_ms: Optional[float] = None
 
 class PRDScenario(BaseModel):
     title: str
@@ -78,6 +93,9 @@ class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")
     prd_content: Optional[str] = None
     webhook_url: Optional[str] = None
+    enable_crawler: Optional[bool] = False
+    max_pages: Optional[int] = 5
+    crawl_depth: Optional[int] = 1
 
 class ScanResult(BaseModel):
     scan_id: str
@@ -89,6 +107,8 @@ class ScanResult(BaseModel):
     network_traces: List[NetworkRequestTrace] = []
     prd_analysis: Optional[PRDAnalysisResponse] = None
     self_healing_events: Optional[List[Dict[str, Any]]] = None
+    crawl_graph: Optional[List[CrawlNode]] = None
+    crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None
