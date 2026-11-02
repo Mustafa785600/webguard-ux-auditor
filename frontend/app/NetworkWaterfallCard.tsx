@@ -205,3 +205,4 @@ export default function NetworkWaterfallCard({ traces }: NetworkWaterfallCardPro
     </section>
   );
 }
+

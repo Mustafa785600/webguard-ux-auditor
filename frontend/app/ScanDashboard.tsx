@@ -6,6 +6,7 @@ import type { ScanResult, Severity, Category, RCACategory } from "@/types/scan";
 import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
 import NetworkWaterfallCard from "./NetworkWaterfallCard";
+import PrdIntelligenceCard from "./PrdIntelligenceCard";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
   CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4,
@@ -164,6 +165,10 @@ export default function ScanDashboard() {
       </header>
 
       <main className="container">
+        {!result && !loading && (
+          <PrdIntelligenceCard targetUrl={url} />
+        )}
+
         {loading && (
           <div className="scan-loading" aria-live="polite">
             <div className="spinner" role="status" aria-label="Scanning" />
@@ -197,6 +202,11 @@ export default function ScanDashboard() {
             {result.network_traces && result.network_traces.length > 0 && (
               <NetworkWaterfallCard traces={result.network_traces} />
             )}
+
+            <PrdIntelligenceCard
+              targetUrl={result.target_url}
+              initialAnalysis={result.prd_analysis}
+            />
 
             <div className="filters-bar">
               <div className="filter-group">

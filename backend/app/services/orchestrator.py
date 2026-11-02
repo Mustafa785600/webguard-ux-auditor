@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from typing import Optional
 import uuid
 import httpx
 from app.core.config import settings
@@ -14,6 +15,7 @@ from app.scanners.ux.links import BrokenLinksScanner
 from app.scanners.ux.forms_a11y import FormsA11yScanner
 from app.scanners.ux.playwright_qa import PlaywrightQAScanner
 from app.services.scorer import calculate_category_score
+from app.services.prd_agent import analyze_prd_and_generate_tests
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -26,7 +28,7 @@ SCANNERS = [
     PlaywrightQAScanner(),
 ]
 
-async def execute_scan(target_url: str) -> ScanResult:
+async def execute_scan(target_url: str, prd_content: Optional[str] = None) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
     
@@ -41,6 +43,13 @@ async def execute_scan(target_url: str) -> ScanResult:
             started_at=started_at,
             completed_at=datetime.utcnow()
         )
+
+    prd_analysis = None
+    if prd_content and prd_content.strip():
+        try:
+            prd_analysis = await analyze_prd_and_generate_tests(prd_content, sanitized_url)
+        except Exception:
+            pass
 
     headers = {"User-Agent": settings.USER_AGENT}
     async with httpx.AsyncClient(
@@ -73,6 +82,7 @@ async def execute_scan(target_url: str) -> ScanResult:
         ux_score=ux_score,
         findings=all_findings,
         network_traces=network_traces,
+        prd_analysis=prd_analysis,
         started_at=started_at,
         completed_at=datetime.utcnow()
     )

@@ -55,8 +55,28 @@ class Finding(BaseModel):
     # Phase 2: RCA Classification (TestSprite style)
     rca_category: Optional[RCACategory] = None
 
+class PRDScenario(BaseModel):
+    title: str
+    role: str
+    steps: List[str]
+    expected_result: str
+    edge_cases: List[str] = []
+
+class PRDAnalysisResponse(BaseModel):
+    target_url: str
+    summary: str
+    user_roles: List[str]
+    scenarios: List[PRDScenario]
+    generated_spec_code: str
+    generated_at: datetime
+
+class PRDAnalyzeRequest(BaseModel):
+    target_url: str = Field(..., example="https://example.com")
+    prd_text: str = Field(..., example="Users should be able to register, log in, and browse products.")
+
 class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")
+    prd_content: Optional[str] = None
 
 class ScanResult(BaseModel):
     scan_id: str
@@ -66,6 +86,7 @@ class ScanResult(BaseModel):
     ux_score: int = 100
     findings: List[Finding] = []
     network_traces: List[NetworkRequestTrace] = []
+    prd_analysis: Optional[PRDAnalysisResponse] = None
     error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None

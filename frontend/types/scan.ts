@@ -37,6 +37,23 @@ export interface Finding {
   rca_category?: RCACategory;
 }
 
+export interface PRDScenario {
+  title: string;
+  role: string;
+  steps: string[];
+  expected_result: string;
+  edge_cases: string[];
+}
+
+export interface PRDAnalysisResponse {
+  target_url: string;
+  summary: string;
+  user_roles: string[];
+  scenarios: PRDScenario[];
+  generated_spec_code: string;
+  generated_at: string;
+}
+
 export interface ScanResult {
   scan_id: string;
   target_url: string;
@@ -45,6 +62,7 @@ export interface ScanResult {
   ux_score: number;
   findings: Finding[];
   network_traces?: NetworkRequestTrace[];
+  prd_analysis?: PRDAnalysisResponse;
   error_message?: string;
   started_at: string;
   completed_at?: string;
