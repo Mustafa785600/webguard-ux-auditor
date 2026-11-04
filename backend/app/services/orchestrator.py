@@ -34,9 +34,9 @@ async def execute_scan(
     target_url: str,
     prd_content: Optional[str] = None,
     webhook_url: Optional[str] = None,
-    enable_crawler: bool = False,
+    enable_crawler: bool = True,
     max_pages: int = 5,
-    crawl_depth: int = 1,
+    crawl_depth: int = 2,
 ) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()

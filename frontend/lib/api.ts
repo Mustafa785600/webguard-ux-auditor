@@ -17,9 +17,9 @@ export async function startScan(
     body: JSON.stringify({
       url,
       prd_content: prdContent,
-      enable_crawler: crawlerOptions?.enableCrawler ?? false,
+      enable_crawler: crawlerOptions?.enableCrawler ?? true,
       max_pages: crawlerOptions?.maxPages ?? 5,
-      crawl_depth: crawlerOptions?.crawlDepth ?? 1,
+      crawl_depth: crawlerOptions?.crawlDepth ?? 2,
     }),
   });
   if (!res.ok) {

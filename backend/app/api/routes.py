@@ -21,7 +21,7 @@ async def run_scan(request: ScanRequest):
         request.webhook_url,
         enable_crawler=bool(request.enable_crawler),
         max_pages=request.max_pages or 5,
-        crawl_depth=request.crawl_depth or 1
+        crawl_depth=request.crawl_depth or 2
     )
     if result.status == ScanStatus.FAILED and "SSRF Protection" in (result.error_message or ""):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.error_message)
