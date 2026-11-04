@@ -18,7 +18,7 @@ Start-Sleep -Seconds 3
 
 # 2. Frontend Baslat
 Write-Host "[2/2] Frontend baslatiliyor (localhost:3000)..." -ForegroundColor Yellow
-Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$frontend`" && pnpm run dev" -WindowStyle Normal
+Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$frontend`" && npm run dev" -WindowStyle Normal
 
 # 4 saniye bekle
 Start-Sleep -Seconds 4

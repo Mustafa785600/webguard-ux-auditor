@@ -18,7 +18,7 @@ ping 127.0.0.1 -n 4 >nul
 
 REM --- 2. Frontend Baslat ---
 echo [2/2] Frontend baslatiliyor (localhost:3000)...
-start "WebGuard-Frontend" cmd /k "cd /d "%ROOT%\frontend" && pnpm run dev"
+start "WebGuard-Frontend" cmd /k "cd /d "%ROOT%\frontend" && npm run dev"
 
 REM 4 saniye bekle
 ping 127.0.0.1 -n 5 >nul
