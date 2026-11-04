@@ -21,7 +21,10 @@ def normalize_url(url: str) -> str:
     path = parsed.path.rstrip("/")
     if not path:
         path = "/"
-    cleaned = parsed._replace(fragment="", path=path).geturl()
+    # Preserve SPA hash routing (e.g., #/about, #!/contact, #/products)
+    fragment = parsed.fragment
+    preserved_frag = fragment if fragment.startswith(("/", "!/")) else ""
+    cleaned = parsed._replace(fragment=preserved_frag, path=path).geturl()
     return cleaned
 
 def get_base_domain(netloc: str) -> str:
@@ -42,7 +45,10 @@ def is_same_domain(url: str, seed_domain: str) -> bool:
         return False
 
 def is_crawlable_link(url: str, seed_domain: str) -> bool:
-    if not url or url.startswith(("javascript:", "mailto:", "tel:", "#", "data:")):
+    if not url or url.startswith(("javascript:", "mailto:", "tel:", "data:")):
+        return False
+    # Ignore simple in-page anchor links (e.g., #top, #section1) unless it's SPA hash routing (#/route)
+    if url.startswith("#") and not url.startswith(("#/", "#!/")):
         return False
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):

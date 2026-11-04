@@ -57,8 +57,9 @@ async def execute_scan(
     if prd_content and prd_content.strip():
         try:
             prd_analysis = await analyze_prd_and_generate_tests(prd_content, sanitized_url)
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
     headers = {"User-Agent": settings.USER_AGENT}
     async with httpx.AsyncClient(
@@ -93,8 +94,9 @@ async def execute_scan(
             crawl_graph = crawl_nodes
             crawled_pages_count = len(crawl_nodes)
             all_findings.extend(crawler_findings)
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
     security_score = calculate_category_score(all_findings, Category.SECURITY)
     ux_score = calculate_category_score(all_findings, Category.UX)
@@ -117,7 +119,8 @@ async def execute_scan(
     if webhook_url:
         try:
             asyncio.create_task(dispatch_webhook(webhook_url, result))
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
     return result
