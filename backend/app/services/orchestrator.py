@@ -9,6 +9,7 @@ from app.models.schema import Finding, ScanResult, ScanStatus, Category
 from app.scanners.security.headers import SecurityHeadersScanner
 from app.scanners.security.ssl_tls import SSLTLSScanner
 from app.scanners.security.exposure import ExposureScanner
+from app.scanners.security.error_handling import ErrorHandlingScanner
 from app.scanners.security.technologies import TechnologyScanner
 from app.scanners.ux.basic_ux import BasicUXScanner
 from app.scanners.ux.links import BrokenLinksScanner
@@ -23,6 +24,7 @@ SCANNERS = [
     SecurityHeadersScanner(),
     SSLTLSScanner(),
     ExposureScanner(),
+    ErrorHandlingScanner(),
     TechnologyScanner(),
     BasicUXScanner(),
     BrokenLinksScanner(),

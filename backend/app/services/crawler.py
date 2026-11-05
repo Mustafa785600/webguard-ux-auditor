@@ -240,6 +240,9 @@ class AutonomousCrawler:
                 await browser.close()
 
         except Exception as e:
+            import traceback
+            print(f"[CRAWLER CRITICAL ERROR]: {type(e).__name__}: {e}")
+            traceback.print_exc()
             # Fallback for headless environments or network failure
             if not crawl_nodes:
                 crawl_nodes.append(

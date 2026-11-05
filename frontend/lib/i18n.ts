@@ -205,12 +205,92 @@ const FINDING_TRANSLATIONS_TR: Record<string, FindingTranslation> = {
     remediation:
       "Tarayıcıların bildirilen MIME türlerine kesinlikle uymasını sağlamak için X-Content-Type-Options başlığını 'nosniff' olarak ayarlayın.",
   },
+  SEC_REFERRER_POLICY_MISSING: {
+    title: "Eksik Referrer-Policy Başlığı",
+    description: "Sunucu bir Referrer-Policy başlığı tanımlamamış; bu durum hassas URL yollarının ve sorgu parametrelerinin üçüncü taraf etki alanlarına sızmasına neden olabilir.",
+    risk_impact:
+      "Açık bir politika olmadığında kullanıcılar dış bağlantılara tıkladığında oturum token'ları, e-posta adresleri veya dahili parametreleri içeren tam URL yolları Referer başlığıyla harici sunuculara sızdırılabilir.",
+    remediation:
+      "Referans bilgilerini sınırlandırmak için 'Referrer-Policy' başlığını 'strict-origin-when-cross-origin' veya 'no-referrer' olarak yapılandırın.",
+  },
+  SEC_INSECURE_REFERRER_POLICY: {
+    title: "Güvensiz Referrer-Policy ('unsafe-url')",
+    description: "Referrer-Policy değeri 'unsafe-url' olarak ayarlanmış; protokol güvenliğine bakılmaksızın tüm hedeflere tam URL yolu ve parametreleri gönderilir.",
+    risk_impact:
+      "'unsafe-url' ayarı, şifresiz HTTP bağlantıları dahil tüm çapraz etki alanı isteklerinde gizli URL parametrelerini açıkça ifşa eder.",
+    remediation:
+      "Referrer-Policy değerini güvenli olan 'strict-origin-when-cross-origin' veya 'no-referrer' ile değiştirin.",
+  },
+  SEC_PERMISSIONS_POLICY_MISSING: {
+    title: "Eksik Permissions-Policy Başlığı",
+    description: "Web sunucusu, hassas tarayıcı yeteneklerini (kamera, mikrofon, konum) kısıtlayacak bir Permissions-Policy başlığı sunmuyor.",
+    risk_impact:
+      "Permissions-Policy başlığı olmadan sayfaya gömülen iframe'ler veya ele geçirilmiş üçüncü taraf kütüphaneler kamera, mikrofon veya coğrafi konum gibi yüksek yetkili API'lere kontrolsüz erişim talep edebilir.",
+    remediation:
+      "Hassas tarayıcı API'lerine erişimi kısıtlayan bir Permissions-Policy başlığı ekleyin (örneğin: camera=(), microphone=(), geolocation=()).",
+  },
   SEC_SERVER_INFO_LEAK: {
     title: "Sunucu Sürümü / Teknoloji Sızıntısı",
     description: "Sunucu, yanıt başlıklarında teknoloji ve sürüm imzalarını ifşa ediyor.",
     risk_impact:
       "Sunucu yazılımı ve kesin sürüm numaralarının ifşa edilmesi, otomatik tarayıcıların ve saldırganların yamalanmamış CVE açıklarını tespit edip hedef almasını kolaylaştırır.",
     remediation: "Web sunucusu yapılandırmasında 'Server' ve 'X-Powered-By' başlıklarını gizleyin veya kaldırın.",
+  },
+  SEC_INSECURE_COOKIE: {
+    title: "Güvensiz Çerez Yapılandırması",
+    description: "Tarayıcıya gönderilen çerezlerde 'Secure', 'HttpOnly' veya 'SameSite' güvenlik bayrakları eksik veya hatalı yapılandırılmış.",
+    risk_impact:
+      "'Secure' bayrağı olmayan çerezler şifresiz HTTP trafiğinde dinlenebilir. 'HttpOnly' olmayan çerezler XSS saldırılarında JavaScript ile çalınabilir. 'SameSite' bayrağı eksik veya uygunsuz çerezler ise siteler arası istek sahteciliği (CSRF) saldırılarına kapı aralar.",
+    remediation:
+      "Tüm oturum ve kimlik doğrulama çerezlerinde 'Secure', 'HttpOnly' ve 'SameSite=Lax' veya 'SameSite=Strict' bayraklarını zorunlu kılın.",
+  },
+  SEC_EXPOSED_DB_DUMP: {
+    title: "Açıkta Veritabanı Dökümü (.sql)",
+    description: "Web kök dizininde herkese açık SQL veritabanı dökümü tespit edildi; tüm tablolar ve kayıtlar ifşa durumdadır.",
+    risk_impact:
+      "Saldırganlar doğrudan veritabanı dosyasını indirerek kullanıcı kimlik bilgilerine, parola özetlerine (hash), kişisel verilere (KVKK/GDPR) ve ticari sırlara anında erişebilir.",
+    remediation:
+      "Veritabanı döküm dosyalarını derhal sunucudan silin. Web sunucusunda .sql uzantılı dosyalara erişimi yasaklayın ve yedekleri sadece şifreli, izole depolama alanlarında tutun.",
+  },
+  SEC_EXPOSED_BACKUP_ARCHIVE: {
+    title: "Açıkta Sıkıştırılmış Yedek Arşivi (.zip / .tar.gz)",
+    description: "Web sunucusunda herkese açık sıkıştırılmış kaynak kod ve site yedek arşivi tespit edildi.",
+    risk_impact:
+      "Uygulamanın kaynak kodları, sunucu konfigürasyonları, gizli API anahtarları ve mimari yapısı saldırganlar tarafından indirilip incelenebilir.",
+    remediation:
+      "Arşiv dosyalarını web kök dizininden kaldırın ve web sunucusunda .zip, .tar, .gz gibi arşiv formatlarına HTTP üzerinden erişimi engelleyin.",
+  },
+  SEC_TABNABBING_RISK: {
+    title: "Tersine Tabnabbing (Reverse Tabnabbing) Güvenlik Açığı",
+    description: "Yeni sekmede açılan (target='_blank') bağlantılarda 'rel=\"noopener noreferrer\"' güvenlik özniteliği eksik.",
+    risk_impact:
+      "Yeni sekmede açılan hedef web sayfası 'window.opener' DOM nesnesine erişebilir ve kullanıcının arkada kalan orijinal sekmesini sahte bir kimlik avı (phishing) sayfasına gizlice yönlendirebilir.",
+    remediation:
+      "Yeni sekmede açılan tüm <a> bağlantılarına rel=\"noopener noreferrer\" özniteliğini ekleyerek çapraz pencere erişimini izole edin.",
+  },
+  SEC_HTTP_NO_REDIRECT: {
+    title: "HTTP'den HTTPS'e Otomatik Yönlendirme Eksik",
+    description: "Sunucu, port 80 üzerinden gelen düz metin HTTP isteklerini HTTPS'e yönlendirmeden doğrudan sunuyor.",
+    risk_impact:
+      "Kullanıcılar adresi 'https://' yazmadan girdiğinde trafik şifresiz iletilir; yerel ağdaki saldırganlar SSL stripping saldırısı yaparak kullanıcı parolalarını ve oturum çerezlerini kolayca çalabilir.",
+    remediation:
+      "Web sunucusunun 80 numaralı port yapılandırmasında tüm gelen istekleri '301 Moved Permanently' ile 'https://' protokolüne yönlendirin.",
+  },
+  SEC_HTTP_TEMPORARY_REDIRECT: {
+    title: "HTTP'den HTTPS'e Geçici Yönlendirme (302/307)",
+    description: "Sunucu, HTTP'den HTTPS'e yükseltme için kalıcı (301/308) yerine geçici (302/307) yönlendirme kodu kullanıyor.",
+    risk_impact:
+      "Geçici yönlendirmeler tarayıcılar tarafından önbelleğe alınmaz. Kullanıcıların her ziyaretinde tarayıcı ilk önce şifresiz HTTP isteği gönderir ve bu durum ağ dinleme saldırılarına açık kapı bırakır.",
+    remediation:
+      "Yönlendirme durum kodunu '301 Moved Permanently' veya '308 Permanent Redirect' olarak güncelleyin.",
+  },
+  SEC_STACK_TRACE_DISCLOSURE: {
+    title: "Stack Trace / Hata ve Debug Ekranı Sızıntısı",
+    description: "Sunucu hata yanıtlarında ayrıntılı kod yığın izleri (stack trace), veritabanı sürücü hataları veya framework hata ayıklama (debug) ekranlarını ifşa ediyor.",
+    risk_impact:
+      "Ayrıntılı hata ekranları; sunucudaki mutlak dosya yollarını, veritabanı tablo isimlerini, kaynak kod parçalarını ve kütüphane sürümlerini ifşa eder. Saldırganlar bu mimari haritayı kullanarak hedefe yönelik güvenlik açığı sömürüleri geliştirir.",
+    remediation:
+      "Canlı (production) ortamda hata ayıklama modunu tamamen kapatın (DEBUG=False, display_errors=Off). İstisnaları yakalayan ve yığın izi içermeyen genel, güvenli özel 500 hata sayfaları yapılandırın.",
   },
   QA_SLOW_API_ENDPOINT: {
     title: "Yavaş API Yanıtı Tespit Edildi (> 2000ms)",

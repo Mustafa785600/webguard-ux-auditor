@@ -87,6 +87,56 @@ class SecurityHeadersScanner(BaseScanner):
                 )
             )
 
+        # Referrer-Policy Check
+        referrer_policy = headers.get("referrer-policy", "").lower().strip()
+        if not referrer_policy:
+            findings.append(
+                Finding(
+                    id="SEC_REFERRER_POLICY_MISSING",
+                    category=Category.SECURITY,
+                    severity=Severity.LOW,
+                    title="Missing Referrer-Policy Header",
+                    description="The server does not specify a Referrer-Policy header, which may lead to unintentional leakage of sensitive URL paths and query parameters to third-party domains.",
+                    remediation="Configure the 'Referrer-Policy' header to 'strict-origin-when-cross-origin' or 'no-referrer'.",
+                    risk_impact="Without an explicit policy, browsers may include full paths and query strings (potentially containing session tokens, email addresses, or internal parameters) in the HTTP Referer header when navigating to external websites.",
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    # Missing Referrer-Policy header\n}"
+                )
+            )
+        elif referrer_policy == "unsafe-url":
+            findings.append(
+                Finding(
+                    id="SEC_INSECURE_REFERRER_POLICY",
+                    category=Category.SECURITY,
+                    severity=Severity.MEDIUM,
+                    title="Insecure Referrer-Policy ('unsafe-url')",
+                    description="Referrer-Policy is set to 'unsafe-url', sending full URL paths and query strings to all destinations regardless of security protocol.",
+                    remediation="Change Referrer-Policy to 'strict-origin-when-cross-origin' or 'no-referrer'.",
+                    risk_impact="Setting 'unsafe-url' leaks full URLs (including sensitive query parameters) across all cross-origin requests, including unencrypted HTTP connections.",
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="add_header Referrer-Policy \"unsafe-url\" always;"
+                )
+            )
+
+        # Permissions-Policy Check (formerly Feature-Policy)
+        if "permissions-policy" not in headers and "feature-policy" not in headers:
+            findings.append(
+                Finding(
+                    id="SEC_PERMISSIONS_POLICY_MISSING",
+                    category=Category.SECURITY,
+                    severity=Severity.LOW,
+                    title="Missing Permissions-Policy Header",
+                    description="The web server does not provide a Permissions-Policy header to restrict powerful browser capabilities (camera, microphone, geolocation).",
+                    remediation="Add a Permissions-Policy header explicitly controlling access to sensitive browser APIs (e.g. camera=(), microphone=(), geolocation=()).",
+                    risk_impact="Without a Permissions-Policy header, embedded iframes or compromised third-party scripts may gain unauthorized access to browser APIs such as the camera, microphone, or user location.",
+                    code_example="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}",
+                    target_location="nginx.conf (server block)",
+                    problematic_code="server {\n    listen 443 ssl http2;\n    server_name example.com;\n    # Missing Permissions-Policy header\n}"
+                )
+            )
+
         server_header = headers.get("server") or headers.get("x-powered-by")
         if server_header:
             findings.append(
@@ -105,26 +155,94 @@ class SecurityHeadersScanner(BaseScanner):
                 )
             )
 
-        for cookie in response.cookies.jar:
+        # Cookie Security Inspection (Secure, HttpOnly, SameSite)
+        cookies_to_inspect = []
+        seen_names = set()
+
+        # 1. Inspect raw Set-Cookie headers
+        raw_set_cookies = response.headers.get_list("set-cookie") if hasattr(response.headers, "get_list") else []
+        for raw_cookie in raw_set_cookies:
+            parts = [p.strip() for p in raw_cookie.split(";") if p.strip()]
+            if not parts:
+                continue
+            name = parts[0].split("=", 1)[0].strip()
+            directives = {}
+            for p in parts[1:]:
+                if "=" in p:
+                    k, v = p.split("=", 1)
+                    directives[k.strip().lower()] = v.strip()
+                else:
+                    directives[p.strip().lower()] = True
+
+            seen_names.add(name)
+            cookies_to_inspect.append({
+                "name": name,
+                "secure": "secure" in directives,
+                "httponly": "httponly" in directives,
+                "samesite": directives.get("samesite")
+            })
+
+        # 2. Fallback to response.cookies.jar
+        try:
+            jar = getattr(response.cookies, "jar", [])
+        except Exception:
+            jar = []
+
+        for cookie in jar:
+            if cookie.name in seen_names:
+                continue
+            is_secure = bool(cookie.secure)
+            is_httponly = bool(cookie.has_nonstandard_attr("HttpOnly") or getattr(cookie, "httponly", False))
+            samesite = cookie.get_nonstandard_attr("SameSite") or cookie.get_nonstandard_attr("samesite")
+            if not samesite and hasattr(cookie, "_rest"):
+                for k, v in cookie._rest.items():
+                    if k.lower() == "samesite":
+                        samesite = v or True
+                        break
+
+            cookies_to_inspect.append({
+                "name": cookie.name,
+                "secure": is_secure,
+                "httponly": is_httponly,
+                "samesite": samesite
+            })
+
+        for c in cookies_to_inspect:
+            cookie_name = c["name"]
             issues = []
-            if not cookie.secure:
+            if not c["secure"]:
                 issues.append("Missing Secure flag")
-            if not cookie.has_nonstandard_attr("HttpOnly") and not getattr(cookie, "httponly", False):
+            if not c["httponly"]:
                 issues.append("Missing HttpOnly flag")
+
+            samesite = c.get("samesite")
+            if not samesite:
+                issues.append("Missing SameSite attribute (CSRF risk)")
+            else:
+                samesite_str = str(samesite).lower()
+                if samesite_str not in ("lax", "strict"):
+                    if samesite_str == "none":
+                        if not c["secure"]:
+                            issues.append("SameSite=None without Secure flag (rejected by modern browsers)")
+                        else:
+                            issues.append("SameSite=None relaxes cross-site request forgery protection")
+                    else:
+                        issues.append(f"Invalid SameSite value ('{samesite}')")
+
             if issues:
                 findings.append(
                     Finding(
                         id="SEC_INSECURE_COOKIE",
                         category=Category.SECURITY,
                         severity=Severity.MEDIUM,
-                        title=f"Insecure Cookie Flags: {cookie.name}",
-                        description=f"Cookie '{cookie.name}' has security deficiencies: {', '.join(issues)}.",
+                        title=f"Insecure Cookie Flags: {cookie_name}",
+                        description=f"Cookie '{cookie_name}' has security deficiencies: {', '.join(issues)}.",
                         remediation="Ensure all session and authentication cookies enforce 'Secure', 'HttpOnly', and 'SameSite=Lax/Strict'.",
-                        evidence={"cookie_name": cookie.name, "issues": issues},
-                        risk_impact="Cookies lacking the Secure flag can be intercepted over unencrypted HTTP. Cookies without HttpOnly can be stolen by JavaScript in the event of an XSS vulnerability.",
+                        evidence={"cookie_name": cookie_name, "issues": issues},
+                        risk_impact="Cookies lacking the Secure flag can be intercepted over unencrypted HTTP. Cookies without HttpOnly can be stolen by JavaScript in the event of an XSS vulnerability. Missing or improper SameSite flags allow cross-site requests to transmit cookies, leaving users vulnerable to Cross-Site Request Forgery (CSRF).",
                         code_example="response.set_cookie(key=\"session\", value=token, secure=True, httponly=True, samesite=\"lax\")",
                         target_location="Backend Application (Set-Cookie)",
-                        problematic_code=f"Set-Cookie: {cookie.name}=***; (Deficiencies: {', '.join(issues)})"
+                        problematic_code=f"Set-Cookie: {cookie_name}=***; (Deficiencies: {', '.join(issues)})"
                     )
                 )
 

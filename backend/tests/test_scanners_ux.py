@@ -50,6 +50,27 @@ def test_broken_links_url_cleaner():
     assert scanner._clean_url(base, "../index.html") == "https://example.com/index.html"
     assert scanner._clean_url(base, "https://other.org/resource") == "https://other.org/resource"
 
+def test_tabnabbing_detection():
+    scanner = BrokenLinksScanner()
+
+    # Vulnerable link: target="_blank" without rel
+    html_vuln = '<html><body><a href="https://external.com" target="_blank">External</a></body></html>'
+    soup_vuln = BeautifulSoup(html_vuln, "html.parser")
+    findings_vuln = scanner._check_tabnabbing(soup_vuln)
+    assert any(f.id == "SEC_TABNABBING_RISK" for f in findings_vuln)
+
+    # Secure link: target="_blank" with rel="noopener noreferrer"
+    html_safe = '<html><body><a href="https://external.com" target="_blank" rel="noopener noreferrer">External</a></body></html>'
+    soup_safe = BeautifulSoup(html_safe, "html.parser")
+    findings_safe = scanner._check_tabnabbing(soup_safe)
+    assert not any(f.id == "SEC_TABNABBING_RISK" for f in findings_safe)
+
+    # Normal link: target not _blank
+    html_normal = '<html><body><a href="https://external.com">External</a></body></html>'
+    soup_normal = BeautifulSoup(html_normal, "html.parser")
+    findings_normal = scanner._check_tabnabbing(soup_normal)
+    assert not any(f.id == "SEC_TABNABBING_RISK" for f in findings_normal)
+
 def test_forms_a11y_violations():
     scanner = FormsA11yScanner()
 

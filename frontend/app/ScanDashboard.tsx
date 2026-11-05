@@ -8,6 +8,7 @@ import ScoreCard from "./ScoreCard";
 import NetworkWaterfallCard from "./NetworkWaterfallCard";
 import PrdIntelligenceCard from "./PrdIntelligenceCard";
 import CrawlGraphView from "./CrawlGraphView";
+import GeneralControlModal from "./GeneralControlModal";
 import {
   type Language,
   UI_STRINGS,
@@ -42,6 +43,7 @@ export default function ScanDashboard() {
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");
+  const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
 
   const t = UI_STRINGS[lang];
 
@@ -272,6 +274,14 @@ export default function ScanDashboard() {
               <span className="results-bar-label">{t.scanned}</span>
               <span className="results-bar-url">{result.target_url}</span>
               <div className="results-actions">
+                <button
+                  type="button"
+                  className="btn-action btn-checklist"
+                  onClick={() => setShowGeneralControl(true)}
+                  title={lang === "tr" ? "GeneralControl Denetim Listesi" : "GeneralControl Checklist"}
+                >
+                  🛡️ {lang === "tr" ? "GeneralControl Listesi" : "GeneralControl Checklist"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -418,6 +428,26 @@ export default function ScanDashboard() {
                 )}
               </>
             )}
+
+            <GeneralControlModal
+              isOpen={showGeneralControl}
+              onClose={() => setShowGeneralControl(false)}
+              findings={result.findings}
+              lang={lang}
+              onSelectFinding={(fid) => {
+                setActiveTab("FINDINGS");
+                setTimeout(() => {
+                  const card = document.getElementById(`finding-${fid}`);
+                  if (card) {
+                    card.scrollIntoView({ behavior: "smooth", block: "center" });
+                    card.style.outline = "2px solid #818cf8";
+                    setTimeout(() => {
+                      card.style.outline = "none";
+                    }, 2500);
+                  }
+                }, 200);
+              }}
+            />
           </>
         )}
       </main>

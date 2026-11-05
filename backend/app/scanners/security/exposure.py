@@ -29,12 +29,80 @@ SENSITIVE_TARGETS = [
         "title": "Exposed Git Repository (.git/HEAD)",
         "description": "The .git directory is publicly accessible, allowing attackers to download and reconstruct entire source code repositories.",
         "remediation": "Block HTTP/HTTPS access to all '.git' directories and files in your web server configuration.",
-        "validator": lambda text, ct: text.strip().startswith("ref: refs/"),
+        "validator": lambda text, ct, raw_bytes=b"": text.strip().startswith("ref: refs/"),
         "risk_impact": "Attackers can dump the complete Git repository, recovering full proprietary source code, commit history, and historical hardcoded credentials.",
         "code_example": "location ~ /\\.git {\n    deny all;\n    return 404;\n}",
         "target_location": ".git/HEAD",
         "line_number": 1,
         "problematic_code": "/.git/HEAD (Publicly Accessible)"
+    },
+    {
+        "path": "/dump.sql",
+        "id": "SEC_EXPOSED_DB_DUMP",
+        "severity": Severity.CRITICAL,
+        "title": "Exposed SQL Database Dump (/dump.sql)",
+        "description": "Publicly accessible SQL database dump detected, exposing complete database tables, schemas, and confidential records.",
+        "remediation": "Immediately remove database dump files from the public web root and block HTTP access to '.sql' files.",
+        "validator": lambda text, ct, raw_bytes=b"": not text.lstrip().startswith("<!DOCTYPE") and not text.lstrip().startswith("<html") and any(
+            kw in text.upper() for kw in ("CREATE TABLE", "INSERT INTO", "DROP TABLE", "-- MYSQL DUMP", "-- POSTGRESQL", "BEGIN TRANSACTION")
+        ),
+        "risk_impact": "Attackers can download production databases containing sensitive user credentials, password hashes, PII, and financial or business data.",
+        "code_example": "location ~* \\.(sql|bak|dump)$ {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root (/dump.sql)",
+        "line_number": 1,
+        "problematic_code": "/dump.sql (Publicly Accessible Database Dump)"
+    },
+    {
+        "path": "/backup.sql",
+        "id": "SEC_EXPOSED_DB_DUMP",
+        "severity": Severity.CRITICAL,
+        "title": "Exposed SQL Database Dump (/backup.sql)",
+        "description": "Publicly accessible SQL database backup detected, exposing proprietary database schemas and records.",
+        "remediation": "Delete SQL backup files from web servers and store database backups exclusively in private, encrypted storage.",
+        "validator": lambda text, ct, raw_bytes=b"": not text.lstrip().startswith("<!DOCTYPE") and not text.lstrip().startswith("<html") and any(
+            kw in text.upper() for kw in ("CREATE TABLE", "INSERT INTO", "DROP TABLE", "-- MYSQL DUMP", "-- POSTGRESQL", "BEGIN TRANSACTION")
+        ),
+        "risk_impact": "Database backups contain the entirety of the application database, permitting instantaneous offline credential cracking and data exfiltration.",
+        "code_example": "location ~* \\.(sql|bak|dump)$ {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root (/backup.sql)",
+        "line_number": 1,
+        "problematic_code": "/backup.sql (Publicly Accessible Database Backup)"
+    },
+    {
+        "path": "/backup.zip",
+        "id": "SEC_EXPOSED_BACKUP_ARCHIVE",
+        "severity": Severity.CRITICAL,
+        "title": "Exposed Compressed Archive Backup (/backup.zip)",
+        "description": "Publicly accessible compressed archive backup detected, exposing source code, configuration files, and assets.",
+        "remediation": "Remove compressed backup archives from the web server and enforce deny rules for archive formats.",
+        "validator": lambda text, ct, raw_bytes=b"": not text.lstrip().startswith("<!DOCTYPE") and not text.lstrip().startswith("<html") and (
+            raw_bytes.startswith(b"PK\x03\x04") or text.startswith("PK") or any(
+                zct in ct.lower() for zct in ("application/zip", "application/x-zip-compressed", "application/octet-stream")
+            )
+        ),
+        "risk_impact": "Publicly downloadable zip backups allow adversaries to reconstruct the entire web application, including server-side code, secrets, and architecture.",
+        "code_example": "location ~* \\.(zip|tar|gz|7z|rar|bak)$ {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root (/backup.zip)",
+        "line_number": 1,
+        "problematic_code": "/backup.zip (Publicly Accessible Archive)"
+    },
+    {
+        "path": "/backup.tar.gz",
+        "id": "SEC_EXPOSED_BACKUP_ARCHIVE",
+        "severity": Severity.CRITICAL,
+        "title": "Exposed Compressed Tarball Backup (/backup.tar.gz)",
+        "description": "Publicly accessible tarball archive detected, exposing application source tree and configurations.",
+        "remediation": "Block access to archive files and store build artifacts offsite.",
+        "validator": lambda text, ct, raw_bytes=b"": not text.lstrip().startswith("<!DOCTYPE") and not text.lstrip().startswith("<html") and (
+            raw_bytes.startswith(b"\x1f\x8b") or any(
+                zct in ct.lower() for zct in ("application/gzip", "application/x-gzip", "application/x-tar")
+            )
+        ),
+        "risk_impact": "Direct download of web application tarball backups enables comprehensive offline security analysis, hardcoded secret discovery, and intellectual property theft.",
+        "code_example": "location ~* \\.(zip|tar|gz|7z|rar|bak)$ {\n    deny all;\n    return 404;\n}",
+        "target_location": "Web Root (/backup.tar.gz)",
+        "line_number": 1,
+        "problematic_code": "/backup.tar.gz (Publicly Accessible Tarball)"
     },
     {
         "path": "/swagger.json",
@@ -94,7 +162,13 @@ class ExposureScanner(BaseScanner):
             if resp.status_code == 200:
                 body_text = resp.text
                 content_type = resp.headers.get("content-type", "")
-                if target_spec["validator"](body_text, content_type):
+                raw_bytes = getattr(resp, "content", b"")
+                try:
+                    is_valid = target_spec["validator"](body_text, content_type, raw_bytes)
+                except TypeError:
+                    is_valid = target_spec["validator"](body_text, content_type)
+
+                if is_valid:
                     return Finding(
                         id=target_spec["id"],
                         category=Category.SECURITY,

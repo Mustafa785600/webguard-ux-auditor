@@ -70,7 +70,7 @@ export default function FindingCard({
   );
 
   return (
-    <article className="finding-card">
+    <article className="finding-card" id={`finding-${finding.id}`}>
       <div
         className="finding-header"
         onClick={() => setOpen((o) => !o)}

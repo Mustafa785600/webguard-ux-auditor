@@ -57,6 +57,9 @@ class BrokenLinksScanner(BaseScanner):
         broken_assets = [res for res in asset_results if isinstance(res, tuple) and res[1] >= 400]
         broken_links = [res for res in link_results if isinstance(res, tuple) and res[1] >= 400]
 
+        # Tabnabbing security checks (target="_blank" without rel="noopener noreferrer")
+        findings.extend(self._check_tabnabbing(soup))
+
         if broken_assets:
             first_url, first_status = broken_assets[0]
             first_tag = assets_map.get(first_url)
@@ -108,6 +111,44 @@ class BrokenLinksScanner(BaseScanner):
         absolute = urljoin(base_url, trimmed)
         parsed = urlparse(absolute)
         return absolute if parsed.scheme in ("http", "https") else None
+
+    def _check_tabnabbing(self, soup: BeautifulSoup) -> List[Finding]:
+        tabnabbing_links = []
+        for a_tag in soup.find_all("a", href=True):
+            target = a_tag.get("target", "")
+            if isinstance(target, list):
+                target = target[0] if target else ""
+            if str(target).strip().lower() == "_blank":
+                rel = a_tag.get("rel") or []
+                if isinstance(rel, str):
+                    rel_tokens = {r.lower().strip() for r in rel.split()}
+                else:
+                    rel_tokens = {str(r).lower().strip() for r in rel}
+
+                if "noopener" not in rel_tokens and "noreferrer" not in rel_tokens:
+                    tabnabbing_links.append(a_tag)
+
+        if not tabnabbing_links:
+            return []
+
+        first_tag = tabnabbing_links[0]
+        link_line = getattr(first_tag, "sourceline", None)
+        return [
+            Finding(
+                id="SEC_TABNABBING_RISK",
+                category=Category.SECURITY,
+                severity=Severity.MEDIUM,
+                title=f"{len(tabnabbing_links)} Link(s) Vulnerable to Reverse Tabnabbing (Missing rel=\"noopener\")",
+                description="Hyperlinks opening in a new tab (target='_blank') lack 'rel=\"noopener noreferrer\"', allowing target pages to access and manipulate 'window.opener'.",
+                remediation="Add rel=\"noopener noreferrer\" to all <a> elements that specify target=\"_blank\".",
+                evidence={"count": len(tabnabbing_links), "samples": [str(t)[:100] for t in tabnabbing_links[:3]]},
+                risk_impact="Target pages opened in a new tab can manipulate 'window.opener.location', silently navigating the originating tab to a spoofed phishing page without user notice.",
+                code_example="<a href=\"https://external.example.com\" target=\"_blank\" rel=\"noopener noreferrer\">\n    External Link\n</a>",
+                target_location="index.html",
+                line_number=link_line,
+                problematic_code=str(first_tag)[:160]
+            )
+        ]
 
     async def _probe_url(self, url: str, client: httpx.AsyncClient) -> Tuple[str, int]:
         try:

@@ -186,7 +186,51 @@ class SSLTLSScanner(BaseScanner):
                     )
                 )
 
+        # Check HTTP to HTTPS automatic redirect on port 80
+        redirect_finding = await self._check_http_to_https_redirect(hostname, client)
+        if redirect_finding:
+            findings.append(redirect_finding)
+
         return findings
+
+    async def _check_http_to_https_redirect(self, hostname: str, client: Optional[httpx.AsyncClient]) -> Optional[Finding]:
+        if not client or not hostname:
+            return None
+
+        http_probe_url = f"http://{hostname}"
+        try:
+            resp = await client.get(http_probe_url, follow_redirects=False, timeout=5.0)
+            if resp.status_code == 200:
+                return Finding(
+                    id="SEC_HTTP_NO_REDIRECT",
+                    category=Category.SECURITY,
+                    severity=Severity.HIGH,
+                    title="Missing Automatic HTTP to HTTPS Redirect",
+                    description=f"Server serves unencrypted plaintext HTTP on port 80 ({http_probe_url}) without redirecting to HTTPS.",
+                    remediation="Configure the web server on port 80 to permanently redirect (301 Moved Permanently) all requests to https://.",
+                    risk_impact="Users who navigate to http:// or type the address without 'https://' remain unencrypted, allowing attackers on the local network to execute SSL stripping and intercept credentials.",
+                    code_example="server {\n    listen 80;\n    server_name example.com www.example.com;\n    return 301 https://$host$request_uri;\n}",
+                    target_location="Web Server Configuration (nginx.conf / httpd.conf)",
+                    problematic_code=f"Plaintext HTTP accessible with status 200 OK at {http_probe_url}"
+                )
+            elif resp.status_code in (302, 307):
+                loc = resp.headers.get("location", "")
+                if loc.startswith("https://"):
+                    return Finding(
+                        id="SEC_HTTP_TEMPORARY_REDIRECT",
+                        category=Category.SECURITY,
+                        severity=Severity.LOW,
+                        title="HTTP to HTTPS Uses Temporary Redirect (302/307)",
+                        description=f"Server redirects HTTP to HTTPS using a temporary redirect ({resp.status_code}) instead of a permanent redirect (301/308).",
+                        remediation="Upgrade the redirect status code on port 80 to 301 Moved Permanently or 308 Permanent Redirect to enable browser redirect caching.",
+                        risk_impact="Temporary redirects are not cached by browsers, forcing client devices to make unencrypted round-trip HTTP requests on every subsequent visit, increasing exposure to SSL stripping.",
+                        code_example="server {\n    listen 80;\n    server_name example.com;\n    return 301 https://$host$request_uri;\n}",
+                        target_location="Web Server Configuration (nginx.conf / httpd.conf)",
+                        problematic_code=f"HTTP {resp.status_code} Redirect to {loc}"
+                    )
+        except Exception:
+            pass
+        return None
 
     async def _fetch_cert_and_tls_details(self, hostname: str, port: int):
         ctx = ssl.create_default_context()
