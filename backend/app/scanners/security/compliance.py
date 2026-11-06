@@ -506,3 +506,4 @@ class ComplianceScanner(BaseScanner):
                 continue
 
         return findings
+

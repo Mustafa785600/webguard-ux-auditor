@@ -9,6 +9,7 @@ import NetworkWaterfallCard from "./NetworkWaterfallCard";
 import PrdIntelligenceCard from "./PrdIntelligenceCard";
 import CrawlGraphView from "./CrawlGraphView";
 import GeneralControlModal from "./GeneralControlModal";
+import AuditReportModal from "./AuditReportModal";
 import {
   type Language,
   UI_STRINGS,
@@ -45,6 +46,7 @@ export default function ScanDashboard() {
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
+  const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
   const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
 
   const t = UI_STRINGS[lang];
@@ -312,10 +314,18 @@ export default function ScanDashboard() {
                 >
                   🛡️ {lang === "tr" ? "GeneralControl Listesi" : "GeneralControl Checklist"}
                 </button>
+                <button
+                  type="button"
+                  className="btn-action btn-report-trigger"
+                  onClick={() => setShowAuditReport(true)}
+                  title={lang === "tr" ? "Resmi Yönetici Denetim Raporu" : "Executive Audit Report"}
+                >
+                  📄 {lang === "tr" ? "Resmi PDF Raporu" : "Executive PDF Report"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
-                <button className="btn-action" onClick={() => window.print()} title="Print / PDF">
+                <button className="btn-action" onClick={() => setShowAuditReport(true)} title="Print / PDF">
                   {t.printPdf}
                 </button>
               </div>
@@ -502,6 +512,13 @@ export default function ScanDashboard() {
                   }
                 }, 200);
               }}
+            />
+
+            <AuditReportModal
+              isOpen={showAuditReport}
+              onClose={() => setShowAuditReport(false)}
+              result={result}
+              lang={lang}
             />
           </>
         )}

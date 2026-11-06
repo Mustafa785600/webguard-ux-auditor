@@ -73,6 +73,16 @@ Bu belge, yeni bir sohbete geçildiğinde yapay zekanın (Antigravity) projeyi, 
 - **OWASP API Security Top 10:** Wildcard CORS (`Access-Control-Allow-Origin: *`) ve açık Swagger/OpenAPI dokümantasyon sızıntıları.
 - **Frontend Gösterimi:** URL çubuğu altında şık rozetlerle sektör seçici; sonuç ekranında aktif sektör rozeti, Yapay Zeka otomatik tespit etiketi, 3. skor kartı olarak **Uyumluluk & Mevzuat Skoru** ve bulgu kartlarında `⚖️ [Standart Kuralı]` etiketleri.
 
+### I. Kurumsal Yönetici Özeti & Resmi PDF Denetim Raporu (`AuditReportModal.tsx`)
+- **Resmi Antet & Rapor No:** Her taramaya özel `WG-XXXXXXXX` referans numarası, ISO 27001 ve PCI-DSS uyumlu kurumsal başlık.
+- **Genel Not & Damga (Executive Grade Stamp):** Genel güvenlik, uyumluluk ve UX puanına göre dinamik `A+`, `A`, `B`, `C`, `F` resmi sertifika damgası.
+- **Üçlü Skor Tablosu:** Güvenlik Skoru, Sektörel Uyumluluk Skoru ve UX Skorunun görsel ilerleme çubuklarıyla sunumu.
+- **Yönetici Değerlendirmesi:** Denetlenen hedef, uygulanan protokol ve kritik risk sayısını özetleyen resmi metin.
+- **27 Maddelik GeneralControl Matrisi:** Tablo formatında 27 kriterin kategori, kapsam ve denetim sonucu (✓ GEÇTİ / ✕ RİSKLİ).
+- **Bulgular & Eylem Planı (Remediation Plan):** Tespit edilen açıklar, risk etkileri ve Nginx/sunucu çözüm kod blokları.
+- **Resmi İmza & Doğrulama Alanı:** WebGuard AI Auditor v2.4 sertifika onay alanı ve denetim tarihi.
+- **Baskı & PDF Standardı (`@media print`):** A4 dikey (portrait) sayfa yapısı, kurumsal beyaz kağıt teması, sayfa bölme optimizasyonu (`page-break-inside: avoid`). Sayfadaki butonlar gizlenerek yalnızca resmi rapor belgesi yazdırılır veya PDF kaydedilir.
+
 ---
 
 ## 📂 4. Kritik Dosya Haritası
