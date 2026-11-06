@@ -18,7 +18,7 @@ Bu belge, yeni bir sohbete geçildiğinde yapay zekanın (Antigravity) projeyi, 
 ## 🏗️ 2. Teknoloji Yığını (Tech Stack)
 - **Backend:** Python 3.12, FastAPI, Playwright (Headless Chromium), Uvicorn, BeautifulSoup4, HTTPX, Pydantic v2.
 - **Frontend:** Next.js 16 (Turbopack), React 19, TypeScript (Strict Mode), CSS Modules & Glassmorphic Dark UI.
-- **Test Paketi:** Pytest & Pytest-Asyncio (61 birim ve entegrasyon testi — %100 başarılı).
+- **Test Paketi:** Pytest & Pytest-Asyncio (74 birim ve entegrasyon testi — %100 başarılı).
 - **Otomasyon & Scriptler:** `start.bat`, `stop.bat`, `start.ps1`, `WebGuard.vbs`.
 
 ---
@@ -59,11 +59,19 @@ Bu belge, yeni bir sohbete geçildiğinde yapay zekanın (Antigravity) projeyi, 
 - Tüm hata başlıkları, risk etiketleri, Nginx `server { ... }` çözüm blokları ve arayüz dinamik çevrilir.
 
 ### G. İnteraktif GeneralControl Kontrol Listesi Penceresi (`GeneralControlModal.tsx`)
-- Kullanıcının tek tıkla açabildiği (`🛡️ GeneralControl Listesi` butonu), siber güvenlik uzmanlarının uyguladığı 22 temel kuralın canlı uyumluluk penceresi.
+- Kullanıcının tek tıkla açabildiği (`🛡️ GeneralControl Listesi` butonu), siber güvenlik ve sektörel uyumluluk uzmanlarının uyguladığı 27 temel kuralın canlı uyumluluk penceresi.
 - Her kriterin başında dinamik durum baloncukları:
   - **Kırmızı Çarpı Baloncuğu (❌):** İlgili güvenlik açığı sitede tespit edildiğinde kırmızı yanıp sönen baloncuk, bulgu başlığı ve "Bulguyu İncele" kısayolu.
   - **Yeşil Tik Baloncuğu (✅):** Denetimden başarıyla geçildiğinde zümrüt yeşili parlama.
-- Filtreler: `Tümü (22)`, `Başarılı (✅)`, `Riskli (❌)` sekmeleri ve genel uyumluluk skoru yüzdesi (`%`).
+- Filtreler: `Tümü (27)`, `Başarılı (✅)`, `Riskli (❌)` sekmeleri ve genel uyumluluk skoru yüzdesi (`%`).
+
+### H. Sektörel Uyumluluk Protokolleri (Industry Compliance Engine)
+- **Sektör Tipleri (`SectorType`):** `AUTO` (Akıllı Yapay Zeka Tespiti), `GENERAL` (Genel Web), `ECOMMERCE` (E-Ticaret & Finans), `HEALTHCARE` (Sağlık & Medikal), `CORPORATE_GOV` (Kurumsal & Kamu), `SAAS_API` (SaaS & Teknoloji).
+- **PCI-DSS v4.0 Denetimleri:** Dış kaynaklı JavaScript dosyalarında Subresource Integrity (SRI) bütünlüğü (`integrity="sha384-..."`), açıkta unutulan Stripe test/canlı gizli anahtarları (`sk_live_...`, `pk_test_...`), şifresiz ödeme formları.
+- **KVKK Madde 10 & GDPR Art. 13:** Yasal Aydınlatma Metni ve Gizlilik Politikası varlığı, üçüncü taraf takipçiler (Google Analytics, Meta Pixel vb.) için Çerez Onay Banner'ı (Cookie Consent).
+- **HIPAA Privacy Rule & FTC Sağlık Rehberi:** Klinik ve hasta randevu sayfalarında üçüncü taraf sosyal medya ve reklam takip pikselleri (Meta Pixel, TikTok Pixel vb.) sızıntısı tespiti.
+- **OWASP API Security Top 10:** Wildcard CORS (`Access-Control-Allow-Origin: *`) ve açık Swagger/OpenAPI dokümantasyon sızıntıları.
+- **Frontend Gösterimi:** URL çubuğu altında şık rozetlerle sektör seçici; sonuç ekranında aktif sektör rozeti, Yapay Zeka otomatik tespit etiketi, 3. skor kartı olarak **Uyumluluk & Mevzuat Skoru** ve bulgu kartlarında `⚖️ [Standart Kuralı]` etiketleri.
 
 ---
 
