@@ -47,6 +47,10 @@ export interface Finding {
   // Sektörel Uyumluluk ve Yasal Standartlar (PCI-DSS, KVKK, HIPAA, OWASP)
   compliance_standard?: string;
   sector_relevance?: SectorType[];
+  // TestSprite Failure Diagnostic Bundle
+  reproduction_steps?: string[];
+  dom_snapshot?: string;
+  root_cause_hypothesis?: string;
 }
 
 export interface CrawlNode {

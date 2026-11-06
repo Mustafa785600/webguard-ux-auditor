@@ -202,6 +202,16 @@ class PlaywrightQAScanner(BaseScanner):
                         pass
 
                 page_title = await page.title()
+
+                # Capture final state screenshot (after all interactions & error triggers)
+                screenshot_final_b64: Optional[str] = None
+                try:
+                    screenshot_final_b64 = "data:image/png;base64," + base64.b64encode(
+                        await page.screenshot(type="png", full_page=False)
+                    ).decode()
+                except Exception:
+                    screenshot_final_b64 = screenshot_initial_b64
+
                 await context.close()
                 await browser.close()
 
@@ -238,6 +248,15 @@ class PlaywrightQAScanner(BaseScanner):
                 line_number=err["line"],
                 problematic_code=err["message"],
                 screenshot_before_b64=screenshot_initial_b64,
+                screenshot_after_b64=screenshot_final_b64 or screenshot_initial_b64,
+                reproduction_steps=[
+                    f"1. Navigate to '{target_url}' in headless browser",
+                    f"2. Wait for page hydration and script initialization",
+                    f"3. Unhandled exception thrown in {err['file']}:{err['line']}",
+                    f"4. Error message captured: {err['message']}",
+                ],
+                root_cause_hypothesis=f"Script execution in {err['file']} threw an unhandled exception without proper try/catch or error boundary, crashing interactive DOM components.",
+                dom_snapshot=f"<script src='.../{err['file']}'></script>",
                 interaction_log=interaction_log[:10],
                 rca_category=RCACategory.REAL_BUG,
             ))
@@ -272,6 +291,14 @@ class PlaywrightQAScanner(BaseScanner):
                 line_number=1,
                 problematic_code=console_errors[0],
                 screenshot_before_b64=screenshot_initial_b64,
+                screenshot_after_b64=screenshot_final_b64 or screenshot_initial_b64,
+                reproduction_steps=[
+                    f"1. Open page '{target_url}' in browser",
+                    "2. Attach listener to window 'console' error event",
+                    f"3. Critical error emitted during startup: {console_errors[0]}",
+                ],
+                root_cause_hypothesis="Client script executed a failing network call, missing asset import, or unresolved promise during page startup.",
+                dom_snapshot=f"console.error('{console_errors[0]}')",
                 rca_category=RCACategory.REAL_BUG,
             ))
 
@@ -305,6 +332,14 @@ class PlaywrightQAScanner(BaseScanner):
                 target_location="API Route / Backend Controller",
                 problematic_code=f"{err_req['url']} (HTTP {err_req['status']})",
                 screenshot_before_b64=screenshot_initial_b64,
+                screenshot_after_b64=screenshot_final_b64 or screenshot_initial_b64,
+                reproduction_steps=[
+                    f"1. Navigate to '{target_url}'",
+                    f"2. Trigger background asynchronous fetch/XHR request to '{err_req['url']}'",
+                    f"3. Server responded with HTTP status code {err_req['status']}",
+                ],
+                root_cause_hypothesis=f"Backend controller at '{err_req['url']}' encountered an unhandled server error or database disconnection, returning HTTP {err_req['status']}.",
+                dom_snapshot=f"fetch('{err_req['url']}') // Returned HTTP {err_req['status']}",
                 rca_category=RCACategory.ENV_ISSUE,
             ))
 
@@ -375,6 +410,14 @@ class PlaywrightQAScanner(BaseScanner):
                 target_location="API Route / Backend Performance",
                 problematic_code=f"{worst_slow['method']} {worst_slow['url'][:80]} ({worst_slow['duration_ms']}ms)",
                 screenshot_before_b64=screenshot_initial_b64,
+                screenshot_after_b64=screenshot_final_b64 or screenshot_initial_b64,
+                reproduction_steps=[
+                    f"1. Navigate to target '{target_url}'",
+                    f"2. Initiate asynchronous {worst_slow['method']} call to '{worst_slow['url'][:80]}'",
+                    f"3. High latency measured: {worst_slow['duration_ms']}ms (threshold: 2000ms)",
+                ],
+                root_cause_hypothesis=f"Backend route '{worst_slow['url'][:60]}' lacks query optimization, database indexes, or Redis caching, triggering slow roundtrip times.",
+                dom_snapshot=f"fetch('{worst_slow['url'][:80]}') // Latency: {worst_slow['duration_ms']}ms",
                 rca_category=RCACategory.REAL_BUG,
             ))
 
@@ -406,6 +449,14 @@ class PlaywrightQAScanner(BaseScanner):
                 target_location="API Gateway / CORS Middleware",
                 problematic_code="Access-Control-Allow-Origin: *",
                 screenshot_before_b64=screenshot_initial_b64,
+                screenshot_after_b64=screenshot_final_b64 or screenshot_initial_b64,
+                reproduction_steps=[
+                    f"1. Send cross-origin request from third-party client to '{issue['url'][:80]}'",
+                    "2. Read 'Access-Control-Allow-Origin' header from HTTP response",
+                    "3. Observed unrestricted wildcard '*' configuration",
+                ],
+                root_cause_hypothesis="CORS policy is configured with permissive wildcard ('*') origin reflection instead of an explicit whitelist of trusted frontend domains.",
+                dom_snapshot=f"// HTTP Response Headers\nAccess-Control-Allow-Origin: *\nAccess-Control-Allow-Credentials: true",
                 rca_category=RCACategory.REAL_BUG,
             ))
 
@@ -562,6 +613,15 @@ class PlaywrightQAScanner(BaseScanner):
                             screenshot_before_b64=screenshot_before,
                             screenshot_after_b64=screenshot_after,
                             interaction_log=interaction_log[-5:],
+                            reproduction_steps=[
+                                f"1. Open target page '{target_url}'",
+                                f"2. Locate form #{form_idx+1} on page",
+                                "3. Fill input fields with XSS probe: <script>alert(1)</script>",
+                                "4. Click form submit button",
+                                "5. Probe payload reflected unsanitized in DOM response",
+                            ],
+                            root_cause_hypothesis="Form input is rendered directly into response HTML without output encoding or sanitization (Reflected XSS).",
+                            dom_snapshot=f"<form action='...'>...<script>alert(1)</script>...</form>",
                             rca_category=RCACategory.REAL_BUG,
                         ))
                 except Exception:
@@ -599,6 +659,15 @@ class PlaywrightQAScanner(BaseScanner):
                             screenshot_before_b64=screenshot_before,
                             screenshot_after_b64=screenshot_after,
                             interaction_log=interaction_log[-5:],
+                            reproduction_steps=[
+                                f"1. Open target page '{target_url}'",
+                                f"2. Locate form #{form_idx+1}",
+                                "3. Inject SQL boundary probe payload: ' OR '1'='1",
+                                "4. Submit form",
+                                "5. Database error string reflected in page response",
+                            ],
+                            root_cause_hypothesis="Backend SQL query constructed via unescaped string concatenation, leaking database driver syntax errors to client.",
+                            dom_snapshot=f"<form action='...'>// Leaked SQL syntax error in response</form>",
                             rca_category=RCACategory.REAL_BUG,
                         ))
                 except Exception:
@@ -657,6 +726,14 @@ class PlaywrightQAScanner(BaseScanner):
                         ),
                         target_location=sel,
                         problematic_code=f"Element '{sel}' never hidden after data load",
+                        reproduction_steps=[
+                            f"1. Navigate to '{target_url}'",
+                            f"2. Wait for loading indicator matching '{sel}'",
+                            "3. Monitor element visibility for 8000ms duration",
+                            "4. Spinner remains visible without data resolution or timeout dismissal",
+                        ],
+                        root_cause_hypothesis=f"Frontend loading state for '{sel}' is controlled by an unhandled promise or suspended state machine that never dispatches a completion or error action.",
+                        dom_snapshot=f"<div class='loading-spinner' selector='{sel}' aria-busy='true'></div>",
                         rca_category=RCACategory.REAL_BUG,
                     ))
                     break

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Finding } from "@/types/scan";
 import { type Language, UI_STRINGS, localizeFinding } from "@/lib/i18n";
+import DiagnosticBundleModal from "./DiagnosticBundleModal";
 
 function CodeBlockWithLines({
   code,
@@ -47,7 +48,10 @@ export default function FindingCard({
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedIde, setCopiedIde] = useState(false);
+  const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
   const [screenshotTab, setScreenshotTab] = useState<"before" | "after">("before");
+  const [screenshotMode, setScreenshotMode] = useState<"tabs" | "split">("split");
 
   const finding = localizeFinding(rawFinding, lang);
   const t = UI_STRINGS[lang] || UI_STRINGS.en;
@@ -63,6 +67,48 @@ export default function FindingCard({
     navigator.clipboard.writeText(finding.code_example);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleCopyIdeBundle(e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    const reproductionSteps = finding.reproduction_steps && finding.reproduction_steps.length > 0
+      ? finding.reproduction_steps
+      : [
+          `1. Navigate to target URL: ${finding.page_url || "Target Application"}`,
+          `2. Inspect component / endpoint: ${finding.target_location || "DOM Document"}`,
+          `3. Execute security & UX assertion for rule [${finding.id}]`,
+          `4. Anomaly detected: ${finding.title}`,
+        ];
+
+    const ideBundle = {
+      diagnostic_bundle_version: "1.0",
+      generator: "WebGuard & UX Auditor (TestSprite AI Engine)",
+      issue: {
+        id: finding.id,
+        title: finding.title,
+        severity: finding.severity,
+        rca_category: finding.rca_category || "REAL_BUG",
+        target_location: finding.target_location || "Unknown",
+        line_number: finding.line_number ?? null,
+        page_url: finding.page_url || null,
+      },
+      failure_analysis: {
+        root_cause_hypothesis: finding.root_cause_hypothesis || finding.remediation,
+        reproduction_trace: reproductionSteps,
+        dom_snapshot: finding.dom_snapshot || finding.problematic_code || null,
+        deficient_code: finding.problematic_code || null,
+        recommended_fix: finding.code_example || finding.remediation,
+      },
+      instructions_for_ai: (
+        `Please resolve the issue '${finding.title}' identified at ${finding.target_location || "the target page"}. ` +
+        `Root cause hypothesis: ${finding.root_cause_hypothesis || finding.remediation}. ` +
+        `Apply the recommended fix to eliminate this defect and prevent regressions.`
+      ),
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(ideBundle, null, 2));
+    setCopiedIde(true);
+    setTimeout(() => setCopiedIde(false), 3000);
   }
 
   const hasLocationOrCode = Boolean(
@@ -137,6 +183,40 @@ export default function FindingCard({
 
       {open && (
         <div className="finding-body">
+          {/* TestSprite Failure Diagnostic Bundle Header Banner */}
+          <div className="diagnostic-banner-card">
+            <div className="diag-banner-top">
+              <div className="diag-banner-badge">
+                <span className="banner-icon">🔬</span>
+                <span className="banner-title">{t.diagnosticBundleTitle || "TestSprite Failure Diagnostic Bundle"}</span>
+              </div>
+              <div className="diag-banner-btn-group">
+                <button
+                  type="button"
+                  className={`diag-action-btn copy-ide ${copiedIde ? "copied" : ""}`}
+                  onClick={handleCopyIdeBundle}
+                  title="Cursor / Claude Code / Windsurf için tam teşhis paketini kopyala"
+                >
+                  {copiedIde ? (t.copiedForIde || "✓ JSON Kopyalandı!") : (t.copyForIde || "📋 Cursor / Claude Code İçin Kopyala")}
+                </button>
+                <button
+                  type="button"
+                  className="diag-action-btn open-modal"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDiagnosticModal(true);
+                  }}
+                  title="Tam Ekran Öncesi / Sonrası Karşılaştırma ve Teşhis Paneli"
+                >
+                  ⚡ {t.zoomInspect || "Zengin Teşhis & Öncesi/Sonrası Paneli"}
+                </button>
+              </div>
+            </div>
+            <p className="diag-banner-text">
+              {t.diagnosticBundleSubtitle || "Öncesi / Sonrası ekran görüntüleri, adım adım hata izi ve yapay zeka kök neden teşhisi."}
+            </p>
+          </div>
+
           <p className="finding-desc">{finding.description}</p>
 
           {/* 1. Risk & Impact Analysis */}
@@ -272,46 +352,159 @@ export default function FindingCard({
             </details>
           )}
 
-          {/* 6. Screenshot Evidence Viewer (Phase 2) */}
-          {hasScreenshots && (
-            <div className="screenshot-viewer">
-              <div className="screenshot-tabs">
-                {finding.screenshot_before_b64 && (
-                  <button
-                    className={`screenshot-tab ${screenshotTab === "before" ? "active" : ""}`}
-                    onClick={() => setScreenshotTab("before")}
-                  >
-                    {t.beforeInteraction}
-                  </button>
-                )}
-                {finding.screenshot_after_b64 && (
-                  <button
-                    className={`screenshot-tab ${screenshotTab === "after" ? "active" : ""}`}
-                    onClick={() => setScreenshotTab("after")}
-                  >
-                    {t.afterInteraction}
-                  </button>
-                )}
+          {/* 5. Step-by-Step Reproduction Trace (TestSprite Diagnostic) */}
+          {finding.reproduction_steps && finding.reproduction_steps.length > 0 && (
+            <div className="reproduction-trace-block">
+              <div className="reproduction-trace-header">
+                <span className="trace-icon">👣</span>
+                <span className="trace-title">{t.reproductionTrace || "Adım Adım Hata İzi (Reproduction Trace)"}</span>
               </div>
-              <div className="screenshot-frame">
-                {screenshotTab === "before" && finding.screenshot_before_b64 && (
-                  <img
-                    src={finding.screenshot_before_b64}
-                    alt="Browser state before interaction"
-                    className="screenshot-img"
-                  />
-                )}
-                {screenshotTab === "after" && finding.screenshot_after_b64 && (
-                  <img
-                    src={finding.screenshot_after_b64}
-                    alt="Browser state after interaction"
-                    className="screenshot-img"
-                  />
-                )}
+              <div className="reproduction-trace-list">
+                {finding.reproduction_steps.map((step, idx) => (
+                  <div key={idx} className="reproduction-step-row">
+                    <span className="step-idx">{idx + 1}</span>
+                    <span className="step-desc">{step.replace(/^\d+\.\s*/, "")}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+
+          {/* 6. AI Root Cause Hypothesis (RCA) */}
+          {finding.root_cause_hypothesis && (
+            <div className="rca-hypothesis-block">
+              <div className="rca-hypothesis-header">
+                <span className="rca-icon">🧠</span>
+                <span className="rca-title">{t.rootCauseHypothesis || "Yapay Zeka Kök Neden Hipotezi"}</span>
+                {rcaMeta && (
+                  <span className="rca-sub-badge" style={{ color: rcaMeta.color, borderColor: rcaMeta.color }}>
+                    {rcaMeta.icon} {rcaLabel}
+                  </span>
+                )}
+              </div>
+              <p className="rca-hypothesis-desc">{finding.root_cause_hypothesis}</p>
+            </div>
+          )}
+
+          {/* 7. Screenshot Evidence Viewer (Side-by-Side & Tabbed Modes) */}
+          {hasScreenshots && (
+            <div className="screenshot-viewer">
+              <div className="screenshot-header-toolbar">
+                <div className="screenshot-modes">
+                  <button
+                    type="button"
+                    className={`screenshot-mode-toggle ${screenshotMode === "split" ? "active" : ""}`}
+                    onClick={() => setScreenshotMode("split")}
+                  >
+                    ⚡ {t.viewSideBySide || "Yan Yana (Split)"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`screenshot-mode-toggle ${screenshotMode === "tabs" ? "active" : ""}`}
+                    onClick={() => setScreenshotMode("tabs")}
+                  >
+                    📑 {t.viewTabbed || "Sekmeli"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="screenshot-zoom-btn"
+                  onClick={() => setShowDiagnosticModal(true)}
+                  title="Tam Ekran İncele & Karşılaştır"
+                >
+                  🔍 {t.zoomInspect || "Büyüt & İncele"}
+                </button>
+              </div>
+
+              {screenshotMode === "tabs" ? (
+                <>
+                  <div className="screenshot-tabs">
+                    {finding.screenshot_before_b64 && (
+                      <button
+                        className={`screenshot-tab ${screenshotTab === "before" ? "active" : ""}`}
+                        onClick={() => setScreenshotTab("before")}
+                      >
+                        {t.beforeInteraction}
+                      </button>
+                    )}
+                    {finding.screenshot_after_b64 && (
+                      <button
+                        className={`screenshot-tab ${screenshotTab === "after" ? "active" : ""}`}
+                        onClick={() => setScreenshotTab("after")}
+                      >
+                        {t.afterInteraction}
+                      </button>
+                    )}
+                  </div>
+                  <div className="screenshot-frame">
+                    {screenshotTab === "before" && finding.screenshot_before_b64 && (
+                      <img
+                        src={finding.screenshot_before_b64}
+                        alt="Browser state before interaction"
+                        className="screenshot-img"
+                        onClick={() => setShowDiagnosticModal(true)}
+                        style={{ cursor: "zoom-in" }}
+                      />
+                    )}
+                    {screenshotTab === "after" && finding.screenshot_after_b64 && (
+                      <img
+                        src={finding.screenshot_after_b64}
+                        alt="Browser state after interaction"
+                        className="screenshot-img"
+                        onClick={() => setShowDiagnosticModal(true)}
+                        style={{ cursor: "zoom-in" }}
+                      />
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="screenshot-split-grid">
+                  <div className="split-screen-col">
+                    <div className="split-label before">
+                      <span className="dot green" /> {t.beforeState || "Öncesi (Baseline)"}
+                    </div>
+                    {finding.screenshot_before_b64 ? (
+                      <img
+                        src={finding.screenshot_before_b64}
+                        alt="Before"
+                        className="screenshot-img"
+                        onClick={() => setShowDiagnosticModal(true)}
+                        style={{ cursor: "zoom-in" }}
+                      />
+                    ) : (
+                      <div className="screenshot-placeholder">Baseline unavailable</div>
+                    )}
+                  </div>
+                  <div className="split-screen-col">
+                    <div className="split-label after">
+                      <span className="dot red" /> {t.afterState || "Sonrası (Hata / Anomali)"}
+                    </div>
+                    {finding.screenshot_after_b64 ? (
+                      <img
+                        src={finding.screenshot_after_b64}
+                        alt="After"
+                        className="screenshot-img"
+                        onClick={() => setShowDiagnosticModal(true)}
+                        style={{ cursor: "zoom-in" }}
+                      />
+                    ) : (
+                      <div className="screenshot-placeholder">Failure state unavailable</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* TestSprite Failure Diagnostic Fullscreen Modal */}
+      {showDiagnosticModal && (
+        <DiagnosticBundleModal
+          finding={rawFinding}
+          lang={lang}
+          onClose={() => setShowDiagnosticModal(false)}
+        />
       )}
     </article>
   );

@@ -67,6 +67,10 @@ class Finding(BaseModel):
     # Sektörel Uyumluluk ve Yasal Standartlar (PCI-DSS, KVKK, HIPAA, OWASP)
     compliance_standard: Optional[str] = None
     sector_relevance: Optional[List[SectorType]] = None
+    # TestSprite Failure Diagnostic Bundle (Öncesi / Sonrası ve Kök Neden Teşhisi)
+    reproduction_steps: Optional[List[str]] = None
+    dom_snapshot: Optional[str] = None
+    root_cause_hypothesis: Optional[str] = None
 
 class CrawlNode(BaseModel):
     url: str
