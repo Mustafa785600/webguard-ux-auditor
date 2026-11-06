@@ -120,6 +120,7 @@ class ScanResult(BaseModel):
     security_score: int = 100
     ux_score: int = 100
     compliance_score: int = 100
+    resilience_score: int = 95
     selected_sector: Optional[SectorType] = SectorType.AUTO
     detected_sector: Optional[SectorType] = None
     findings: List[Finding] = []
@@ -131,3 +132,27 @@ class ScanResult(BaseModel):
     error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None
+
+# ── TestSprite Otonom E2E Auto-Heal & Flaky Test İyileştirici ────────────
+
+class AutoHealRepair(BaseModel):
+    original: str
+    healed: str
+    strategy: str
+    confidence: float
+    line_number: Optional[int] = None
+    flakiness_cause: Optional[str] = None
+
+class AutoHealRequest(BaseModel):
+    script_code: str = Field(..., description="Brittle Playwright / Cypress / E2E test script to auto-heal")
+    target_url: Optional[str] = None
+
+class AutoHealResponse(BaseModel):
+    original_code: str
+    healed_code: str
+    repairs: List[AutoHealRepair]
+    resilience_score_before: int
+    resilience_score_after: int
+    flakiness_reduction_pct: int
+    healed_at: datetime = Field(default_factory=datetime.utcnow)
+

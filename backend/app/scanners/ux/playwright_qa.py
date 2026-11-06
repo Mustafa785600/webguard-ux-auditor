@@ -7,6 +7,7 @@ import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace
 from app.scanners.base import BaseScanner
+from app.services.self_healing import SelfHealingEngine
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -45,6 +46,8 @@ class PlaywrightQAScanner(BaseScanner):
 
     def __init__(self):
         self.network_traces: List[NetworkRequestTrace] = []
+        self.self_healing = SelfHealingEngine()
+        self.self_healing_events: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------ #
     #  Main entry point                                                    #
@@ -509,6 +512,25 @@ class PlaywrightQAScanner(BaseScanner):
                 rca_category=RCACategory.EXPECTED_BEHAVIOR,
             ))
 
+        # ── Phase 4: Self-Healing & Flaky Test Auto-Repairs ──────────────
+        healing_findings = self.self_healing.formulate_findings(
+            target_url,
+            screenshot_before=screenshot_initial_b64,
+            screenshot_after=screenshot_final_b64 or screenshot_initial_b64,
+        )
+        findings.extend(healing_findings)
+        self.self_healing_events = [
+            {
+                "original_selector": ev.original_selector,
+                "healed_selector": ev.healed_selector,
+                "strategy": ev.strategy,
+                "confidence": ev.confidence,
+                "flakiness_cause": ev.flakiness_cause,
+                "timestamp": ev.timestamp.isoformat() if hasattr(ev.timestamp, "isoformat") else str(ev.timestamp),
+            }
+            for ev in self.self_healing.events
+        ]
+
         return findings
 
     # ------------------------------------------------------------------ #
@@ -558,12 +580,19 @@ class PlaywrightQAScanner(BaseScanner):
                         except Exception:
                             pass
 
-                    # Attempt form submission
+                    # Attempt form submission with self-healing selector recovery
                     try:
-                        submit_btn = form.locator("button[type='submit'], input[type='submit']")
+                        submit_btn, event = await self.self_healing.resolve_element(
+                            form,
+                            "button[type='submit'], input[type='submit']",
+                            fallbacks=["button:visible", "[role='button']:visible"],
+                            semantic_hint="Submit",
+                            timeout_ms=1000
+                        )
                         if await submit_btn.count() > 0:
                             interaction_log.append(
-                                f"Form #{form_idx+1}: submitting with payload '{payload['type']}'"
+                                f"Form #{form_idx+1}: submitting with payload '{payload['type']}'" +
+                                (f" (Self-healed: {event.strategy})" if event else "")
                             )
                             await submit_btn.first.click(timeout=3000)
                             await page.wait_for_timeout(800)

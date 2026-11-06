@@ -10,6 +10,7 @@ import PrdIntelligenceCard from "./PrdIntelligenceCard";
 import CrawlGraphView from "./CrawlGraphView";
 import GeneralControlModal from "./GeneralControlModal";
 import AuditReportModal from "./AuditReportModal";
+import AutoHealView from "./AutoHealView";
 import {
   type Language,
   UI_STRINGS,
@@ -44,7 +45,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL">("FINDINGS");
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
   const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
@@ -388,6 +389,13 @@ export default function ScanDashboard() {
               >
                 🗺️ {t.tabCrawlGraph} ({result.crawl_graph?.length ?? result.crawled_pages_count ?? 1})
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "AUTO_HEAL" ? "active" : ""}`}
+                onClick={() => setActiveTab("AUTO_HEAL")}
+              >
+                🧪 {t.tabAutoHeal || "Auto-Heal"} ({result.self_healing_events?.length ?? 0})
+              </button>
             </div>
 
             {/* TAB 1: TestSprite PRD Intelligence */}
@@ -411,7 +419,17 @@ export default function ScanDashboard() {
               />
             )}
 
-            {/* TAB 3: Main Findings List */}
+            {/* TAB 3: TestSprite Autonomous Auto-Heal & Flaky Tests */}
+            {activeTab === "AUTO_HEAL" && (
+              <AutoHealView
+                targetUrl={result.target_url}
+                selfHealingEvents={result.self_healing_events}
+                resilienceScore={result.resilience_score}
+                lang={lang}
+              />
+            )}
+
+            {/* TAB 4: Main Findings List */}
             {activeTab === "FINDINGS" && (
               <>
                 {selectedRouteUrl && (

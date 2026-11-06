@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
 from app.models.schema import (
     ScanRequest, ScanResult, ScanStatus,
-    PRDAnalyzeRequest, PRDAnalysisResponse
+    PRDAnalyzeRequest, PRDAnalysisResponse,
+    AutoHealRequest, AutoHealResponse
 )
 from app.services.orchestrator import execute_scan
 from app.services.prd_agent import analyze_prd_and_generate_tests
+from app.services.self_healing import heal_playwright_script
 from app.core.security import validate_and_sanitize_target_url, SecurityValidationError
 
 router = APIRouter()
@@ -38,3 +40,13 @@ async def analyze_prd(request: PRDAnalyzeRequest):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
 
     return await analyze_prd_and_generate_tests(request.prd_text, sanitized_url)
+
+@router.post("/auto-heal/analyze", response_model=AutoHealResponse)
+async def analyze_and_heal_spec(request: AutoHealRequest):
+    """
+    TestSprite Auto-Heal & Flaky Test Repair Service.
+    Analyzes fragile locators (CSS hashes, XPaths, nth-child, dynamic IDs, static sleep)
+    and patches them into resilient Playwright locators.
+    """
+    return heal_playwright_script(request.script_code, target_url=request.target_url)
+

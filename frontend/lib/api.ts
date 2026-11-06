@@ -1,4 +1,4 @@
-import { ScanResult, PRDAnalysisResponse, SectorType } from "@/types/scan";
+import { ScanResult, PRDAnalysisResponse, SectorType, AutoHealResponse } from "@/types/scan";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -40,6 +40,19 @@ export async function analyzePRD(targetUrl: string, prdText: string): Promise<PR
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? "PRD analysis request failed.");
+  }
+  return res.json();
+}
+
+export async function healTestScript(scriptCode: string, targetUrl?: string): Promise<AutoHealResponse> {
+  const res = await fetch(`${API_BASE}/auto-heal/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ script_code: scriptCode, target_url: targetUrl }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Auto-heal request failed.");
   }
   return res.json();
 }

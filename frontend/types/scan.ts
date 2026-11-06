@@ -91,6 +91,7 @@ export interface ScanResult {
   security_score: number;
   ux_score: number;
   compliance_score?: number;
+  resilience_score?: number;
   selected_sector?: SectorType;
   detected_sector?: SectorType;
   findings: Finding[];
@@ -102,4 +103,23 @@ export interface ScanResult {
   error_message?: string;
   started_at: string;
   completed_at?: string;
+}
+
+export interface AutoHealRepair {
+  original: string;
+  healed: string;
+  strategy: string;
+  confidence: number;
+  line_number?: number;
+  flakiness_cause?: string;
+}
+
+export interface AutoHealResponse {
+  original_code: string;
+  healed_code: string;
+  repairs: AutoHealRepair[];
+  resilience_score_before: number;
+  resilience_score_after: number;
+  flakiness_reduction_pct: number;
+  healed_at: string;
 }
