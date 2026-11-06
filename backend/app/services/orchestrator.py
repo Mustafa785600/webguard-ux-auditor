@@ -5,12 +5,13 @@ import uuid
 import httpx
 from app.core.config import settings
 from app.core.security import validate_and_sanitize_target_url
-from app.models.schema import Finding, ScanResult, ScanStatus, Category
+from app.models.schema import Finding, ScanResult, ScanStatus, Category, SectorType, Severity
 from app.scanners.security.headers import SecurityHeadersScanner
 from app.scanners.security.ssl_tls import SSLTLSScanner
 from app.scanners.security.exposure import ExposureScanner
 from app.scanners.security.error_handling import ErrorHandlingScanner
 from app.scanners.security.technologies import TechnologyScanner
+from app.scanners.security.compliance import ComplianceScanner
 from app.scanners.ux.basic_ux import BasicUXScanner
 from app.scanners.ux.links import BrokenLinksScanner
 from app.scanners.ux.forms_a11y import FormsA11yScanner
@@ -39,6 +40,7 @@ async def execute_scan(
     enable_crawler: bool = True,
     max_pages: int = 5,
     crawl_depth: int = 2,
+    sector: Optional[SectorType] = SectorType.AUTO,
 ) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
@@ -51,6 +53,7 @@ async def execute_scan(
             target_url=target_url,
             status=ScanStatus.FAILED,
             error_message=str(exc),
+            selected_sector=sector or SectorType.AUTO,
             started_at=started_at,
             completed_at=datetime.utcnow()
         )
@@ -63,6 +66,8 @@ async def execute_scan(
             import logging
             logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
+    compliance_scanner = ComplianceScanner(requested_sector=sector or SectorType.AUTO)
+
     headers = {"User-Agent": settings.USER_AGENT}
     async with httpx.AsyncClient(
         headers=headers,
@@ -70,7 +75,8 @@ async def execute_scan(
         follow_redirects=True,
         verify=False
     ) as client:
-        scan_coroutines = [scanner.scan(sanitized_url, client) for scanner in SCANNERS]
+        active_scanners = SCANNERS + [compliance_scanner]
+        scan_coroutines = [scanner.scan(sanitized_url, client) for scanner in active_scanners]
         scanner_results = await asyncio.gather(*scan_coroutines, return_exceptions=True)
 
     all_findings: list[Finding] = []
@@ -79,7 +85,7 @@ async def execute_scan(
             all_findings.extend(res)
 
     network_traces = []
-    for scanner in SCANNERS:
+    for scanner in active_scanners:
         if hasattr(scanner, "network_traces") and scanner.network_traces:
             network_traces.extend(scanner.network_traces)
 
@@ -103,12 +109,31 @@ async def execute_scan(
     security_score = calculate_category_score(all_findings, Category.SECURITY)
     ux_score = calculate_category_score(all_findings, Category.UX)
 
+    # Sektörel Uyumluluk Skoru Hesabı
+    comp_findings = [f for f in all_findings if f.compliance_standard]
+    comp_deduction = 0
+    for f in comp_findings:
+        if f.severity == Severity.CRITICAL:
+            comp_deduction += 25
+        elif f.severity == Severity.HIGH:
+            comp_deduction += 15
+        elif f.severity == Severity.MEDIUM:
+            comp_deduction += 8
+        elif f.severity == Severity.LOW:
+            comp_deduction += 3
+    compliance_score = max(0, 100 - comp_deduction)
+
+    detected_sector = compliance_scanner.detected_sector or SectorType.GENERAL
+
     result = ScanResult(
         scan_id=scan_id,
         target_url=sanitized_url,
         status=ScanStatus.COMPLETED,
         security_score=security_score,
         ux_score=ux_score,
+        compliance_score=compliance_score,
+        selected_sector=sector or SectorType.AUTO,
+        detected_sector=detected_sector,
         findings=all_findings,
         network_traces=network_traces,
         prd_analysis=prd_analysis,

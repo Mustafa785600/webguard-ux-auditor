@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { startScan } from "@/lib/api";
-import type { ScanResult, Severity, Category, RCACategory } from "@/types/scan";
+import type { ScanResult, Severity, Category, RCACategory, SectorType } from "@/types/scan";
 import FindingCard from "./FindingCard";
 import ScoreCard from "./ScoreCard";
 import NetworkWaterfallCard from "./NetworkWaterfallCard";
@@ -15,6 +15,7 @@ import {
   CATEGORY_LABELS,
   SEVERITY_LABELS,
   RCA_LABELS,
+  SECTOR_LABELS,
 } from "@/lib/i18n";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
@@ -44,6 +45,7 @@ export default function ScanDashboard() {
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH">("FINDINGS");
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
+  const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
 
   const t = UI_STRINGS[lang];
 
@@ -89,6 +91,7 @@ export default function ScanDashboard() {
       const data = await startScan(targetUrl.trim(), undefined, {
         enableCrawler,
         maxPages,
+        sector: selectedSector,
       });
       if (data.status === "FAILED") {
         setError(data.error_message ?? "Scan failed.");
@@ -219,6 +222,33 @@ export default function ScanDashboard() {
           )}
         </div>
 
+        {/* Sectoral Compliance Protocol Selector */}
+        <div className="sector-selector-bar">
+          <div className="sector-selector-label">
+            🏛️ {lang === "tr" ? "Sektörel Uyumluluk Protokolü:" : "Industry Compliance Protocol:"}
+          </div>
+          <div className="sector-pills-list">
+            {(["AUTO", "GENERAL", "ECOMMERCE", "HEALTHCARE", "CORPORATE_GOV", "SAAS_API"] as SectorType[]).map((sec) => {
+              const info = SECTOR_LABELS[lang][sec];
+              const isActive = selectedSector === sec;
+              return (
+                <button
+                  type="button"
+                  key={sec}
+                  className={`sector-pill ${isActive ? "active" : ""}`}
+                  onClick={() => setSelectedSector(sec)}
+                  disabled={loading}
+                  title={`${info.name} — ${info.standard}`}
+                >
+                  <span className="sector-pill-icon">{info.icon}</span>
+                  <span className="sector-pill-name">{info.name}</span>
+                  <span className="sector-pill-std">{info.standard}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="history-section">
           <div className="history-header">
             <span className="history-title">
@@ -291,9 +321,34 @@ export default function ScanDashboard() {
               </div>
             </div>
 
+            {result.detected_sector && (
+              <div className="sector-status-banner">
+                <span className="sector-banner-label">
+                  🏛️ {lang === "tr" ? "Uygulanan Sektörel Standart:" : "Active Industry Standard:"}
+                </span>
+                <span className="sector-banner-tag">
+                  {SECTOR_LABELS[lang][result.detected_sector]?.icon}{" "}
+                  <strong>{SECTOR_LABELS[lang][result.detected_sector]?.name}</strong> —{" "}
+                  {SECTOR_LABELS[lang][result.detected_sector]?.standard}
+                </span>
+                {result.selected_sector === "AUTO" && (
+                  <span className="sector-auto-badge">
+                    ✨ {lang === "tr" ? "Yapay Zeka Tarafından Otomatik Belirlendi" : "Auto-Detected by AI"}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="scores-grid">
               <ScoreCard label={t.securityScore} score={result.security_score} color="#6366f1" />
               <ScoreCard label={t.uxScore} score={result.ux_score} color="#34d399" />
+              {result.compliance_score !== undefined && (
+                <ScoreCard
+                  label={lang === "tr" ? "Uyumluluk & Mevzuat Skoru" : "Compliance & Standards"}
+                  score={result.compliance_score}
+                  color="#f59e0b"
+                />
+              )}
             </div>
 
             {result.network_traces && result.network_traces.length > 0 && (

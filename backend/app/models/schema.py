@@ -26,6 +26,14 @@ class RCACategory(str, Enum):
     ENV_ISSUE = "ENV_ISSUE"
     EXPECTED_BEHAVIOR = "EXPECTED_BEHAVIOR"
 
+class SectorType(str, Enum):
+    AUTO = "AUTO"
+    GENERAL = "GENERAL"
+    ECOMMERCE = "ECOMMERCE"
+    HEALTHCARE = "HEALTHCARE"
+    CORPORATE_GOV = "CORPORATE_GOV"
+    SAAS_API = "SAAS_API"
+
 class NetworkRequestTrace(BaseModel):
     url: str
     method: str
@@ -56,6 +64,9 @@ class Finding(BaseModel):
     rca_category: Optional[RCACategory] = None
     # Multi-page Autonomous Crawler: URL or route where finding was discovered
     page_url: Optional[str] = None
+    # Sektörel Uyumluluk ve Yasal Standartlar (PCI-DSS, KVKK, HIPAA, OWASP)
+    compliance_standard: Optional[str] = None
+    sector_relevance: Optional[List[SectorType]] = None
 
 class CrawlNode(BaseModel):
     url: str
@@ -91,6 +102,7 @@ class PRDAnalyzeRequest(BaseModel):
 
 class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")
+    sector: Optional[SectorType] = SectorType.AUTO
     prd_content: Optional[str] = None
     webhook_url: Optional[str] = None
     enable_crawler: Optional[bool] = False
@@ -103,6 +115,9 @@ class ScanResult(BaseModel):
     status: ScanStatus
     security_score: int = 100
     ux_score: int = 100
+    compliance_score: int = 100
+    selected_sector: Optional[SectorType] = SectorType.AUTO
+    detected_sector: Optional[SectorType] = None
     findings: List[Finding] = []
     network_traces: List[NetworkRequestTrace] = []
     prd_analysis: Optional[PRDAnalysisResponse] = None

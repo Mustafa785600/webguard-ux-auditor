@@ -1,4 +1,4 @@
-import { ScanResult, PRDAnalysisResponse } from "@/types/scan";
+import { ScanResult, PRDAnalysisResponse, SectorType } from "@/types/scan";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -9,6 +9,7 @@ export async function startScan(
     enableCrawler?: boolean;
     maxPages?: number;
     crawlDepth?: number;
+    sector?: SectorType;
   }
 ): Promise<ScanResult> {
   const res = await fetch(`${API_BASE}/scan`, {
@@ -20,6 +21,7 @@ export async function startScan(
       enable_crawler: crawlerOptions?.enableCrawler ?? true,
       max_pages: crawlerOptions?.maxPages ?? 5,
       crawl_depth: crawlerOptions?.crawlDepth ?? 2,
+      sector: crawlerOptions?.sector ?? "AUTO",
     }),
   });
   if (!res.ok) {

@@ -93,6 +93,14 @@ export default function FindingCard({
         
         <div className="finding-title-group">
           <span className="finding-title">{finding.title}</span>
+          {finding.compliance_standard && (
+            <span
+              className="compliance-badge"
+              title={`Uyumluluk Standardı: ${finding.compliance_standard}`}
+            >
+              ⚖️ {finding.compliance_standard}
+            </span>
+          )}
           {finding.page_url && (
             <span
               className="finding-location-pill route-pill"

@@ -7,6 +7,14 @@ export type RCACategory =
   | "ENV_ISSUE"
   | "EXPECTED_BEHAVIOR";
 
+export type SectorType =
+  | "AUTO"
+  | "GENERAL"
+  | "ECOMMERCE"
+  | "HEALTHCARE"
+  | "CORPORATE_GOV"
+  | "SAAS_API";
+
 export interface NetworkRequestTrace {
   url: string;
   method: string;
@@ -36,6 +44,9 @@ export interface Finding {
   interaction_log?: string[];
   rca_category?: RCACategory;
   page_url?: string;
+  // Sektörel Uyumluluk ve Yasal Standartlar (PCI-DSS, KVKK, HIPAA, OWASP)
+  compliance_standard?: string;
+  sector_relevance?: SectorType[];
 }
 
 export interface CrawlNode {
@@ -75,6 +86,9 @@ export interface ScanResult {
   status: ScanStatus;
   security_score: number;
   ux_score: number;
+  compliance_score?: number;
+  selected_sector?: SectorType;
+  detected_sector?: SectorType;
   findings: Finding[];
   network_traces?: NetworkRequestTrace[];
   prd_analysis?: PRDAnalysisResponse;

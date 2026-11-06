@@ -1,6 +1,28 @@
-import type { Finding, Severity, Category, RCACategory } from "@/types/scan";
+import type { Finding, Severity, Category, RCACategory, SectorType } from "@/types/scan";
 
 export type Language = "en" | "tr";
+
+export const SECTOR_LABELS: Record<
+  Language,
+  Record<SectorType, { name: string; standard: string; icon: string }>
+> = {
+  tr: {
+    AUTO: { name: "Otomatik Tespit", standard: "Akıllı Sektör Analizi", icon: "✨" },
+    GENERAL: { name: "Genel Web", standard: "Standart Güvenlik", icon: "🌐" },
+    ECOMMERCE: { name: "E-Ticaret & Finans", standard: "PCI-DSS v4.0", icon: "🛒" },
+    HEALTHCARE: { name: "Sağlık & Medikal", standard: "HIPAA & Hasta Gizliliği", icon: "🏥" },
+    CORPORATE_GOV: { name: "Kurumsal & Kamu", standard: "KVKK & GDPR", icon: "🏛️" },
+    SAAS_API: { name: "SaaS & Teknoloji", standard: "OWASP API Top 10", icon: "⚡" },
+  },
+  en: {
+    AUTO: { name: "Auto-Detect", standard: "Smart Sector Analysis", icon: "✨" },
+    GENERAL: { name: "General Web", standard: "Baseline Security", icon: "🌐" },
+    ECOMMERCE: { name: "E-Commerce & Finance", standard: "PCI-DSS v4.0", icon: "🛒" },
+    HEALTHCARE: { name: "Healthcare & MedTech", standard: "HIPAA & Health Privacy", icon: "🏥" },
+    CORPORATE_GOV: { name: "Corporate & Gov", standard: "GDPR & KVKK", icon: "🏛️" },
+    SAAS_API: { name: "SaaS & Technology", standard: "OWASP API Top 10", icon: "⚡" },
+  },
+};
 
 export const UI_STRINGS: Record<Language, Record<string, string>> = {
   en: {

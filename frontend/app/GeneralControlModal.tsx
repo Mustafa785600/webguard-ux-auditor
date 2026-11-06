@@ -6,7 +6,7 @@ import type { Language } from "@/lib/i18n";
 
 export interface GeneralControlRule {
   id: string;
-  category: "TRANSPORT" | "HEADERS" | "COOKIES" | "EXPOSURE" | "CLIENT" | "API";
+  category: "TRANSPORT" | "HEADERS" | "COOKIES" | "EXPOSURE" | "CLIENT" | "API" | "COMPLIANCE";
   categoryTr: string;
   categoryEn: string;
   titleTr: string;
@@ -259,6 +259,61 @@ export const GENERAL_CONTROL_RULES: GeneralControlRule[] = [
     descEn: "Ensures stylesheets, scripts, images, and links resolve with 200 OK without dead ends.",
     findingIds: ["UX_BROKEN_LINKS", "UX_BROKEN_ASSETS"],
   },
+  {
+    id: "RULE_PCI_SRI",
+    category: "COMPLIANCE",
+    categoryTr: "Sektörel Uyumluluk",
+    categoryEn: "Compliance",
+    titleTr: "Harici Scriptlerde SRI Bütünlüğü (PCI-DSS 6.4.3)",
+    titleEn: "Subresource Integrity (SRI) on External Scripts",
+    descTr: "Dış CDN ve üçüncü taraf alan adlarından yüklenen JavaScript dosyalarının kriptografik hash ile doğrulanması.",
+    descEn: "Verifies scripts from third parties/CDNs contain cryptographic SRI hashes to block Magecart attacks.",
+    findingIds: ["SEC_PCI_MISSING_SRI"],
+  },
+  {
+    id: "RULE_PCI_KEYS",
+    category: "COMPLIANCE",
+    categoryTr: "Sektörel Uyumluluk",
+    categoryEn: "Compliance",
+    titleTr: "Ödeme API Anahtarları İzolasyonu (PCI-DSS 3.3)",
+    titleEn: "Exposed Payment API Keys Protection",
+    descTr: "Stripe veya ödeme sağlayıcılarına ait gizli veya test anahtarlarının istemci tarafı kaynak kodda sızdırılmaması.",
+    descEn: "Ensures payment gateway secret or test keys are never leaked in client-side HTML or JS bundles.",
+    findingIds: ["SEC_PCI_EXPOSED_SECRET_KEY", "SEC_PCI_EXPOSED_TEST_KEY", "SEC_PCI_INSECURE_PAYMENT_FORM"],
+  },
+  {
+    id: "RULE_KVKK_PRIVACY",
+    category: "COMPLIANCE",
+    categoryTr: "Sektörel Uyumluluk",
+    categoryEn: "Compliance",
+    titleTr: "Yasal Aydınlatma Metni & Gizlilik Politikası (KVKK & GDPR)",
+    titleEn: "Privacy Notice & Legal Compliance (KVKK / GDPR)",
+    descTr: "Kullanıcı verisi toplayan sayfalarda kolayca erişilebilir yasal Aydınlatma Metni veya Gizlilik Sözleşmesi bulunması.",
+    descEn: "Mandatory accessible Privacy Notice and statutory disclosure links under KVKK Art. 10 & GDPR Art. 13.",
+    findingIds: ["SEC_KVKK_PRIVACY_POLICY_MISSING"],
+  },
+  {
+    id: "RULE_COOKIE_CONSENT",
+    category: "COMPLIANCE",
+    categoryTr: "Sektörel Uyumluluk",
+    categoryEn: "Compliance",
+    titleTr: "Çerez Onay Mekanizması & ePrivacy (Cookie Banner)",
+    titleEn: "Cookie Consent Management & ePrivacy",
+    descTr: "Pazarlama ve analiz çerezleri çalıştırılmadan önce kullanıcıdan açık rıza toplayan onay mekanizması.",
+    descEn: "Ensures cookie consent is obtained prior to loading third-party marketing and analytics trackers.",
+    findingIds: ["SEC_KVKK_COOKIE_CONSENT_MISSING"],
+  },
+  {
+    id: "RULE_HEALTH_PRIVACY",
+    category: "COMPLIANCE",
+    categoryTr: "Sektörel Uyumluluk",
+    categoryEn: "Compliance",
+    titleTr: "Sağlık Verisi & Hasta Gizliliği Koruması (HIPAA & FTC)",
+    titleEn: "Health Data & Patient Privacy (HIPAA / FTC)",
+    descTr: "Sağlık ve randevu sayfalarında Meta Pixel, TikTok Pixel gibi üçüncü taraf sosyal medya/reklam takipçilerinin bulunmaması.",
+    descEn: "Prohibits third-party advertising pixels on clinical, appointment, and patient-facing workflows.",
+    findingIds: ["SEC_HIPAA_TRACKER_LEAKAGE"],
+  },
 ];
 
 interface GeneralControlModalProps {
@@ -345,8 +400,8 @@ export default function GeneralControlModal({
             </h2>
             <p className="gc-header-subtitle">
               {lang === "tr"
-                ? "Siber güvenlik uzmanlarının web uygulamalarında doğruladığı 22 temel kural ve canlı uyumluluk durumu."
-                : "22 essential baseline rules verified by security auditors and live target compliance status."}
+                ? "Siber güvenlik ve sektörel uyumluluk uzmanlarının web uygulamalarında doğruladığı 27 temel kural ve canlı uyumluluk durumu."
+                : "27 essential baseline security and compliance rules verified by auditors and live target compliance status."}
             </p>
           </div>
           <button className="gc-close-btn" onClick={onClose} title="Kapat">
