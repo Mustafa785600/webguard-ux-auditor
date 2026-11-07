@@ -13,6 +13,7 @@ from app.services.scroll_manager import HumanScrollEngine
 from app.services.menu_explorer import NavigationMenuExplorer
 from app.services.journey_engine import MultiStepJourneyEngine
 from app.services.challenge_detector import ChallengeDetector
+from app.services.live_screencast import live_hub, CDPScreencastManager
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -87,6 +88,12 @@ class PlaywrightQAScanner(BaseScanner):
                     ignore_https_errors=True
                 )
                 page = await context.new_page()
+
+                cdp = None
+                try:
+                    cdp = await CDPScreencastManager.attach_screencast(context, page)
+                except Exception:
+                    pass
 
                 # ── Event listeners ──────────────────────────────────────
                 def handle_page_error(exc):
@@ -169,6 +176,7 @@ class PlaywrightQAScanner(BaseScanner):
                 page.on("response",       handle_response)
 
                 # ── 1. Navigate ──────────────────────────────────────────
+                live_hub.record_action(f"Hedef URL'ye bağlanılıyor: {target_url}", action_type="NAVIGATE", target=target_url)
                 try:
                     await page.goto(target_url, wait_until="domcontentloaded", timeout=15000)
                     await page.wait_for_timeout(1500)
@@ -180,6 +188,7 @@ class PlaywrightQAScanner(BaseScanner):
                     screenshot_initial_b64 = "data:image/png;base64," + base64.b64encode(
                         await page.screenshot(type="png", full_page=False)
                     ).decode()
+                    await live_hub.broadcast_frame(screenshot_initial_b64)
                 except Exception:
                     pass
 
@@ -188,6 +197,7 @@ class PlaywrightQAScanner(BaseScanner):
                 try:
                     consent_res = await CookieConsentManager.dismiss_cookie_banner(page)
                     if consent_res.detected:
+                        live_hub.record_action(f"Çerez / KVKK: {consent_res.details}", action_type="COOKIE", target=consent_res.button_text or "banner")
                         interaction_log.append(f"Cookie / KVKK: {consent_res.details}")
                         if consent_res.dark_pattern_detected:
                             forced_cookie_finding = CookieConsentManager.formulate_compliance_finding(consent_res, target_url)
@@ -203,6 +213,7 @@ class PlaywrightQAScanner(BaseScanner):
                         page, max_steps=8, step_px=350, pause_ms=130, return_to_top=True
                     )
                     if scroll_res.total_scrolled_px > 0:
+                        live_hub.record_action(f"Doğal İnsan Kaydırması: {scroll_res.total_scrolled_px}px ({scroll_res.scroll_steps} adım)", action_type="SCROLL", target="viewport")
                         interaction_log.append(f"Smooth Scroll: {scroll_res.details}")
                         if scroll_res.broken_images_detected > 0:
                             broken_finding = HumanScrollEngine.formulate_broken_assets_finding(scroll_res, target_url)
@@ -290,6 +301,12 @@ class PlaywrightQAScanner(BaseScanner):
                     ).decode()
                 except Exception:
                     screenshot_final_b64 = screenshot_initial_b64
+
+                if cdp:
+                    try:
+                        await CDPScreencastManager.stop_screencast(cdp)
+                    except Exception:
+                        pass
 
                 await context.close()
                 await browser.close()

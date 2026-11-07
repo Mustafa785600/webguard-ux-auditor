@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, WebSocket, WebSocketDisconnect
 from app.models.schema import (
     ScanRequest, ScanResult, ScanStatus,
     PRDAnalyzeRequest, PRDAnalysisResponse,
@@ -7,6 +7,7 @@ from app.models.schema import (
 from app.services.orchestrator import execute_scan
 from app.services.prd_agent import analyze_prd_and_generate_tests
 from app.services.self_healing import heal_playwright_script
+from app.services.live_screencast import live_hub
 from app.core.security import validate_and_sanitize_target_url, SecurityValidationError
 
 router = APIRouter()
@@ -14,6 +15,29 @@ router = APIRouter()
 @router.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
     return {"status": "ok"}
+
+@router.get("/screencast/state")
+async def get_screencast_state():
+    """
+    Returns current live browser screencast frame and action HUD history (HTTP polling fallback).
+    """
+    return live_hub.get_state()
+
+@router.websocket("/ws/screencast")
+async def websocket_screencast_endpoint(websocket: WebSocket):
+    """
+    Real-time WebSocket feed for live browser viewport screencasting and AI Action HUD ticker events.
+    """
+    await live_hub.register_client(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        live_hub.unregister_client(websocket)
+    except Exception:
+        live_hub.unregister_client(websocket)
 
 @router.post("/scan", response_model=ScanResult)
 async def run_scan(request: ScanRequest):

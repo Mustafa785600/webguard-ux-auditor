@@ -21,6 +21,7 @@ from app.services.prd_agent import analyze_prd_and_generate_tests
 from app.services.crawler import AutonomousCrawler
 from app.services.notifier import dispatch_webhook
 from app.services.performance_tester import PerformanceBenchmarkEngine
+from app.services.live_screencast import live_hub
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -105,6 +106,7 @@ async def execute_scan(
     
     try:
         sanitized_url = validate_and_sanitize_target_url(target_url)
+        live_hub.start_session(sanitized_url)
     except Exception as exc:
         return ScanResult(
             scan_id=scan_id,
@@ -256,6 +258,11 @@ async def execute_scan(
         started_at=started_at,
         completed_at=datetime.utcnow()
     )
+
+    try:
+        live_hub.end_session("Güvenlik ve UX denetimi tamamlandı.")
+    except Exception:
+        pass
 
     if webhook_url:
         try:

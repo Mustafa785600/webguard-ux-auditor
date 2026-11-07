@@ -14,6 +14,7 @@ import ExecutiveDeckModal from "./ExecutiveDeckModal";
 import AutoHealView from "./AutoHealView";
 import RcaTriageBar from "./RcaTriageBar";
 import PerformanceView from "./PerformanceView";
+import LiveScreencastPanel from "./LiveScreencastPanel";
 import {
   type Language,
   UI_STRINGS,
@@ -52,6 +53,7 @@ export default function ScanDashboard() {
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
   const [showExecutiveDeck, setShowExecutiveDeck] = useState<boolean>(false);
+  const [showLiveScreencast, setShowLiveScreencast] = useState<boolean>(false);
   const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
 
   const t = UI_STRINGS[lang];
@@ -293,15 +295,12 @@ export default function ScanDashboard() {
         {!result && !loading && <PrdIntelligenceCard targetUrl={url} lang={lang} />}
 
         {loading && (
-          <div className="scan-loading" aria-live="polite">
-            <div className="spinner" role="status" aria-label="Scanning" />
-            <p>
-              {lang === "tr" ? "Denetleniyor: " : "Scanning "}
-              <strong>{url}</strong>…
-            </p>
-            <p style={{ fontSize: "13px", marginTop: "6px", color: "var(--text-muted)" }}>
-              {t.scanningMsg}
-            </p>
+          <div className="scan-live-streaming-section">
+            <LiveScreencastPanel
+              targetUrl={url}
+              isActive={true}
+              lang={lang}
+            />
           </div>
         )}
 
@@ -334,6 +333,14 @@ export default function ScanDashboard() {
                   title={lang === "tr" ? "Virgosol Tarzı C-Level Yönetici Sunumu (16:9 Deck)" : "Executive Presentation Deck"}
                 >
                   📽️ {lang === "tr" ? "Yönetici Sunumu (Deck)" : "Executive Deck"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-action btn-checklist"
+                  onClick={() => setShowLiveScreencast(true)}
+                  title={lang === "tr" ? "TestSprite Tarzı Canlı Tarayıcı Ekranı & HUD Kaydı" : "Live Browser Stream & Action HUD"}
+                >
+                  📺 {lang === "tr" ? "Canlı Kayıt & HUD" : "Live HUD Replay"}
                 </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
@@ -590,6 +597,17 @@ export default function ScanDashboard() {
               result={result}
               lang={lang}
             />
+
+            {showLiveScreencast && (
+              <div className="live-screencast-container expanded">
+                <LiveScreencastPanel
+                  targetUrl={result.target_url}
+                  isActive={false}
+                  lang={lang}
+                  onClose={() => setShowLiveScreencast(false)}
+                />
+              </div>
+            )}
           </>
         )}
       </main>

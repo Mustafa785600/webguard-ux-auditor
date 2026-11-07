@@ -128,3 +128,4 @@ async def test_challenge_detector_returns_clean_when_no_gate():
 
         assert result.detected is False
         assert result.challenge_type is None
+
