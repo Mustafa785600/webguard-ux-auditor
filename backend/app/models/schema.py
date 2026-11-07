@@ -33,6 +33,7 @@ class SectorType(str, Enum):
     HEALTHCARE = "HEALTHCARE"
     CORPORATE_GOV = "CORPORATE_GOV"
     SAAS_API = "SAAS_API"
+    FINTECH_BANKING = "FINTECH_BANKING"
 
 class NetworkRequestTrace(BaseModel):
     url: str
@@ -115,6 +116,23 @@ class ScanRequest(BaseModel):
     max_pages: Optional[int] = 5
     crawl_depth: Optional[int] = 1
 
+class PerformanceMetrics(BaseModel):
+    total_requests: int
+    concurrency: int
+    success_rate: float
+    avg_latency_ms: float
+    min_latency_ms: float
+    p50_latency_ms: float
+    p90_latency_ms: float
+    p95_latency_ms: float
+    p99_latency_ms: float
+    max_latency_ms: float
+    throughput_req_per_sec: float
+    sla_status: str  # "EXCELLENT" | "ACCEPTABLE" | "BREACH"
+    status_codes: Dict[int, int] = {}
+    samples: List[float] = []
+    ttfb_ms: Optional[float] = None
+
 class ScanResult(BaseModel):
     scan_id: str
     target_url: str
@@ -123,11 +141,13 @@ class ScanResult(BaseModel):
     ux_score: int = 100
     compliance_score: int = 100
     resilience_score: int = 95
+    bddk_compliance_score: Optional[int] = None
     selected_sector: Optional[SectorType] = SectorType.AUTO
     detected_sector: Optional[SectorType] = None
     findings: List[Finding] = []
     rca_summary: Optional[Dict[str, int]] = None
     network_traces: List[NetworkRequestTrace] = []
+    performance_metrics: Optional[PerformanceMetrics] = None
     prd_analysis: Optional[PRDAnalysisResponse] = None
     self_healing_events: Optional[List[Dict[str, Any]]] = None
     crawl_graph: Optional[List[CrawlNode]] = None

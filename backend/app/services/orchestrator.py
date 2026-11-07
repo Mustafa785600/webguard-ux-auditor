@@ -20,6 +20,7 @@ from app.services.scorer import calculate_category_score
 from app.services.prd_agent import analyze_prd_and_generate_tests
 from app.services.crawler import AutonomousCrawler
 from app.services.notifier import dispatch_webhook
+from app.services.performance_tester import PerformanceBenchmarkEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -126,6 +127,7 @@ async def execute_scan(
     compliance_scanner = ComplianceScanner(requested_sector=sector or SectorType.AUTO)
 
     headers = {"User-Agent": settings.USER_AGENT}
+    perf_metrics = None
     async with httpx.AsyncClient(
         headers=headers,
         timeout=settings.REQUEST_TIMEOUT_SECONDS,
@@ -136,10 +138,20 @@ async def execute_scan(
         scan_coroutines = [scanner.scan(sanitized_url, client) for scanner in active_scanners]
         scanner_results = await asyncio.gather(*scan_coroutines, return_exceptions=True)
 
+        # Virgosol Yük, Stres ve Latency SLA Benchmark Motoru
+        try:
+            perf_engine = PerformanceBenchmarkEngine(concurrency=5, total_requests=10)
+            perf_metrics, perf_findings = await perf_engine.benchmark(sanitized_url, client=client)
+        except Exception as exc:
+            perf_findings = []
+            import logging
+            logging.error(f"[Performance Benchmark Error] Failed on {sanitized_url}: {exc}")
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
             all_findings.extend(res)
+    all_findings.extend(perf_findings)
 
     network_traces = []
     for scanner in active_scanners:
@@ -184,8 +196,21 @@ async def execute_scan(
         elif f.severity == Severity.LOW:
             comp_deduction += 3
     compliance_score = max(0, 100 - comp_deduction)
-
     detected_sector = compliance_scanner.detected_sector or SectorType.GENERAL
+
+    # BDDK ve Finansal Mevzuat Skoru Hesabı
+    bddk_findings = [f for f in all_findings if "BDDK" in (f.compliance_standard or "") or "BKM" in (f.compliance_standard or "")]
+    bddk_deduction = 0
+    for f in bddk_findings:
+        if f.severity == Severity.CRITICAL:
+            bddk_deduction += 35
+        elif f.severity == Severity.HIGH:
+            bddk_deduction += 20
+        elif f.severity == Severity.MEDIUM:
+            bddk_deduction += 10
+        elif f.severity == Severity.LOW:
+            bddk_deduction += 5
+    bddk_compliance_score = max(0, 100 - bddk_deduction) if bddk_findings or detected_sector == SectorType.FINTECH_BANKING else None
 
     # Ensure 100% Full-Spectrum RCA & Team Assignment for all findings
     rca_counts = {
@@ -210,12 +235,14 @@ async def execute_scan(
         security_score=security_score,
         ux_score=ux_score,
         compliance_score=compliance_score,
+        bddk_compliance_score=bddk_compliance_score,
         resilience_score=resilience_score,
         selected_sector=sector or SectorType.AUTO,
         detected_sector=detected_sector,
         findings=all_findings,
         rca_summary=rca_counts,
         network_traces=network_traces,
+        performance_metrics=perf_metrics,
         prd_analysis=prd_analysis,
         self_healing_events=self_healing_events,
         crawl_graph=crawl_graph,

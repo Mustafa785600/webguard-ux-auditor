@@ -97,6 +97,14 @@ class ComplianceScanner(BaseScanner):
         api_findings = await self._check_exposed_api_docs(target_url, client)
         findings.extend(api_findings)
 
+        # 6. BDDK & Fintek Uyumluluk Denetimleri (Virgosol Standardı)
+        findings.extend(self._check_bddk_session_security(response))
+        findings.extend(self._check_bddk_financial_data_masking(html_text))
+        if active_sector == SectorType.FINTECH_BANKING or self.detected_sector == SectorType.FINTECH_BANKING:
+            findings.extend(self._check_bddk_mfa_login_security(soup, target_url))
+            bddk_api_findings = await self._check_bddk_open_banking_api(target_url, client)
+            findings.extend(bddk_api_findings)
+
         return findings
 
     def detect_sector(self, soup: BeautifulSoup, url: str, text: str) -> SectorType:
@@ -109,7 +117,21 @@ class ComplianceScanner(BaseScanner):
             SectorType.HEALTHCARE: 0,
             SectorType.CORPORATE_GOV: 0,
             SectorType.SAAS_API: 0,
+            SectorType.FINTECH_BANKING: 0,
         }
+
+        # Fintech & Banking Signals (Virgosol Standard)
+        fintech_keywords = [
+            "banka", "bankacılık", "banking", "iban", "mevduat", "kredi",
+            "havale", "eft", "fast", "pos", "fintek", "fintech", "cüzdan",
+            "wallet", "açık bankacılık", "open banking", "bkm", "bddk",
+            "swift", "kart başvurusu", "faiz", "bireysel emeklilik", "yatırım"
+        ]
+        for kw in fintech_keywords:
+            if kw in lower_text:
+                scores[SectorType.FINTECH_BANKING] += 1
+        if any(term in lower_url for term in ("bank", "finans", "fintech", "cuzdan", "credit", "kredi", "garanti", "isbank", "akbank")):
+            scores[SectorType.FINTECH_BANKING] += 3
 
         # E-Commerce Signals
         ecom_keywords = [
@@ -499,6 +521,259 @@ class ComplianceScanner(BaseScanner):
                                 problematic_code=f"{probe_url} (HTTP 200 OK)",
                                 compliance_standard="OWASP API Security Top 10 (API9:2023)",
                                 sector_relevance=[SectorType.SAAS_API]
+                            )
+                        )
+                        break
+            except Exception:
+                continue
+
+        return findings
+
+    # ── Virgosol Tarzı BDDK & Açık Bankacılık Standartları Denetimleri ──
+
+    def _check_bddk_session_security(self, response: httpx.Response) -> List[Finding]:
+        """
+        BDDK Bilgi Sistemleri ve Elektronik Bankacılık Hizmetleri Yönetmeliği (Madde 31 - Oturum Yönetimi):
+        Oturum çerezleri mutlak surette 'Secure', 'HttpOnly' ve 'SameSite=Strict' veya 'Lax' olmalıdır.
+        """
+        findings: List[Finding] = []
+        set_cookie_headers = response.headers.get_list("set-cookie") if hasattr(response.headers, "get_list") else [response.headers.get("set-cookie", "")]
+
+        insecure_cookies = []
+        session_keywords = ["session", "token", "auth", "sid", "phpsessid", "jsessionid", "connect.sid", "jwt", "bank"]
+
+        for cookie_str in set_cookie_headers:
+            if not cookie_str:
+                continue
+            lower_c = cookie_str.lower()
+            cookie_name = cookie_str.split("=")[0].strip()
+
+            is_session = any(k in cookie_name.lower() for k in session_keywords)
+            if not is_session:
+                continue
+
+            missing_flags = []
+            if "secure" not in lower_c:
+                missing_flags.append("Secure")
+            if "httponly" not in lower_c:
+                missing_flags.append("HttpOnly")
+            if "samesite=strict" not in lower_c and "samesite=lax" not in lower_c:
+                missing_flags.append("SameSite=Strict/Lax")
+
+            if missing_flags:
+                insecure_cookies.append(f"{cookie_name} (Eksik: {', '.join(missing_flags)})")
+
+        if insecure_cookies:
+            findings.append(
+                Finding(
+                    id="BDDK_INSECURE_SESSION_COOKIE",
+                    category=Category.SECURITY,
+                    severity=Severity.HIGH,
+                    title="BDDK Md. 31: Güvensiz Oturum Çerezi Yapılandırması",
+                    description=(
+                        "BDDK Bilgi Sistemleri Yönetmeliği Madde 31 gereğince oturum yönetimi çerezlerinde "
+                        f"'Secure', 'HttpOnly' ve 'SameSite=Strict' bayrakları zorunludur. Tespit edilen eksik çerezler: {', '.join(insecure_cookies)}"
+                    ),
+                    remediation=(
+                        "Set-Cookie başlığında 'Secure; HttpOnly; SameSite=Strict' direktiflerini zorunlu kılın. "
+                        "Çerezlerin yalnızca HTTPS üzerinden iletildiğinden ve JavaScript (XSS) ile erişilemediğinden emin olun."
+                    ),
+                    risk_impact=(
+                        "Oturum çerezinde HttpOnly eksikliği XSS saldırılarında oturum çalınmasına (Session Hijacking), "
+                        "SameSite eksikliği ise CSRF yoluyla yetkisiz para transferi veya talimat verilmesine yol açar."
+                    ),
+                    evidence={"insecure_cookies": insecure_cookies},
+                    code_example=(
+                        "# Güvenli BDDK Uyumlu Çerez Örneği\n"
+                        "Set-Cookie: session_token=abcd1234efgh; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=1800"
+                    ),
+                    target_location="Set-Cookie Header",
+                    compliance_standard="BDDK Bilgi Sistemleri Yönetmeliği (Md. 31)",
+                    sector_relevance=[SectorType.FINTECH_BANKING, SectorType.ECOMMERCE],
+                )
+            )
+
+        return findings
+
+    def _check_bddk_financial_data_masking(self, html_text: str) -> List[Finding]:
+        """
+        BDDK Bilgi Sistemleri Yönetmeliği (Madde 34) & KVKK:
+        Hassas finansal ve kimlik verilerinin (IBAN, TCKN, Kredi Kartı) maskelenmeden açıkta gösterimi yasaktır.
+        """
+        findings: List[Finding] = []
+
+        # 1. Unmasked Turkish IBAN Check (TR + 24 digits = 26 total)
+        iban_pattern = re.compile(r"\b(TR\d{2}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{2})\b", re.IGNORECASE)
+        unmasked_ibans = []
+        for match in iban_pattern.finditer(html_text):
+            raw_iban = match.group(1).replace(" ", "")
+            if len(raw_iban) == 26 and "*" not in raw_iban and "X" not in raw_iban:
+                unmasked_ibans.append(f"{raw_iban[:4]}...{raw_iban[-4:]} (Açıkta: {raw_iban})")
+
+        if unmasked_ibans:
+            findings.append(
+                Finding(
+                    id="BDDK_UNMASKED_IBAN_EXPOSURE",
+                    category=Category.SECURITY,
+                    severity=Severity.HIGH,
+                    title="BDDK Md. 34: Maskelenmemiş IBAN Bilgisi Tespit Edildi",
+                    description=(
+                        f"Sayfa içeriğinde {len(unmasked_ibans)} adet maskelenmemiş açık Türk IBAN numarası tespit edildi. "
+                        "Finansal mevzuata göre müşteri hesap ve IBAN bilgileri maskelenmelidir."
+                    ),
+                    remediation=(
+                        "Arayüzde gösterilen tüm IBAN numaralarını yalnızca ilk 4 hane (ülke ve kontrol kodu) "
+                        "ile son 4 hanesi görünür olacak şekilde (örn. TR33 ********** 1234) maskeleyin."
+                    ),
+                    risk_impact=(
+                        "Açık IBAN bilgileri kimlik avı (phishing), sosyal mühendislik ve BDDK/KVKK denetimlerinde "
+                        "ağır idari para cezalarına yol açar."
+                    ),
+                    evidence={"samples": unmasked_ibans[:3]},
+                    code_example=(
+                        "// IBAN Maskeleme Fonksiyonu\n"
+                        "function maskIBAN(iban) {\n"
+                        "    const clean = iban.replace(/\\s/g, '');\n"
+                        "    return clean.slice(0, 4) + ' ' + '*'.repeat(16) + ' ' + clean.slice(-4);\n"
+                        "}"
+                    ),
+                    target_location="HTML Response Body",
+                    compliance_standard="BDDK Bilgi Sistemleri Yönetmeliği (Md. 34)",
+                    sector_relevance=[SectorType.FINTECH_BANKING, SectorType.ECOMMERCE],
+                )
+            )
+
+        # 2. Algorithmic Turkish Citizenship ID (TCKN) Check
+        tckn_pattern = re.compile(r"\b([1-9]\d{10})\b")
+        unmasked_tckns = []
+        for match in tckn_pattern.finditer(html_text):
+            candidate = match.group(1)
+            # Algorithmic validation
+            digits = [int(c) for c in candidate]
+            if len(set(digits)) == 1:
+                continue  # Skip dummy like 11111111111
+            d10 = ((digits[0] + digits[2] + digits[4] + digits[6] + digits[8]) * 7 - (digits[1] + digits[3] + digits[5] + digits[7])) % 10
+            d11 = sum(digits[:10]) % 10
+            if digits[9] == d10 and digits[10] == d11:
+                unmasked_tckns.append(f"{candidate[:3]}*****{candidate[-2:]}")
+
+        if unmasked_tckns:
+            findings.append(
+                Finding(
+                    id="BDDK_UNMASKED_TCKN_EXPOSURE",
+                    category=Category.SECURITY,
+                    severity=Severity.CRITICAL,
+                    title="Kritik Veri Sızıntısı: Maskelenmemiş T.C. Kimlik Numarası",
+                    description=(
+                        f"Sayfa kaynak kodunda resmi TCKN algoritma doğrulamasını geçen {len(unmasked_tckns)} adet açık kimlik numarası tespit edildi."
+                    ),
+                    remediation=(
+                        "Kullanıcı TCKN bilgilerini veritabanında şifreli (AES-256) saklayın ve web arayüzlerinde "
+                        "yalnızca ilk 3 ve son 2 hane hariç tüm haneleri maskeleyin (örn. 123******89)."
+                    ),
+                    risk_impact=(
+                        "TCKN sızıntısı KVKK Madde 12 ve BDDK Bilgi Sistemleri düzenlemelerine göre en üst düzey kritik güvenlik ihlalidir."
+                    ),
+                    evidence={"masked_samples": unmasked_tckns[:3]},
+                    target_location="HTML Response Body",
+                    compliance_standard="BDDK Bilgi Sistemleri & KVKK (Md. 12)",
+                    sector_relevance=[SectorType.FINTECH_BANKING, SectorType.CORPORATE_GOV],
+                )
+            )
+
+        return findings
+
+    def _check_bddk_mfa_login_security(self, soup: BeautifulSoup, target_url: str) -> List[Finding]:
+        """
+        BDDK Elektronik Bankacılık Hizmetleri (Kimlik Doğrulama & Çift Faktör Standartları):
+        Kimlik doğrulama formları HTTPS üzerinde olmalı ve CSRF koruması içermelidir.
+        """
+        findings: List[Finding] = []
+
+        password_inputs = soup.find_all("input", attrs={"type": lambda t: t and t.lower() == "password"})
+        if not password_inputs:
+            return findings
+
+        for pwd in password_inputs:
+            form = pwd.find_parent("form")
+            if not form:
+                continue
+
+            action = form.get("action", "").strip()
+            # Insecure cleartext action
+            if action.lower().startswith("http://"):
+                findings.append(
+                    Finding(
+                        id="BDDK_INSECURE_AUTH_TRANSMISSION",
+                        category=Category.SECURITY,
+                        severity=Severity.CRITICAL,
+                        title="BDDK Kritik İhlal: Parola Formunun Şifresiz HTTP ile İletimi",
+                        description=f"Kimlik doğrulama formu verileri şifresiz HTTP uç noktasına ({action}) postalanıyor.",
+                        remediation="Form action hedefini mutlaka TLS 1.3 / HTTPS korumalı bir uç noktaya çevirin.",
+                        risk_impact="Yerel ağ dinleyicileri ve ortadaki adam (MitM) saldırganları bankacılık parolalarını açık metin olarak ele geçirebilir.",
+                        target_location="<form action='...'>",
+                        compliance_standard="BDDK Elektronik Bankacılık Hizmetleri (Kimlik Doğrulama)",
+                        sector_relevance=[SectorType.FINTECH_BANKING],
+                    )
+                )
+                break
+
+            # Anti-CSRF token check in authentication / financial transaction forms
+            csrf_inputs = form.find_all(
+                "input",
+                attrs={"name": lambda n: n and any(k in n.lower() for k in ("csrf", "token", "_token", "authenticity_token"))}
+            )
+            if not csrf_inputs:
+                findings.append(
+                    Finding(
+                        id="BDDK_MISSING_CSRF_PROTECTION",
+                        category=Category.SECURITY,
+                        severity=Severity.HIGH,
+                        title="BDDK Uyumsuzluğu: Kimlik Doğrulama Formunda Eksik CSRF Koruması",
+                        description="Kritik giriş veya işlem formunda anti-CSRF token doğrulama parametresi tespit edilemedi.",
+                        remediation="Her oturum veya istek için kriptografik olarak güvenli bir CSRF token üretin ve form submit edildiğinde doğrulayın.",
+                        risk_impact="Saldırganlar kullanıcı adına yetkisiz finansal işlemler veya talimatlar tetikleyebilir.",
+                        target_location="<form>",
+                        compliance_standard="BDDK Bilgi Sistemleri Yönetmeliği (Md. 33)",
+                        sector_relevance=[SectorType.FINTECH_BANKING],
+                    )
+                )
+                break
+
+        return findings
+
+    async def _check_bddk_open_banking_api(self, target_url: str, client: httpx.AsyncClient) -> List[Finding]:
+        """
+        BKM Açık Bankacılık GEÇİT & BDDK Standartları:
+        Açık Bankacılık API uç noktalarında yetkisiz erişim, mTLS gereksinimi ve CORS politikası denetimi.
+        """
+        findings: List[Finding] = []
+        open_banking_paths = ["/open-banking/v1", "/bkm/gecit", "/api/v1/accounts", "/api/psd2"]
+
+        for path in open_banking_paths:
+            probe_url = urljoin(target_url, path)
+            try:
+                resp = await client.get(probe_url, timeout=3.0)
+                # If an open banking endpoint responds with 200 OK without authentication
+                if resp.status_code == 200:
+                    acao = resp.headers.get("access-control-allow-origin", "")
+                    if acao == "*":
+                        findings.append(
+                            Finding(
+                                id="BDDK_OPEN_BANKING_PERMISSIVE_CORS",
+                                category=Category.SECURITY,
+                                severity=Severity.HIGH,
+                                title="BKM Açık Bankacılık Standart İhlali: API'de Wildcard CORS",
+                                description=(
+                                    f"Açık bankacılık uç noktası ({path}) herkese açık 'Access-Control-Allow-Origin: *' başlığı dönüyor. "
+                                    "BKM GEÇİT standartlarına göre finansal API'lerde wildcard CORS kesinlikle yasaktır."
+                                ),
+                                remediation="Açık bankacılık API uç noktalarında yalnızca yetkilendirilmiş Fintek (ÖHS/YHB) sertifikalı alan adlarına izin verin.",
+                                risk_impact="Kötü amaçlı web siteleri kullanıcının açık oturumunu sömürerek hesap veya bakiye bilgilerini okuyabilir.",
+                                evidence={"endpoint": probe_url, "access_control_allow_origin": acao},
+                                target_location=path,
+                                compliance_standard="BKM Açık Bankacılık & BDDK API Standartları",
+                                sector_relevance=[SectorType.FINTECH_BANKING],
                             )
                         )
                         break

@@ -12,6 +12,7 @@ import GeneralControlModal from "./GeneralControlModal";
 import AuditReportModal from "./AuditReportModal";
 import AutoHealView from "./AutoHealView";
 import RcaTriageBar from "./RcaTriageBar";
+import PerformanceView from "./PerformanceView";
 import {
   type Language,
   UI_STRINGS,
@@ -46,7 +47,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE">("FINDINGS");
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
   const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
@@ -232,7 +233,7 @@ export default function ScanDashboard() {
             🏛️ {lang === "tr" ? "Sektörel Uyumluluk Protokolü:" : "Industry Compliance Protocol:"}
           </div>
           <div className="sector-pills-list">
-            {(["AUTO", "GENERAL", "ECOMMERCE", "HEALTHCARE", "CORPORATE_GOV", "SAAS_API"] as SectorType[]).map((sec) => {
+            {(["AUTO", "GENERAL", "ECOMMERCE", "HEALTHCARE", "CORPORATE_GOV", "SAAS_API", "FINTECH_BANKING"] as SectorType[]).map((sec) => {
               const info = SECTOR_LABELS[lang][sec];
               const isActive = selectedSector === sec;
               return (
@@ -361,6 +362,13 @@ export default function ScanDashboard() {
                   color="#f59e0b"
                 />
               )}
+              {result.bddk_compliance_score !== undefined && (
+                <ScoreCard
+                  label={lang === "tr" ? "BDDK & Finans Mevzuat Skoru" : "BDDK Banking Compliance"}
+                  score={result.bddk_compliance_score}
+                  color="#0ea5e9"
+                />
+              )}
             </div>
 
             {result.network_traces && result.network_traces.length > 0 && (
@@ -397,6 +405,13 @@ export default function ScanDashboard() {
               >
                 🧪 {t.tabAutoHeal || "Auto-Heal"} ({result.self_healing_events?.length ?? 0})
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "PERFORMANCE" ? "active" : ""}`}
+                onClick={() => setActiveTab("PERFORMANCE")}
+              >
+                ⚡ {t.tabPerformance || "Yük & Performans (SLA)"} {result.performance_metrics ? `(${result.performance_metrics.p95_latency_ms}ms)` : ""}
+              </button>
             </div>
 
             {/* TAB 1: TestSprite PRD Intelligence */}
@@ -430,7 +445,16 @@ export default function ScanDashboard() {
               />
             )}
 
-            {/* TAB 4: Main Findings List */}
+            {/* TAB 4: Virgosol Enterprise Load & Performance Benchmark */}
+            {activeTab === "PERFORMANCE" && (
+              <PerformanceView
+                metrics={result.performance_metrics}
+                findings={result.findings}
+                lang={lang}
+              />
+            )}
+
+            {/* TAB 5: Main Findings List */}
             {activeTab === "FINDINGS" && (
               <>
                 {selectedRouteUrl && (

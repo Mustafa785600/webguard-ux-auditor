@@ -13,6 +13,7 @@ export const SECTOR_LABELS: Record<
     HEALTHCARE: { name: "Sağlık & Medikal", standard: "HIPAA & Hasta Gizliliği", icon: "🏥" },
     CORPORATE_GOV: { name: "Kurumsal & Kamu", standard: "KVKK & GDPR", icon: "🏛️" },
     SAAS_API: { name: "SaaS & Teknoloji", standard: "OWASP API Top 10", icon: "⚡" },
+    FINTECH_BANKING: { name: "Bankacılık & Fintek", standard: "BDDK & Açık Bankacılık", icon: "🏦" },
   },
   en: {
     AUTO: { name: "Auto-Detect", standard: "Smart Sector Analysis", icon: "✨" },
@@ -21,6 +22,7 @@ export const SECTOR_LABELS: Record<
     HEALTHCARE: { name: "Healthcare & MedTech", standard: "HIPAA & Health Privacy", icon: "🏥" },
     CORPORATE_GOV: { name: "Corporate & Gov", standard: "GDPR & KVKK", icon: "🏛️" },
     SAAS_API: { name: "SaaS & Technology", standard: "OWASP API Top 10", icon: "⚡" },
+    FINTECH_BANKING: { name: "Banking & Fintech", standard: "BDDK & Open Banking", icon: "🏦" },
   },
 };
 
@@ -97,6 +99,7 @@ export const UI_STRINGS: Record<Language, Record<string, string>> = {
     tabPrd: "TestSprite PRD Intelligence",
     tabCrawlGraph: "Site Map & Route Graph",
     tabAutoHeal: "Auto-Heal & Flaky Tests",
+    tabPerformance: "⚡ Load & Performance (SLA)",
     pagesExplored: "Pages Explored",
     routesDiscovered: "Internal Routes",
     formsButtonsTested: "Forms & Controls Tested",
@@ -177,6 +180,7 @@ export const UI_STRINGS: Record<Language, Record<string, string>> = {
     tabPrd: "TestSprite PRD Zekası",
     tabCrawlGraph: "Site Haritası & Rota Ağacı",
     tabAutoHeal: "Otonom E2E Auto-Heal",
+    tabPerformance: "⚡ Yük & Performans (SLA)",
     pagesExplored: "Taranan Sayfa",
     routesDiscovered: "Dahili Rota",
     formsButtonsTested: "Test Edilen Form & Buton",
@@ -423,6 +427,60 @@ const FINDING_TRANSLATIONS_TR: Record<string, FindingTranslation> = {
     description: "Sayfada 404 dönen veya ulaşılamayan bağlantılar tespit edildi.",
     risk_impact: "Kırık bağlantılar kullanıcıların sitede kaybolmasına ve arama motoru puanlarının düşmesine neden olur.",
     remediation: "Tüm köprüleri ve resim kaynaklarını kontrol ederek geçerli URL'ler ile güncelleyin.",
+  },
+  PERF_LATENCY_SLA_BREACH: {
+    title: "Kritik Yanıt Süresi (Latency SLA) İhlali",
+    description: "Sunucu P95 yanıt süresi ve ortalama gecikme kurumsal SLA standardı olan 500ms sınırını aşıyor.",
+    risk_impact: "Yüksek yanıt süresi e-ticaret ve fintek sistemlerinde kullanıcı terk oranını artırır ve BDDK yanıt süresi SLA taahhütlerinin ihlaline yol açar.",
+    remediation: "Ters vekil (reverse proxy) önbellekleme (Nginx cache), veritabanı indekslemesi veya CDN kenar önbelleklemesini etkinleştirin.",
+  },
+  PERF_CONCURRENT_STRESS_FAILURE: {
+    title: "Eşzamanlı Yük Altında İstek Hataları",
+    description: "Hafif eşzamanlı yük altında isteklerin bir kısmı başarısız oldu veya zaman aşımına uğradı.",
+    risk_impact: "Kullanıcı trafiği aniden arttığında sistem yanıt veremez hale gelir ve 502/504 hataları üretir.",
+    remediation: "Web sunucusu bağlantı havuzunu artırın, rate-limiting ve auto-scaling yapılandırın.",
+  },
+  PERF_NO_COMPRESSION: {
+    title: "Eksik Yanıt Sıkıştırması (Gzip / Brotli)",
+    description: "Sunucu yanıtlarında Gzip veya Brotli içerik sıkıştırması (Content-Encoding) etkinleştirilmemiş.",
+    risk_impact: "Sıkıştırılmamış metin yanıtları bant genişliğini tüketir ve mobil cihazlarda sayfa yükleme süresini uzatır.",
+    remediation: "Nginx, Apache veya CDN seviyesinde Gzip/Brotli sıkıştırmasını etkinleştirin.",
+  },
+  BDDK_INSECURE_SESSION_COOKIE: {
+    title: "BDDK Md. 31: Güvensiz Oturum Çerezi Yapılandırması",
+    description: "Oturum yönetimi çerezlerinde Secure, HttpOnly ve SameSite bayrakları zorunludur.",
+    risk_impact: "Oturum çerezinde HttpOnly eksikliği XSS ile oturum çalınmasına (Session Hijacking), SameSite eksikliği ise CSRF ile yetkisiz transfere yol açar.",
+    remediation: "Set-Cookie başlığında 'Secure; HttpOnly; SameSite=Strict' direktiflerini zorunlu kılın.",
+  },
+  BDDK_UNMASKED_IBAN_EXPOSURE: {
+    title: "BDDK Md. 34: Maskelenmemiş IBAN Bilgisi",
+    description: "Sayfa içeriğinde maskelenmemiş açık Türk IBAN numarası tespit edildi.",
+    risk_impact: "Açık IBAN bilgileri sosyal mühendislik ve BDDK/KVKK denetimlerinde ağır idari cezalara yol açar.",
+    remediation: "Arayüzde gösterilen tüm IBAN numaralarını yalnızca ilk 4 ve son 4 hanesi görünecek şekilde maskeleyin.",
+  },
+  BDDK_UNMASKED_TCKN_EXPOSURE: {
+    title: "Kritik Veri Sızıntısı: Maskelenmemiş T.C. Kimlik No",
+    description: "Resmi TCKN algoritma doğrulamasını geçen açık kimlik numarası tespit edildi.",
+    risk_impact: "TCKN sızıntısı KVKK Madde 12 ve BDDK Bilgi Sistemleri düzenlemelerine göre en üst düzey kritik güvenlik ihlalidir.",
+    remediation: "Kullanıcı TCKN bilgilerini veritabanında şifreli saklayın ve web arayüzlerinde ilk 3 ve son 2 hane hariç maskeleyin.",
+  },
+  BDDK_INSECURE_AUTH_TRANSMISSION: {
+    title: "BDDK Kritik: Parola Formunun Şifresiz İletimi",
+    description: "Kimlik doğrulama formu verileri şifresiz HTTP uç noktasına postalanıyor.",
+    risk_impact: "Ortadaki adam (MitM) saldırganları bankacılık parolalarını açık metin olarak ele geçirebilir.",
+    remediation: "Form action hedefini mutlaka TLS 1.3 / HTTPS korumalı bir uç noktaya çevirin.",
+  },
+  BDDK_MISSING_CSRF_PROTECTION: {
+    title: "BDDK Md. 33: Giriş Formunda Eksik CSRF Koruması",
+    description: "Kritik giriş veya işlem formunda anti-CSRF token doğrulama parametresi tespit edilemedi.",
+    risk_impact: "Saldırganlar kullanıcı adına yetkisiz finansal işlemler veya talimatlar tetikleyebilir.",
+    remediation: "Her oturum veya istek için kriptografik olarak güvenli bir CSRF token üretin ve doğrulayın.",
+  },
+  BDDK_OPEN_BANKING_PERMISSIVE_CORS: {
+    title: "BKM Açık Bankacılık İhlali: API'de Wildcard CORS",
+    description: "Açık bankacılık uç noktası herkese açık Access-Control-Allow-Origin: * başlığı dönüyor.",
+    risk_impact: "Kötü amaçlı web siteleri kullanıcının açık oturumunu sömürerek hesap veya bakiye bilgilerini okuyabilir.",
+    remediation: "Yalnızca yetkilendirilmiş Fintek (ÖHS/YHB) lisanslı alan adlarını beyaz listeye alın.",
   },
 };
 

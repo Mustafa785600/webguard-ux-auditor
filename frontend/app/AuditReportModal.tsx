@@ -307,6 +307,37 @@ export default function AuditReportModal({
               )}
             </section>
 
+            {/* Virgosol Enterprise Load & BDDK Performance SLA Section */}
+            {result.performance_metrics && (
+              <section className="report-section report-page-break">
+                <h2 className="report-section-title">
+                  ⚡ {lang === "tr" ? "4. Virgosol Yük, Yanıt Süresi (Latency SLA) & BDDK Matrisi" : "4. Virgosol Load, Latency SLA & BDDK Matrix"}
+                </h2>
+                <div className="report-perf-summary-box">
+                  <div className="report-perf-meta">
+                    <div>
+                      <strong>{lang === "tr" ? "Kurumsal SLA Durumu: " : "Enterprise SLA Status: "}</strong>
+                      <span className={`perf-status-badge ${result.performance_metrics.sla_status.toLowerCase()}`}>
+                        {result.performance_metrics.sla_status}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>{lang === "tr" ? "P95 Gecikme (SLA Standardı): " : "P95 Latency (SLA Target): "}</strong>
+                      {result.performance_metrics.p95_latency_ms} ms (&lt; 500ms Hedefi)
+                    </div>
+                    <div>
+                      <strong>{lang === "tr" ? "P50 Medyan Gecikme: " : "P50 Median Latency: "}</strong>
+                      {result.performance_metrics.p50_latency_ms} ms
+                    </div>
+                    <div>
+                      <strong>Throughput: </strong>
+                      {result.performance_metrics.throughput_req_per_sec} req/sec (%{result.performance_metrics.success_rate} Başarı)
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Official Sign-Off Footer */}
             <footer className="report-footer">
               <div className="footer-disclaimer">

@@ -13,7 +13,8 @@ export type SectorType =
   | "ECOMMERCE"
   | "HEALTHCARE"
   | "CORPORATE_GOV"
-  | "SAAS_API";
+  | "SAAS_API"
+  | "FINTECH_BANKING";
 
 export interface NetworkRequestTrace {
   url: string;
@@ -86,6 +87,24 @@ export interface PRDAnalysisResponse {
   generated_at: string;
 }
 
+export interface PerformanceMetrics {
+  total_requests: number;
+  concurrency: number;
+  success_rate: number;
+  avg_latency_ms: number;
+  min_latency_ms: number;
+  p50_latency_ms: number;
+  p90_latency_ms: number;
+  p95_latency_ms: number;
+  p99_latency_ms: number;
+  max_latency_ms: number;
+  throughput_req_per_sec: number;
+  sla_status: "EXCELLENT" | "ACCEPTABLE" | "BREACH";
+  status_codes: Record<number, number>;
+  samples: number[];
+  ttfb_ms?: number;
+}
+
 export interface ScanResult {
   scan_id: string;
   target_url: string;
@@ -93,12 +112,14 @@ export interface ScanResult {
   security_score: number;
   ux_score: number;
   compliance_score?: number;
+  bddk_compliance_score?: number;
   resilience_score?: number;
   selected_sector?: SectorType;
   detected_sector?: SectorType;
   findings: Finding[];
   rca_summary?: Record<string, number>;
   network_traces?: NetworkRequestTrace[];
+  performance_metrics?: PerformanceMetrics;
   prd_analysis?: PRDAnalysisResponse;
   self_healing_events?: Record<string, unknown>[];
   crawl_graph?: CrawlNode[];
