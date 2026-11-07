@@ -141,3 +141,4 @@ async def test_journey_engine_graceful_when_no_interactive_flows():
         await browser.close()
 
         assert journey is None
+

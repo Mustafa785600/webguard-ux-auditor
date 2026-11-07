@@ -12,6 +12,7 @@ from app.services.cookie_manager import CookieConsentManager
 from app.services.scroll_manager import HumanScrollEngine
 from app.services.menu_explorer import NavigationMenuExplorer
 from app.services.journey_engine import MultiStepJourneyEngine
+from app.services.challenge_detector import ChallengeDetector
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -215,11 +216,28 @@ class PlaywrightQAScanner(BaseScanner):
                 spinner_findings = await self._detect_infinite_spinners(page, interaction_log)
                 findings.extend(spinner_findings)
 
+                # ── 3.5. Human-in-the-Loop (HITL) Challenge Guard ────────
+                # Detects CAPTCHA / 2FA gates and safely halts automated probing.
+                challenge_gate = False
+                try:
+                    challenge_res = await ChallengeDetector.inspect_and_halt_if_gated(page)
+                    if challenge_res.detected:
+                        challenge_gate = True
+                        interaction_log.append(f"Security Gate: {challenge_res.details}")
+                        hitl_finding = ChallengeDetector.formulate_hitl_finding(
+                            challenge_res, target_url, screenshot_initial_b64
+                        )
+                        if hitl_finding:
+                            findings.append(hitl_finding)
+                except Exception:
+                    pass
+
                 # ── 4. Autonomous form fill (Phase 2 core) ───────────────
-                form_findings = await self._test_forms_autonomously(
-                    page, target_url, interaction_log
-                )
-                findings.extend(form_findings)
+                if not challenge_gate:
+                    form_findings = await self._test_forms_autonomously(
+                        page, target_url, interaction_log
+                    )
+                    findings.extend(form_findings)
 
                 # ── 5. Navigation link traversal ─────────────────────────
                 nav_findings = await self._traverse_nav_links(
