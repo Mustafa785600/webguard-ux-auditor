@@ -10,6 +10,7 @@ from app.scanners.base import BaseScanner
 from app.services.self_healing import SelfHealingEngine
 from app.services.cookie_manager import CookieConsentManager
 from app.services.scroll_manager import HumanScrollEngine
+from app.services.menu_explorer import NavigationMenuExplorer
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -223,6 +224,17 @@ class PlaywrightQAScanner(BaseScanner):
                     page, target_url, interaction_log
                 )
                 findings.extend(nav_findings)
+
+                # ── 5.5. Multi-Layer Navigation & Mega-Menu Exploration ──
+                try:
+                    menu_res = await NavigationMenuExplorer.explore_dropdown_menus(page, base_url=target_url)
+                    if menu_res.menus_probed > 0:
+                        interaction_log.append(f"Navigation: {menu_res.details}")
+                        menu_finding = NavigationMenuExplorer.formulate_menu_summary_finding(menu_res, target_url)
+                        if menu_finding:
+                            findings.append(menu_finding)
+                except Exception:
+                    pass
 
                 # ── 6. Interactive element hover probe ───────────────────
                 buttons = page.locator("button:visible, [role='button']:visible")

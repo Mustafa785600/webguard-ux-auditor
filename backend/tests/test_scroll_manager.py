@@ -114,3 +114,4 @@ async def test_human_scroll_skips_short_page():
         assert result.scroll_steps == 0
         assert result.total_scrolled_px == 0
         assert "scroll skipped" in result.details.lower()
+

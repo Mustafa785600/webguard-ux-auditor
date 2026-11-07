@@ -9,6 +9,7 @@ from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import CrawlNode, Finding, Category, Severity, RCACategory
 from app.services.cookie_manager import CookieConsentManager
 from app.services.scroll_manager import HumanScrollEngine
+from app.services.menu_explorer import NavigationMenuExplorer
 
 IGNORE_EXTENSIONS = (
     ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
@@ -183,6 +184,20 @@ class AutonomousCrawler:
                                     discovered_internal_links.append(norm)
                                 if current_depth < max_depth and norm not in visited:
                                     queue.append((norm, current_depth + 1))
+
+                        # Multi-Layer Navigation Exploration (Dropdown & Mega-menu Traversal)
+                        try:
+                            menu_res = await NavigationMenuExplorer.explore_dropdown_menus(page, base_url=current_clean)
+                            for revealed_url in menu_res.revealed_urls:
+                                full_revealed = urljoin(current_clean, revealed_url)
+                                if is_crawlable_link(full_revealed, seed_domain):
+                                    norm = normalize_url(full_revealed)
+                                    if norm not in discovered_internal_links:
+                                        discovered_internal_links.append(norm)
+                                    if current_depth < max_depth and norm not in visited:
+                                        queue.append((norm, current_depth + 1))
+                        except Exception:
+                            pass
 
                         # Form inspection and safe dummy testing
                         form_elements = await page.locator("form").all()
