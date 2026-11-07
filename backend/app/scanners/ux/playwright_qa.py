@@ -9,6 +9,7 @@ from app.models.schema import Finding, Category, Severity, RCACategory, NetworkR
 from app.scanners.base import BaseScanner
 from app.services.self_healing import SelfHealingEngine
 from app.services.cookie_manager import CookieConsentManager
+from app.services.scroll_manager import HumanScrollEngine
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -189,6 +190,21 @@ class PlaywrightQAScanner(BaseScanner):
                             if forced_cookie_finding:
                                 forced_cookie_finding.screenshot_before_b64 = screenshot_initial_b64
                                 findings.append(forced_cookie_finding)
+                except Exception:
+                    pass
+
+                # ── 2.8. Smooth Human Scroll & Lazy-Load Trigger ──────────
+                try:
+                    scroll_res = await HumanScrollEngine.smooth_scroll_page(
+                        page, max_steps=8, step_px=350, pause_ms=130, return_to_top=True
+                    )
+                    if scroll_res.total_scrolled_px > 0:
+                        interaction_log.append(f"Smooth Scroll: {scroll_res.details}")
+                        if scroll_res.broken_images_detected > 0:
+                            broken_finding = HumanScrollEngine.formulate_broken_assets_finding(scroll_res, target_url)
+                            if broken_finding:
+                                broken_finding.screenshot_before_b64 = screenshot_initial_b64
+                                findings.append(broken_finding)
                 except Exception:
                     pass
 

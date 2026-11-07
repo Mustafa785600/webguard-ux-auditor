@@ -136,3 +136,4 @@ async def test_cookie_consent_graceful_when_no_banner():
         assert result.detected is False
         assert result.action == "NONE"
         assert result.dark_pattern_detected is False
+

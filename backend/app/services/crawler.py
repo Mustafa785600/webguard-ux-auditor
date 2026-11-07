@@ -8,6 +8,7 @@ import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import CrawlNode, Finding, Category, Severity, RCACategory
 from app.services.cookie_manager import CookieConsentManager
+from app.services.scroll_manager import HumanScrollEngine
 
 IGNORE_EXTENSIONS = (
     ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
@@ -142,6 +143,18 @@ class AutonomousCrawler:
                                 forced_cookie_finding = CookieConsentManager.formulate_compliance_finding(consent_res, current_clean)
                                 if forced_cookie_finding and not any(f.id == "KVKK_FORCED_COOKIE_CONSENT" for f in crawler_findings):
                                     crawler_findings.append(forced_cookie_finding)
+                        except Exception:
+                            pass
+
+                        # Natural Human Scrolling & Lazy-load Trigger (Reveals lazy-loaded links & assets)
+                        try:
+                            scroll_res = await HumanScrollEngine.smooth_scroll_page(
+                                page, max_steps=6, step_px=400, pause_ms=100, return_to_top=True
+                            )
+                            if scroll_res.broken_images_detected > 0:
+                                broken_finding = HumanScrollEngine.formulate_broken_assets_finding(scroll_res, current_clean)
+                                if broken_finding and not any(f.id == "UX_LAZY_LOAD_BROKEN_ASSET" for f in crawler_findings):
+                                    crawler_findings.append(broken_finding)
                         except Exception:
                             pass
 

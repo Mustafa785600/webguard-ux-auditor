@@ -391,3 +391,4 @@ class CookieConsentManager:
                 f"3. Yalnızca '{result.button_text}' seçeneğinin sunulduğunu, açık bir 'Reddet' butonunun bulunmadığını gözlemleyin",
             ]
         )
+
