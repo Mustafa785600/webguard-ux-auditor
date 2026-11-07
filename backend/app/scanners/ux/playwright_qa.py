@@ -2,7 +2,7 @@ import asyncio
 import base64
 import re
 import time
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace
@@ -55,6 +55,7 @@ class PlaywrightQAScanner(BaseScanner):
         self.self_healing = SelfHealingEngine()
         self.self_healing_events: List[Dict[str, Any]] = []
         self.user_journeys: List[Dict[str, Any]] = []
+        self.browser_performance_metrics: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------ #
     #  Main entry point                                                    #
@@ -292,6 +293,15 @@ class PlaywrightQAScanner(BaseScanner):
                     pass
 
                 page_title = await page.title()
+
+                # ── 7. Browser Core Web Vitals & Loading Speed Inspection ─
+                try:
+                    vitals_data, vitals_findings = await self._collect_browser_performance_vitals(page, target_url)
+                    if vitals_data:
+                        self.browser_performance_metrics = vitals_data
+                        findings.extend(vitals_findings)
+                except Exception:
+                    pass
 
                 # Capture final state screenshot (after all interactions & error triggers)
                 screenshot_final_b64: Optional[str] = None
@@ -937,3 +947,135 @@ class PlaywrightQAScanner(BaseScanner):
             f"  await expect(page).not.toHaveURL(/error/);\n"
             f"}});"
         )
+
+    async def _collect_browser_performance_vitals(
+        self, page, target_url: str
+    ) -> Tuple[Optional[Dict[str, Any]], List[Finding]]:
+        """
+        Tarayıcı içi Performance API ve Navigation Timing üzerinden
+        Core Web Vitals (FCP, LCP, DOM Content Loaded, Window Load, DOM düğüm sayısı ve ağır kaynakları) ölçer.
+        """
+        findings: List[Finding] = []
+        try:
+            metrics_data = await page.evaluate(
+                """() => {
+                    try {
+                        const nav = performance.getEntriesByType('navigation')[0] || {};
+                        const paints = performance.getEntriesByType('paint') || [];
+                        const fcpEntry = paints.find(p => p.name === 'first-contentful-paint');
+                        
+                        const lcpEntries = performance.getEntriesByType('largest-contentful-paint') || [];
+                        const lastLcp = lcpEntries.length > 0 ? lcpEntries[lcpEntries.length - 1].startTime : null;
+                        
+                        const resources = performance.getEntriesByType('resource') || [];
+                        let totalSize = 0;
+                        let heavyResources = [];
+                        resources.forEach(r => {
+                            const size = r.transferSize || r.decodedBodySize || 0;
+                            totalSize += size;
+                            if (size > 1024 * 1024) { // >1MB
+                                heavyResources.push({
+                                    name: r.name ? r.name.substring(0, 100) : 'unknown',
+                                    size_kb: Math.round(size / 1024),
+                                    initiator: r.initiatorType || 'other'
+                                });
+                            }
+                        });
+
+                        return {
+                            ttfb_ms: nav.responseStart ? Math.round(nav.responseStart - nav.requestStart) : null,
+                            dom_load_ms: nav.domContentLoadedEventEnd ? Math.round(nav.domContentLoadedEventEnd - nav.fetchStart) : null,
+                            window_load_ms: nav.loadEventEnd ? Math.round(nav.loadEventEnd - nav.fetchStart) : null,
+                            fcp_ms: fcpEntry ? Math.round(fcpEntry.startTime) : null,
+                            lcp_ms: lastLcp ? Math.round(lastLcp) : null,
+                            total_dom_nodes: document.getElementsByTagName('*').length,
+                            total_page_size_kb: Math.round(totalSize / 1024),
+                            heavy_resources: heavyResources
+                        };
+                    } catch (e) {
+                        return null;
+                    }
+                }"""
+            )
+            if not metrics_data:
+                return None, findings
+
+            dom_load = metrics_data.get("dom_load_ms") or 0
+            window_load = metrics_data.get("window_load_ms") or 0
+            fcp = metrics_data.get("fcp_ms") or 0
+            total_nodes = metrics_data.get("total_dom_nodes") or 0
+            heavy_res = metrics_data.get("heavy_resources") or []
+
+            # 1. Yavaş Sayfa Açılma Süresi (Slow Window Load > 4000ms)
+            if window_load > 4000:
+                findings.append(
+                    Finding(
+                        id="PERF_SLOW_PAGE_LOAD",
+                        category=Category.UX,
+                        severity=Severity.HIGH,
+                        title=f"Kritik Yavaş Sayfa Açılış Süresi ({window_load}ms)",
+                        description=(
+                            f"Sayfanın tamamen yüklenmesi (Window Load) {window_load}ms sürdü. "
+                            f"Google ve UX standartlarına göre 3000ms üzeri yükleme süreleri kullanıcı terk oranını %50'den fazla artırır."
+                        ),
+                        remediation=(
+                            "Kritik olmayan JavaScript ve CSS dosyalarını 'defer' veya 'async' ile yükleyin. "
+                            "Gereksiz üçüncü parti izleme scriptlerini kaldırın veya geciktirin (lazy execution)."
+                        ),
+                        risk_impact="Kullanıcılar yavaş açılan sayfayı terk eder, e-ticaret dönüşüm oranları düşer ve arama motoru (SEO) sıralaması geriler.",
+                        evidence={"window_load_ms": window_load, "dom_load_ms": dom_load, "fcp_ms": fcp},
+                        rca_category=RCACategory.REAL_BUG,
+                        team_assignment="Yazılım Geliştirici (Frontend / Performance)",
+                        root_cause_hypothesis="Sayfa açılışında render-blocking kaynaklar veya ağır harici kütüphaneler ana iş parçacığını kilitliyor.",
+                    )
+                )
+
+            # 2. Aşırı DOM Düğümü (Excessive DOM Nodes > 1500)
+            if total_nodes > 1500:
+                findings.append(
+                    Finding(
+                        id="PERF_EXCESSIVE_DOM_NODES",
+                        category=Category.UX,
+                        severity=Severity.MEDIUM,
+                        title=f"Aşırı DOM Düğüm Sayısı ({total_nodes} Düğüm)",
+                        description=(
+                            f"Sayfada {total_nodes} adet DOM elemanı tespit edildi. "
+                            f"Lighthouse ve Core Web Vitals eşik değeri maksimum 1,500 düğümdür (optimal: <800)."
+                        ),
+                        remediation=(
+                            "Büyük listeleri ve tabloları sanallaştırın (virtual scrolling / pagination). "
+                            "Gereksiz iç içe <div> ve sarmalayıcı (wrapper) etiketlerini temizleyin."
+                        ),
+                        risk_impact="Aşırı DOM boyutu bellek tüketimini artırır, stil hesaplamalarını (recalculate style) yavaşlatır ve mobil cihazlarda takılmalara yol açar.",
+                        evidence={"total_dom_nodes": total_nodes, "recommended_max": 1500},
+                        rca_category=RCACategory.REAL_BUG,
+                        team_assignment="Yazılım Geliştirici (Frontend / Performance)",
+                    )
+                )
+
+            # 3. Optimize Edilmemiş Ağır Kaynaklar (>1MB)
+            if heavy_res:
+                findings.append(
+                    Finding(
+                        id="PERF_HEAVY_RESOURCE_BLOAT",
+                        category=Category.UX,
+                        severity=Severity.MEDIUM,
+                        title=f"{len(heavy_res)} Adet 1MB Üzeri Ağır Kaynak Tespit Edildi",
+                        description=(
+                            f"Sayfa açılırken 1MB'tan büyük {len(heavy_res)} adet medya veya kod paketi indirildi. "
+                            f"Örnek: {heavy_res[0].get('name', '')} ({heavy_res[0].get('size_kb')} KB)."
+                        ),
+                        remediation=(
+                            "Görselleri modern WebP veya AVIF formatlarına dönüştürün ve responsive 'srcset' kullanın. "
+                            "Büyük JavaScript paketlerini dynamic import() ve code-splitting ile parçalara bölün."
+                        ),
+                        risk_impact="Mobil hücresel veri kullanan kullanıcılarda yüksek veri tüketimine ve ciddi sayfa açılış gecikmelerine neden olur.",
+                        evidence={"heavy_resources": heavy_res[:5]},
+                        rca_category=RCACategory.REAL_BUG,
+                        team_assignment="Yazılım Geliştirici (Frontend / Performance)",
+                    )
+                )
+
+            return metrics_data, findings
+        except Exception:
+            return None, findings

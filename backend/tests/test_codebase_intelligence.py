@@ -39,3 +39,4 @@ def test_blast_radius_calculation():
     scan_result_sym = next((s for s in report.symbols if s.name == "ScanResult"), None)
     if scan_result_sym:
         assert scan_result_sym.blast_radius_score >= 5
+

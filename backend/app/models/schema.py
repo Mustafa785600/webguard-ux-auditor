@@ -147,6 +147,13 @@ class PerformanceMetrics(BaseModel):
     status_codes: Dict[int, int] = {}
     samples: List[float] = []
     ttfb_ms: Optional[float] = None
+    fcp_ms: Optional[float] = None
+    lcp_ms: Optional[float] = None
+    dom_load_ms: Optional[float] = None
+    window_load_ms: Optional[float] = None
+    total_dom_nodes: Optional[int] = None
+    total_page_size_kb: Optional[float] = None
+    heavy_resources: Optional[List[Dict[str, Any]]] = None
 
 class ScanResult(BaseModel):
     scan_id: str

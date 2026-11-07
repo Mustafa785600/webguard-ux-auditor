@@ -171,6 +171,20 @@ async def execute_scan(
         if hasattr(scanner, "user_journeys") and scanner.user_journeys:
             user_journeys.extend(scanner.user_journeys)
 
+    # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
+    if perf_metrics:
+        for scanner in active_scanners:
+            if hasattr(scanner, "browser_performance_metrics") and scanner.browser_performance_metrics:
+                bpm = scanner.browser_performance_metrics
+                perf_metrics.fcp_ms = bpm.get("fcp_ms")
+                perf_metrics.lcp_ms = bpm.get("lcp_ms")
+                perf_metrics.dom_load_ms = bpm.get("dom_load_ms")
+                perf_metrics.window_load_ms = bpm.get("window_load_ms")
+                perf_metrics.total_dom_nodes = bpm.get("total_dom_nodes")
+                perf_metrics.total_page_size_kb = bpm.get("total_page_size_kb")
+                perf_metrics.heavy_resources = bpm.get("heavy_resources")
+                break
+
     crawl_graph = None
     crawled_pages_count = 1
     if enable_crawler:

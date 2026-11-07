@@ -119,6 +119,13 @@ export interface PerformanceMetrics {
   status_codes: Record<number, number>;
   samples: number[];
   ttfb_ms?: number;
+  fcp_ms?: number;
+  lcp_ms?: number;
+  dom_load_ms?: number;
+  window_load_ms?: number;
+  total_dom_nodes?: number;
+  total_page_size_kb?: number;
+  heavy_resources?: Array<{ name: string; size_kb: number; initiator: string }>;
 }
 
 export interface ScanResult {

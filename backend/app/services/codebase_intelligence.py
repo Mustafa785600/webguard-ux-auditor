@@ -497,3 +497,4 @@ class CodebaseIntelligenceEngine:
                     if called_id in self.symbols and self.symbols[called_id].layer == ArchitectureLayer.API_CONTROLLER:
                         score -= 5
         return max(85, score)
+
