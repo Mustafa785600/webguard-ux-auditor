@@ -10,6 +10,7 @@ interface AuditReportModalProps {
   onClose: () => void;
   result: ScanResult;
   lang: Language;
+  onOpenDeck?: () => void;
 }
 
 export default function AuditReportModal({
@@ -17,6 +18,7 @@ export default function AuditReportModal({
   onClose,
   result,
   lang,
+  onOpenDeck,
 }: AuditReportModalProps) {
   if (!isOpen || !result) return null;
 
@@ -111,6 +113,19 @@ export default function AuditReportModal({
             <span className="report-toolbar-id">{reportId}</span>
           </div>
           <div className="report-toolbar-right">
+            {onOpenDeck && (
+              <button
+                type="button"
+                className="report-btn-deck"
+                onClick={() => {
+                  onClose();
+                  onOpenDeck();
+                }}
+                title={lang === "tr" ? "C-Level 16:9 Yönetici Sunum Moduna Geç" : "Switch to Executive Deck Mode"}
+              >
+                📽️ {lang === "tr" ? "Yönetici Sunumu (Deck)" : "Executive Deck Mode"}
+              </button>
+            )}
             <button
               type="button"
               className="report-btn-print"

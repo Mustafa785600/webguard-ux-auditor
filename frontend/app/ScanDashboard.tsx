@@ -10,6 +10,7 @@ import PrdIntelligenceCard from "./PrdIntelligenceCard";
 import CrawlGraphView from "./CrawlGraphView";
 import GeneralControlModal from "./GeneralControlModal";
 import AuditReportModal from "./AuditReportModal";
+import ExecutiveDeckModal from "./ExecutiveDeckModal";
 import AutoHealView from "./AutoHealView";
 import RcaTriageBar from "./RcaTriageBar";
 import PerformanceView from "./PerformanceView";
@@ -50,6 +51,7 @@ export default function ScanDashboard() {
   const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE">("FINDINGS");
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
+  const [showExecutiveDeck, setShowExecutiveDeck] = useState<boolean>(false);
   const [selectedSector, setSelectedSector] = useState<SectorType>("AUTO");
 
   const t = UI_STRINGS[lang];
@@ -325,6 +327,14 @@ export default function ScanDashboard() {
                 >
                   📄 {lang === "tr" ? "Resmi PDF Raporu" : "Executive PDF Report"}
                 </button>
+                <button
+                  type="button"
+                  className="btn-action btn-deck-trigger"
+                  onClick={() => setShowExecutiveDeck(true)}
+                  title={lang === "tr" ? "Virgosol Tarzı C-Level Yönetici Sunumu (16:9 Deck)" : "Executive Presentation Deck"}
+                >
+                  📽️ {lang === "tr" ? "Yönetici Sunumu (Deck)" : "Executive Deck"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -568,6 +578,14 @@ export default function ScanDashboard() {
             <AuditReportModal
               isOpen={showAuditReport}
               onClose={() => setShowAuditReport(false)}
+              result={result}
+              lang={lang}
+              onOpenDeck={() => setShowExecutiveDeck(true)}
+            />
+
+            <ExecutiveDeckModal
+              isOpen={showExecutiveDeck}
+              onClose={() => setShowExecutiveDeck(false)}
               result={result}
               lang={lang}
             />
