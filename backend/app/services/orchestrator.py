@@ -33,6 +33,63 @@ SCANNERS = [
     PlaywrightQAScanner(),
 ]
 
+def classify_finding_rca_and_team(finding: Finding) -> None:
+    """
+    TestSprite & Virgosol Enterprise Root Cause Analysis (RCA) & Triage Engine.
+    Ensures 100% of findings are categorized into the 4 RCA tiers with assigned team:
+    - REAL_BUG: Frontend/Backend Application Developers (Dev Team)
+    - ENV_ISSUE: DevOps / System Administrators / Network Ops (Infra Team)
+    - TEST_FRAGILITY: QA Engineers & Test Automation Engineers (QA Team)
+    - EXPECTED_BEHAVIOR: Product Management & Informational Review (Product Team)
+    """
+    fid = finding.id.upper()
+
+    # 1. RCA Category Auto-Assignment
+    if not finding.rca_category:
+        if any(k in fid for k in ("HEADER", "HSTS", "CSP", "NOSNIFF", "REFERRER", "PERMISSIONS", "SERVER_INFO", "SSL", "TLS", "CERT", "ENCRYPTION", "EXPOSURE", "ROBOTS", "UNREACHABLE", "HTTP3", "TECH", "BROKEN_ASSET", "CORS")):
+            finding.rca_category = RCACategory.ENV_ISSUE
+        elif any(k in fid for k in ("FRAGILITY", "HEALING", "TIMEOUT", "FLAKY")):
+            finding.rca_category = RCACategory.TEST_FRAGILITY
+        elif any(k in fid for k in ("SUITE", "SUMMARY", "INFO", "WATERFALL")):
+            finding.rca_category = RCACategory.EXPECTED_BEHAVIOR
+        else:
+            finding.rca_category = RCACategory.REAL_BUG
+
+    # 2. Team Assignment (Virgosol Enterprise Triage)
+    if not finding.team_assignment:
+        if finding.compliance_standard:
+            finding.team_assignment = "Hukuk & Uyum Ekibi (DPO / Compliance)"
+        elif finding.rca_category == RCACategory.ENV_ISSUE:
+            finding.team_assignment = "DevOps & Sistem Yöneticisi (Infra/SecOps)"
+        elif finding.rca_category == RCACategory.TEST_FRAGILITY:
+            finding.team_assignment = "QA & Test Mühendisliği (Auto-Heal QA)"
+        elif finding.rca_category == RCACategory.EXPECTED_BEHAVIOR:
+            finding.team_assignment = "Ürün & Güvenlik Analisti (Review)"
+        else:
+            finding.team_assignment = "Yazılım Geliştirici (Frontend / Backend)"
+
+    # 3. Root Cause Hypothesis
+    if not finding.root_cause_hypothesis:
+        if finding.rca_category == RCACategory.ENV_ISSUE:
+            finding.root_cause_hypothesis = (
+                f"Web sunucusu veya reverse-proxy yapılandırmasında (Nginx/Apache/Cloudflare) "
+                f"ilgili güvenlik direktifi, HTTP başlığı veya TLS ayarı tanımlanmamış."
+            )
+        elif finding.rca_category == RCACategory.REAL_BUG:
+            finding.root_cause_hypothesis = (
+                f"Uygulama kaynak kodunda veya bileşen şablonunda beklenen veri doğrulama, "
+                f"sanitizasyon veya UI bileşen standardı eksik."
+            )
+        elif finding.rca_category == RCACategory.TEST_FRAGILITY:
+            finding.root_cause_hypothesis = (
+                f"Test otomasyon seçicisi veya zamanlama mekanizması dinamik DOM render döngülerine karşı kırılgan."
+            )
+        else:
+            finding.root_cause_hypothesis = (
+                f"Sistemin standart çalışma parametreleri dahilinde gözlemlenen teyit edilmiş operasyonel durum."
+            )
+
+
 async def execute_scan(
     target_url: str,
     prd_content: Optional[str] = None,
@@ -130,6 +187,18 @@ async def execute_scan(
 
     detected_sector = compliance_scanner.detected_sector or SectorType.GENERAL
 
+    # Ensure 100% Full-Spectrum RCA & Team Assignment for all findings
+    rca_counts = {
+        RCACategory.REAL_BUG.value: 0,
+        RCACategory.ENV_ISSUE.value: 0,
+        RCACategory.TEST_FRAGILITY.value: 0,
+        RCACategory.EXPECTED_BEHAVIOR.value: 0,
+    }
+    for f in all_findings:
+        classify_finding_rca_and_team(f)
+        k = f.rca_category.value if hasattr(f.rca_category, "value") else str(f.rca_category)
+        rca_counts[k] = rca_counts.get(k, 0) + 1
+
     # TestSuite Resilience & Flakiness Resistance Calculation
     fragile_findings = [f for f in all_findings if f.rca_category == RCACategory.TEST_FRAGILITY]
     resilience_score = max(55, 100 - (len(fragile_findings) * 6))
@@ -145,6 +214,7 @@ async def execute_scan(
         selected_sector=sector or SectorType.AUTO,
         detected_sector=detected_sector,
         findings=all_findings,
+        rca_summary=rca_counts,
         network_traces=network_traces,
         prd_analysis=prd_analysis,
         self_healing_events=self_healing_events,

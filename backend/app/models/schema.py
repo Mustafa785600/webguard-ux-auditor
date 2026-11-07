@@ -71,6 +71,8 @@ class Finding(BaseModel):
     reproduction_steps: Optional[List[str]] = None
     dom_snapshot: Optional[str] = None
     root_cause_hypothesis: Optional[str] = None
+    # Virgosol & TestSprite Kurumsal Triyaj (Hangi Ekip Çözecek?)
+    team_assignment: Optional[str] = None
 
 class CrawlNode(BaseModel):
     url: str
@@ -124,6 +126,7 @@ class ScanResult(BaseModel):
     selected_sector: Optional[SectorType] = SectorType.AUTO
     detected_sector: Optional[SectorType] = None
     findings: List[Finding] = []
+    rca_summary: Optional[Dict[str, int]] = None
     network_traces: List[NetworkRequestTrace] = []
     prd_analysis: Optional[PRDAnalysisResponse] = None
     self_healing_events: Optional[List[Dict[str, Any]]] = None

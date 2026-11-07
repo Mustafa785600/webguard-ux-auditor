@@ -24,6 +24,7 @@ export default function DiagnosticBundleModal({
 }: DiagnosticBundleModalProps) {
   const [viewMode, setViewMode] = useState<"split" | "before" | "after">("split");
   const [copiedIde, setCopiedIde] = useState(false);
+  const [copiedJira, setCopiedJira] = useState(false);
   const [copiedDom, setCopiedDom] = useState(false);
 
   const t = UI_STRINGS[lang] || UI_STRINGS.tr;
@@ -85,6 +86,52 @@ export default function DiagnosticBundleModal({
     navigator.clipboard.writeText(JSON.stringify(ideBundle, null, 2));
     setCopiedIde(true);
     setTimeout(() => setCopiedIde(false), 3000);
+  }
+
+  function handleCopyJiraIssue() {
+    const team = finding.team_assignment || (
+      finding.rca_category === "ENV_ISSUE" ? "DevOps & Sistem Yöneticisi" :
+      finding.rca_category === "TEST_FRAGILITY" ? "QA & Test Mühendisliği" :
+      "Yazılım Geliştirici (Dev Team)"
+    );
+
+    const steps = reproductionSteps.map((s) => `# ${s.replace(/^\d+\.\s*/, "")}`).join("\n");
+
+    const jiraMarkdown = [
+      `h2. [WebGuard Audit] ${finding.title}`,
+      `*Issue ID:* \`${finding.id}\``,
+      `*Severity:* ${finding.severity}`,
+      `*RCA Classification:* ${finding.rca_category || "REAL_BUG"} (${rcaLabel})`,
+      `*Assigned Team:* ${team}`,
+      `*Target Location:* ${finding.target_location || "Application"}${finding.line_number ? ` (Line ${finding.line_number})` : ""}`,
+      ...(finding.page_url ? [`*Page Route:* ${finding.page_url}`] : []),
+      "",
+      "h3. Problem Açıklaması & Etki Analizi",
+      finding.description,
+      ...(finding.risk_impact ? [`\n*Risk:* ${finding.risk_impact}`] : []),
+      "",
+      "h3. Kök Neden Teşhisi (Root Cause Analysis)",
+      rootCause,
+      "",
+      "h3. Yeniden Üretim Adımları (Reproduction Steps)",
+      steps,
+      "",
+      "h3. Önerilen Çözüm (Remediation)",
+      finding.remediation,
+      ...(finding.code_example ? [
+        "",
+        "{code:typescript}",
+        "// Recommended Fix:",
+        finding.code_example,
+        "{code}"
+      ] : []),
+      "",
+      `*Labels:* webguard, ${finding.severity.toLowerCase()}, ${(finding.rca_category || "real_bug").toLowerCase().replace(/_/g, "-")}, ${finding.category.toLowerCase()}`
+    ].join("\n");
+
+    navigator.clipboard.writeText(jiraMarkdown);
+    setCopiedJira(true);
+    setTimeout(() => setCopiedJira(false), 3000);
   }
 
   function handleCopyDom() {
@@ -176,19 +223,35 @@ export default function DiagnosticBundleModal({
             )}
           </div>
 
-          <button
-            type="button"
-            className={`diag-ide-export-btn ${copiedIde ? "copied" : ""}`}
-            onClick={handleCopyIdeBundle}
-            title="Cursor / Claude Code / Windsurf için tam teşhis paketini kopyala"
-          >
-            <span className="btn-icon">{copiedIde ? "✓" : "📋"}</span>
-            <span>
-              {copiedIde
-                ? (t.copiedForIde || "✓ JSON Kopyalandı! (IDE'ye Yapıştırın)")
-                : (t.copyForIde || "Cursor / Claude Code İçin Teşhis Paketini Kopyala")}
-            </span>
-          </button>
+          <div className="diag-export-group">
+            <button
+              type="button"
+              className={`diag-ide-export-btn ${copiedIde ? "copied" : ""}`}
+              onClick={handleCopyIdeBundle}
+              title="Cursor / Claude Code / Windsurf için tam teşhis paketini kopyala"
+            >
+              <span className="btn-icon">{copiedIde ? "✓" : "📋"}</span>
+              <span>
+                {copiedIde
+                  ? (t.copiedForIde || "✓ JSON Kopyalandı!")
+                  : (t.copyForIde || "Cursor / Claude Code")}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`diag-jira-export-btn ${copiedJira ? "copied" : ""}`}
+              onClick={handleCopyJiraIssue}
+              title="Virgosol Usulü: Jira / GitHub Issue Formatında Kopyala"
+            >
+              <span className="btn-icon">{copiedJira ? "✓" : "🏢"}</span>
+              <span>
+                {copiedJira
+                  ? "✓ Jira Formatı Kopyalandı!"
+                  : "Jira Issue Kopyala"}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}

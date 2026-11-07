@@ -51,6 +51,8 @@ export interface Finding {
   reproduction_steps?: string[];
   dom_snapshot?: string;
   root_cause_hypothesis?: string;
+  // Virgosol & TestSprite Kurumsal Triyaj (Hangi Ekip Çözecek?)
+  team_assignment?: string;
 }
 
 export interface CrawlNode {
@@ -95,6 +97,7 @@ export interface ScanResult {
   selected_sector?: SectorType;
   detected_sector?: SectorType;
   findings: Finding[];
+  rca_summary?: Record<string, number>;
   network_traces?: NetworkRequestTrace[];
   prd_analysis?: PRDAnalysisResponse;
   self_healing_events?: Record<string, unknown>[];

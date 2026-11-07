@@ -49,6 +49,7 @@ export default function FindingCard({
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedIde, setCopiedIde] = useState(false);
+  const [copiedJira, setCopiedJira] = useState(false);
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
   const [screenshotTab, setScreenshotTab] = useState<"before" | "after">("before");
   const [screenshotMode, setScreenshotMode] = useState<"tabs" | "split">("split");
@@ -109,6 +110,55 @@ export default function FindingCard({
     navigator.clipboard.writeText(JSON.stringify(ideBundle, null, 2));
     setCopiedIde(true);
     setTimeout(() => setCopiedIde(false), 3000);
+  }
+
+  function handleCopyJiraIssue(e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    const team = finding.team_assignment || (
+      finding.rca_category === "ENV_ISSUE" ? "DevOps & Sistem Yöneticisi" :
+      finding.rca_category === "TEST_FRAGILITY" ? "QA & Test Mühendisliği" :
+      "Yazılım Geliştirici (Dev Team)"
+    );
+
+    const steps = finding.reproduction_steps && finding.reproduction_steps.length > 0
+      ? finding.reproduction_steps.map((s) => `# ${s.replace(/^\d+\.\s*/, "")}`).join("\n")
+      : `# Target URL: ${finding.page_url || "Target Application"}\n# Inspect: ${finding.target_location || "Target Location"}\n# Observe anomaly: ${finding.title}`;
+
+    const jiraMarkdown = [
+      `h2. [WebGuard Audit] ${finding.title}`,
+      `*Issue ID:* \`${finding.id}\``,
+      `*Severity:* ${finding.severity}`,
+      `*RCA Classification:* ${finding.rca_category || "REAL_BUG"} (${rcaLabel})`,
+      `*Assigned Team:* ${team}`,
+      `*Target Location:* ${finding.target_location || "Application"}${finding.line_number ? ` (Line ${finding.line_number})` : ""}`,
+      ...(finding.page_url ? [`*Page Route:* ${finding.page_url}`] : []),
+      "",
+      "h3. Problem Açıklaması & Etki Analizi",
+      finding.description,
+      ...(finding.risk_impact ? [`\n*Risk:* ${finding.risk_impact}`] : []),
+      "",
+      "h3. Kök Neden Teşhisi (Root Cause Analysis)",
+      finding.root_cause_hypothesis || finding.remediation,
+      "",
+      "h3. Yeniden Üretim Adımları (Reproduction Steps)",
+      steps,
+      "",
+      "h3. Önerilen Çözüm (Remediation)",
+      finding.remediation,
+      ...(finding.code_example ? [
+        "",
+        "{code:typescript}",
+        "// Recommended Fix:",
+        finding.code_example,
+        "{code}"
+      ] : []),
+      "",
+      `*Labels:* webguard, ${finding.severity.toLowerCase()}, ${(finding.rca_category || "real_bug").toLowerCase().replace(/_/g, "-")}, ${finding.category.toLowerCase()}`
+    ].join("\n");
+
+    navigator.clipboard.writeText(jiraMarkdown);
+    setCopiedJira(true);
+    setTimeout(() => setCopiedJira(false), 3000);
   }
 
   const hasLocationOrCode = Boolean(
@@ -176,6 +226,14 @@ export default function FindingCard({
               ) : null}
             </span>
           )}
+          {finding.team_assignment && (
+            <span
+              className="finding-location-pill team-pill"
+              title={`Atanan Çözüm Ekibi: ${finding.team_assignment}`}
+            >
+              🏢 {finding.team_assignment}
+            </span>
+          )}
         </div>
 
         <span className={`finding-chevron ${open ? "open" : ""}`} aria-hidden>▾</span>
@@ -198,6 +256,14 @@ export default function FindingCard({
                   title="Cursor / Claude Code / Windsurf için tam teşhis paketini kopyala"
                 >
                   {copiedIde ? (t.copiedForIde || "✓ JSON Kopyalandı!") : (t.copyForIde || "📋 Cursor / Claude Code İçin Kopyala")}
+                </button>
+                <button
+                  type="button"
+                  className={`diag-action-btn copy-jira ${copiedJira ? "copied" : ""}`}
+                  onClick={handleCopyJiraIssue}
+                  title="Virgosol Usulü: Jira / GitHub Issue Formatında Kopyala"
+                >
+                  {copiedJira ? "✓ Jira Kopyalandı!" : "📋 Jira Issue Kopyala"}
                 </button>
                 <button
                   type="button"

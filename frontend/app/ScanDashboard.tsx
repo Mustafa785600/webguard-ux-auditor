@@ -11,6 +11,7 @@ import CrawlGraphView from "./CrawlGraphView";
 import GeneralControlModal from "./GeneralControlModal";
 import AuditReportModal from "./AuditReportModal";
 import AutoHealView from "./AutoHealView";
+import RcaTriageBar from "./RcaTriageBar";
 import {
   type Language,
   UI_STRINGS,
@@ -447,6 +448,14 @@ export default function ScanDashboard() {
                     </button>
                   </div>
                 )}
+
+                {/* TestSprite 4-Tier RCA Breakdown & Virgosol Team Triage Bar */}
+                <RcaTriageBar
+                  findings={result.findings}
+                  selectedRca={rcaFilter}
+                  onSelectRca={(rca) => setRcaFilter(rca)}
+                  lang={lang}
+                />
 
                 <div className="filters-bar">
                   <div className="filter-group">
