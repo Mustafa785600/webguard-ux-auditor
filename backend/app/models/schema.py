@@ -165,6 +165,7 @@ class ScanResult(BaseModel):
     performance_metrics: Optional[PerformanceMetrics] = None
     prd_analysis: Optional[PRDAnalysisResponse] = None
     self_healing_events: Optional[List[Dict[str, Any]]] = None
+    user_journeys: Optional[List[Dict[str, Any]]] = None
     crawl_graph: Optional[List[CrawlNode]] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None

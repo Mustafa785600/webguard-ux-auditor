@@ -124,3 +124,4 @@ async def test_menu_explorer_graceful_when_no_nav():
         assert result.menus_probed == 0
         assert result.dropdowns_opened == 0
         assert result.hidden_links_revealed == 0
+

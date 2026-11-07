@@ -163,6 +163,11 @@ async def execute_scan(
         if hasattr(scanner, "self_healing_events") and scanner.self_healing_events:
             self_healing_events.extend(scanner.self_healing_events)
 
+    user_journeys = []
+    for scanner in active_scanners:
+        if hasattr(scanner, "user_journeys") and scanner.user_journeys:
+            user_journeys.extend(scanner.user_journeys)
+
     crawl_graph = None
     crawled_pages_count = 1
     if enable_crawler:
@@ -245,6 +250,7 @@ async def execute_scan(
         performance_metrics=perf_metrics,
         prd_analysis=prd_analysis,
         self_healing_events=self_healing_events,
+        user_journeys=user_journeys,
         crawl_graph=crawl_graph,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,

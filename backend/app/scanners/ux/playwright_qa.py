@@ -11,6 +11,7 @@ from app.services.self_healing import SelfHealingEngine
 from app.services.cookie_manager import CookieConsentManager
 from app.services.scroll_manager import HumanScrollEngine
 from app.services.menu_explorer import NavigationMenuExplorer
+from app.services.journey_engine import MultiStepJourneyEngine
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -51,6 +52,7 @@ class PlaywrightQAScanner(BaseScanner):
         self.network_traces: List[NetworkRequestTrace] = []
         self.self_healing = SelfHealingEngine()
         self.self_healing_events: List[Dict[str, Any]] = []
+        self.user_journeys: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------ #
     #  Main entry point                                                    #
@@ -246,6 +248,19 @@ class PlaywrightQAScanner(BaseScanner):
                         interaction_log.append(f"Hovered button #{i+1}")
                     except Exception:
                         pass
+
+                # ── 6.5. Multi-Step User Journey & State Transition Execution ──
+                try:
+                    journey_res = await MultiStepJourneyEngine.execute_best_journey(page, target_url)
+                    if journey_res:
+                        self.user_journeys.append(journey_res.to_dict())
+                        interaction_log.append(f"User Journey: {journey_res.summary}")
+                        journey_finding = MultiStepJourneyEngine.formulate_journey_finding(journey_res, target_url)
+                        if journey_finding:
+                            journey_finding.screenshot_before_b64 = screenshot_initial_b64
+                            findings.append(journey_finding)
+                except Exception:
+                    pass
 
                 page_title = await page.title()
 
