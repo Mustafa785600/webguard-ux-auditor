@@ -8,6 +8,7 @@ from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace
 from app.scanners.base import BaseScanner
 from app.services.self_healing import SelfHealingEngine
+from app.services.cookie_manager import CookieConsentManager
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -174,6 +175,20 @@ class PlaywrightQAScanner(BaseScanner):
                     screenshot_initial_b64 = "data:image/png;base64," + base64.b64encode(
                         await page.screenshot(type="png", full_page=False)
                     ).decode()
+                except Exception:
+                    pass
+
+                # ── 2.5. Privacy-First Cookie / KVKK Banner Dismissal ────
+                # Enforces user policy: Reject All > Necessary Only > Close > Forced Accept
+                try:
+                    consent_res = await CookieConsentManager.dismiss_cookie_banner(page)
+                    if consent_res.detected:
+                        interaction_log.append(f"Cookie / KVKK: {consent_res.details}")
+                        if consent_res.dark_pattern_detected:
+                            forced_cookie_finding = CookieConsentManager.formulate_compliance_finding(consent_res, target_url)
+                            if forced_cookie_finding:
+                                forced_cookie_finding.screenshot_before_b64 = screenshot_initial_b64
+                                findings.append(forced_cookie_finding)
                 except Exception:
                     pass
 

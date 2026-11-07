@@ -7,6 +7,7 @@ from urllib.parse import urlparse, urljoin
 import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from app.models.schema import CrawlNode, Finding, Category, Severity, RCACategory
+from app.services.cookie_manager import CookieConsentManager
 
 IGNORE_EXTENSIONS = (
     ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
@@ -133,6 +134,17 @@ class AutonomousCrawler:
                             await page.wait_for_timeout(1000)
                         except Exception:
                             pass
+
+                        # Privacy-First Cookie / KVKK Banner Dismissal (Reject > Necessary > Close)
+                        try:
+                            consent_res = await CookieConsentManager.dismiss_cookie_banner(page)
+                            if consent_res.dark_pattern_detected:
+                                forced_cookie_finding = CookieConsentManager.formulate_compliance_finding(consent_res, current_clean)
+                                if forced_cookie_finding and not any(f.id == "KVKK_FORCED_COOKIE_CONSENT" for f in crawler_findings):
+                                    crawler_findings.append(forced_cookie_finding)
+                        except Exception:
+                            pass
+
                         title = await page.title()
                         load_time_ms = round((time.time() - start_time) * 1000, 1)
 
