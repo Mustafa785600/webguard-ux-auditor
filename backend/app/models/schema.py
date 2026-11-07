@@ -167,6 +167,7 @@ class ScanResult(BaseModel):
     self_healing_events: Optional[List[Dict[str, Any]]] = None
     user_journeys: Optional[List[Dict[str, Any]]] = None
     crawl_graph: Optional[List[CrawlNode]] = None
+    codebase_intelligence: Optional['CodebaseIntelligenceReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -194,4 +195,61 @@ class AutoHealResponse(BaseModel):
     resilience_score_after: int
     flakiness_reduction_pct: int
     healed_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Codebase Intelligence & Holistic Architecture Models ─────────────────
+
+class ArchitectureLayer(str, Enum):
+    FRONTEND_UI = "FRONTEND_UI"
+    API_CONTROLLER = "API_CONTROLLER"
+    SERVICE_LOGIC = "SERVICE_LOGIC"
+    SECURITY_GUARD = "SECURITY_GUARD"
+    DATA_MODEL = "DATA_MODEL"
+    INFRA_CONFIG = "INFRA_CONFIG"
+
+class CodeSymbolNode(BaseModel):
+    id: str
+    name: str
+    file_path: str
+    symbol_type: str  # class, function, async_function, component, route, interface
+    layer: ArchitectureLayer
+    purpose_summary: str
+    line_start: int
+    line_end: int
+    docstring: Optional[str] = None
+    decorators: List[str] = []
+    http_method: Optional[str] = None
+    http_route: Optional[str] = None
+    calls: List[str] = []
+    called_by: List[str] = []
+    blast_radius_score: int = 1
+
+class CodebaseConnectionEdge(BaseModel):
+    source_id: str
+    target_id: str
+    connection_type: str  # CALLS, IMPORTS, HTTP_REQUEST, INSTANTIATES, DEPENDS_ON
+    description: str
+
+class FullStackFlow(BaseModel):
+    id: str
+    flow_name: str
+    entry_point: str
+    api_route: str
+    service_pipeline: List[str] = []
+    model_schema: str
+    description: str
+
+class CodebaseIntelligenceReport(BaseModel):
+    total_files: int
+    total_lines_of_code: int
+    total_symbols: int
+    symbols: List[CodeSymbolNode] = []
+    edges: List[CodebaseConnectionEdge] = []
+    full_stack_flows: List[FullStackFlow] = []
+    layer_distribution: Dict[str, int] = {}
+    architectural_health_score: int = 100
+    detected_frameworks: List[str] = []
+    analyzed_at: datetime = Field(default_factory=datetime.utcnow)
+
+ScanResult.model_rebuild()
+
 

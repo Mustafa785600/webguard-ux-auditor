@@ -48,3 +48,4 @@ async def test_screencast_http_state_endpoint():
         assert "is_active" in data
         assert "recent_actions" in data
         assert "total_frames" in data
+

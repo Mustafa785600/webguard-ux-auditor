@@ -1,4 +1,4 @@
-import { ScanResult, PRDAnalysisResponse, SectorType, AutoHealResponse } from "@/types/scan";
+import { ScanResult, PRDAnalysisResponse, SectorType, AutoHealResponse, CodebaseIntelligenceReport } from "@/types/scan";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -56,3 +56,13 @@ export async function healTestScript(scriptCode: string, targetUrl?: string): Pr
   }
   return res.json();
 }
+
+export async function getCodebaseIntelligence(): Promise<CodebaseIntelligenceReport> {
+  const res = await fetch(`${API_BASE}/codebase/intelligence`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Codebase intelligence request failed.");
+  }
+  return res.json();
+}
+

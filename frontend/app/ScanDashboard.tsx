@@ -15,6 +15,7 @@ import AutoHealView from "./AutoHealView";
 import RcaTriageBar from "./RcaTriageBar";
 import PerformanceView from "./PerformanceView";
 import LiveScreencastPanel from "./LiveScreencastPanel";
+import CodebaseIntelligenceView from "./CodebaseIntelligenceView";
 import {
   type Language,
   UI_STRINGS,
@@ -49,7 +50,8 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE">("FINDINGS");
+  const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
   const [showExecutiveDeck, setShowExecutiveDeck] = useState<boolean>(false);
@@ -263,11 +265,24 @@ export default function ScanDashboard() {
             <span className="history-title">
               {recentScans.length > 0 ? t.recentAudits : t.quickTargets}
             </span>
-            {recentScans.length > 0 && (
-              <button className="history-clear-btn" onClick={clearHistory}>
-                {t.clear}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={`text-xs px-2.5 py-1 rounded-md font-semibold border transition ${
+                  showCodebaseStandalone
+                    ? "bg-indigo-600 text-white border-indigo-500"
+                    : "bg-slate-800/80 text-indigo-300 border-indigo-500/30 hover:bg-slate-800"
+                }`}
+                onClick={() => setShowCodebaseStandalone(!showCodebaseStandalone)}
+              >
+                🧠 {lang === "tr" ? "Kod Tabanı & Mimari Zeka" : "Codebase Architecture"}
               </button>
-            )}
+              {recentScans.length > 0 && (
+                <button className="history-clear-btn" onClick={clearHistory}>
+                  {t.clear}
+                </button>
+              )}
+            </div>
           </div>
           <div className="history-list">
             {(recentScans.length > 0
@@ -293,6 +308,12 @@ export default function ScanDashboard() {
 
       <main className="container">
         {!result && !loading && <PrdIntelligenceCard targetUrl={url} lang={lang} />}
+
+        {showCodebaseStandalone && !result && !loading && (
+          <div className="mt-8">
+            <CodebaseIntelligenceView />
+          </div>
+        )}
 
         {loading && (
           <div className="scan-live-streaming-section">
@@ -341,6 +362,14 @@ export default function ScanDashboard() {
                   title={lang === "tr" ? "TestSprite Tarzı Canlı Tarayıcı Ekranı & HUD Kaydı" : "Live Browser Stream & Action HUD"}
                 >
                   📺 {lang === "tr" ? "Canlı Kayıt & HUD" : "Live HUD Replay"}
+                </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "CODEBASE" ? "active" : ""}`}
+                  onClick={() => setActiveTab("CODEBASE")}
+                  title={lang === "tr" ? "Bütünsel Kod Tabanı ve Mimari Zeka Raporu" : "Codebase Intelligence Report"}
+                >
+                  🧠 {lang === "tr" ? "Kod Zeka" : "Codebase"}
                 </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
@@ -429,7 +458,19 @@ export default function ScanDashboard() {
               >
                 ⚡ {t.tabPerformance || "Yük & Performans (SLA)"} {result.performance_metrics ? `(${result.performance_metrics.p95_latency_ms}ms)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "CODEBASE" ? "active" : ""}`}
+                onClick={() => setActiveTab("CODEBASE")}
+              >
+                🧠 {lang === "tr" ? "Kod Zeka & Mimari" : "Codebase Architecture"} {result.codebase_intelligence ? `(${result.codebase_intelligence.total_symbols})` : ""}
+              </button>
             </div>
+
+            {/* TAB: Bütünsel Kod Tabanı ve Mimari Zeka */}
+            {activeTab === "CODEBASE" && (
+              <CodebaseIntelligenceView initialReport={result.codebase_intelligence} />
+            )}
 
             {/* TAB 1: TestSprite PRD Intelligence */}
             {activeTab === "PRD" && (

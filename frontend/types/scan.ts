@@ -139,6 +139,7 @@ export interface ScanResult {
   prd_analysis?: PRDAnalysisResponse;
   self_healing_events?: Record<string, unknown>[];
   crawl_graph?: CrawlNode[];
+  codebase_intelligence?: CodebaseIntelligenceReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -163,3 +164,60 @@ export interface AutoHealResponse {
   flakiness_reduction_pct: number;
   healed_at: string;
 }
+
+export type ArchitectureLayer =
+  | "FRONTEND_UI"
+  | "API_CONTROLLER"
+  | "SERVICE_LOGIC"
+  | "SECURITY_GUARD"
+  | "DATA_MODEL"
+  | "INFRA_CONFIG";
+
+export interface CodeSymbolNode {
+  id: string;
+  name: string;
+  file_path: string;
+  symbol_type: string;
+  layer: ArchitectureLayer;
+  purpose_summary: string;
+  line_start: number;
+  line_end: number;
+  docstring?: string;
+  decorators?: string[];
+  http_method?: string;
+  http_route?: string;
+  calls: string[];
+  called_by: string[];
+  blast_radius_score: number;
+}
+
+export interface CodebaseConnectionEdge {
+  source_id: string;
+  target_id: string;
+  connection_type: string;
+  description: string;
+}
+
+export interface FullStackFlow {
+  id: string;
+  flow_name: string;
+  entry_point: string;
+  api_route: string;
+  service_pipeline: string[];
+  model_schema: string;
+  description: string;
+}
+
+export interface CodebaseIntelligenceReport {
+  total_files: number;
+  total_lines_of_code: number;
+  total_symbols: number;
+  symbols: CodeSymbolNode[];
+  edges: CodebaseConnectionEdge[];
+  full_stack_flows: FullStackFlow[];
+  layer_distribution: Record<string, number>;
+  architectural_health_score: number;
+  detected_frameworks: string[];
+  analyzed_at: string;
+}
+

@@ -22,6 +22,7 @@ from app.services.crawler import AutonomousCrawler
 from app.services.notifier import dispatch_webhook
 from app.services.performance_tester import PerformanceBenchmarkEngine
 from app.services.live_screencast import live_hub
+from app.services.codebase_intelligence import CodebaseIntelligenceEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -235,6 +236,12 @@ async def execute_scan(
     fragile_findings = [f for f in all_findings if f.rca_category == RCACategory.TEST_FRAGILITY]
     resilience_score = max(55, 100 - (len(fragile_findings) * 6))
 
+    codebase_report = None
+    try:
+        codebase_report = CodebaseIntelligenceEngine().analyze()
+    except Exception:
+        pass
+
     result = ScanResult(
         scan_id=scan_id,
         target_url=sanitized_url,
@@ -254,6 +261,7 @@ async def execute_scan(
         self_healing_events=self_healing_events,
         user_journeys=user_journeys,
         crawl_graph=crawl_graph,
+        codebase_intelligence=codebase_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

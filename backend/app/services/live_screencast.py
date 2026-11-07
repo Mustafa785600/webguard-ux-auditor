@@ -199,3 +199,4 @@ class CDPScreencastManager:
             await cdp.detach()
         except Exception:
             pass
+

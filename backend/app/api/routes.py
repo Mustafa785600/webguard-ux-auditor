@@ -1,14 +1,21 @@
 from fastapi import APIRouter, HTTPException, status, WebSocket, WebSocketDisconnect
+from typing import Optional
+from pydantic import BaseModel
 from app.models.schema import (
     ScanRequest, ScanResult, ScanStatus,
     PRDAnalyzeRequest, PRDAnalysisResponse,
-    AutoHealRequest, AutoHealResponse
+    AutoHealRequest, AutoHealResponse,
+    CodebaseIntelligenceReport
 )
 from app.services.orchestrator import execute_scan
 from app.services.prd_agent import analyze_prd_and_generate_tests
 from app.services.self_healing import heal_playwright_script
 from app.services.live_screencast import live_hub
+from app.services.codebase_intelligence import CodebaseIntelligenceEngine
 from app.core.security import validate_and_sanitize_target_url, SecurityValidationError
+
+class CodebaseAnalyzeRequest(BaseModel):
+    root_path: Optional[str] = None
 
 router = APIRouter()
 
@@ -73,4 +80,22 @@ async def analyze_and_heal_spec(request: AutoHealRequest):
     and patches them into resilient Playwright locators.
     """
     return heal_playwright_script(request.script_code, target_url=request.target_url)
+
+@router.get("/codebase/intelligence", response_model=CodebaseIntelligenceReport)
+async def get_codebase_intelligence():
+    """
+    Bütünsel Kod Tabanı ve Mimari Zeka Raporunu döner.
+    AST sembolleri, neden yazıldıkları, katmanlar ve full-stack bağlantıları içerir.
+    """
+    engine = CodebaseIntelligenceEngine()
+    return engine.analyze()
+
+@router.post("/codebase/analyze", response_model=CodebaseIntelligenceReport)
+async def analyze_custom_codebase(request: CodebaseAnalyzeRequest):
+    """
+    Belirtilen veya varsayılan dizindeki kod tabanını otonom olarak analiz eder.
+    """
+    engine = CodebaseIntelligenceEngine(root_dir=request.root_path)
+    return engine.analyze()
+
 
