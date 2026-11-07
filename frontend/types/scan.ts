@@ -73,9 +73,22 @@ export interface CrawlNode {
 export interface PRDScenario {
   title: string;
   role: string;
+  scenario_type?: "POSITIVE" | "NEGATIVE_SECURITY" | "BOUNDARY";
   steps: string[];
   expected_result: string;
   edge_cases: string[];
+  security_risk?: string;
+  abuse_payload?: string;
+  requirement_id?: string;
+}
+
+export interface PRDTraceabilityItem {
+  req_id: string;
+  requirement: string;
+  positive_test: string;
+  security_test: string;
+  risk_level: "HIGH" | "MEDIUM" | "LOW";
+  status: "COVERED" | "NEEDS_REVIEW";
 }
 
 export interface PRDAnalysisResponse {
@@ -83,6 +96,9 @@ export interface PRDAnalysisResponse {
   summary: string;
   user_roles: string[];
   scenarios: PRDScenario[];
+  security_scenarios_count?: number;
+  coverage_score?: number;
+  traceability_matrix?: PRDTraceabilityItem[];
   generated_spec_code: string;
   generated_at: string;
 }

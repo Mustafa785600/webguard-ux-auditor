@@ -290,7 +290,7 @@ export default function ScanDashboard() {
       </header>
 
       <main className="container">
-        {!result && !loading && <PrdIntelligenceCard targetUrl={url} />}
+        {!result && !loading && <PrdIntelligenceCard targetUrl={url} lang={lang} />}
 
         {loading && (
           <div className="scan-loading" aria-live="polite">
@@ -429,6 +429,7 @@ export default function ScanDashboard() {
               <PrdIntelligenceCard
                 targetUrl={result.target_url}
                 initialAnalysis={result.prd_analysis}
+                lang={lang}
               />
             )}
 

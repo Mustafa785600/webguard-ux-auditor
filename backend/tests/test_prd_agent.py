@@ -68,3 +68,23 @@ async def test_prd_analyze_ssrf_blocked():
         assert response.status_code == 400
         assert "SSRF Protection" in response.json().get("detail", "")
 
+
+@pytest.mark.asyncio
+async def test_prd_negative_security_and_matrix():
+    prd_text = """
+    # FinTech FAST Transfer PRD
+    As a bank customer, I want to transfer funds using IBAN.
+    - Validate source balance before transfer.
+    - Confirm transaction with SMS verification.
+    """
+    res = _heuristic_prd_analysis(prd_text, "https://bank.example.com")
+    assert res.security_scenarios_count > 0
+    assert res.traceability_matrix is not None
+    assert len(res.traceability_matrix) > 0
+    # Check that a negative security scenario was synthesized with abuse payload
+    neg_sc = next((s for s in res.scenarios if s.scenario_type == "NEGATIVE_SECURITY"), None)
+    assert neg_sc is not None
+    assert neg_sc.abuse_payload is not None
+    assert "TestSprite Security & Abuse Boundary Matrix" in res.generated_spec_code
+
+

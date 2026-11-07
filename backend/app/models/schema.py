@@ -94,12 +94,27 @@ class PRDScenario(BaseModel):
     steps: List[str]
     expected_result: str
     edge_cases: List[str] = []
+    scenario_type: str = "POSITIVE"  # "POSITIVE" | "NEGATIVE_SECURITY" | "BOUNDARY"
+    security_risk: Optional[str] = None
+    abuse_payload: Optional[str] = None
+    requirement_id: Optional[str] = None
+
+class PRDTraceabilityItem(BaseModel):
+    req_id: str
+    requirement: str
+    positive_test: str
+    security_test: str
+    risk_level: str = "MEDIUM"  # "HIGH" | "MEDIUM" | "LOW"
+    status: str = "COVERED"     # "COVERED" | "NEEDS_REVIEW"
 
 class PRDAnalysisResponse(BaseModel):
     target_url: str
     summary: str
     user_roles: List[str]
     scenarios: List[PRDScenario]
+    security_scenarios_count: int = 0
+    coverage_score: int = 100
+    traceability_matrix: Optional[List[PRDTraceabilityItem]] = None
     generated_spec_code: str
     generated_at: datetime
 
