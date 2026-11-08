@@ -151,6 +151,7 @@ export interface ScanResult {
   chaos_resilience?: ChaosResilienceReport;
   rate_limit_resilience?: RateLimitResilienceReport;
   multi_viewport_report?: MultiViewportReport;
+  api_contract_drift?: APIContractDriftReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -377,6 +378,53 @@ export interface MultiViewportReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type SchemaDriftType =
+  | "TYPE_MISMATCH"
+  | "MISSING_REQUIRED_FIELD"
+  | "UNEXPECTED_FIELD"
+  | "STATUS_CODE_UNSPECIFIED"
+  | "UNDOCUMENTED_SHADOW_API"
+  | "DEPRECATED_ENDPOINT_ACTIVE";
+
+export interface SchemaDriftItem {
+  endpoint: string;
+  method: string;
+  drift_type: SchemaDriftType;
+  severity: Severity;
+  field_path?: string;
+  expected_contract: string;
+  actual_runtime: string;
+  description: string;
+  recommended_fix: string;
+}
+
+export interface APIEndpointContract {
+  path: string;
+  method: string;
+  summary?: string;
+  documented_in_spec: boolean;
+  runtime_status_code?: number;
+  is_deprecated: boolean;
+  drift_count: number;
+}
+
+export interface APIContractDriftReport {
+  contract_compatibility_score: number;
+  spec_detected: boolean;
+  spec_url?: string;
+  spec_title?: string;
+  spec_version?: string;
+  total_endpoints_evaluated: number;
+  documented_endpoints_count: number;
+  shadow_endpoints_count: number;
+  total_drifts_detected: number;
+  endpoints: APIEndpointContract[];
+  drifts: SchemaDriftItem[];
+  compliance_frameworks?: string[];
+  audited_at: string;
+}
+
 
 
 

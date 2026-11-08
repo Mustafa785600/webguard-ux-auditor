@@ -100,3 +100,4 @@ async def test_synthetic_fallback_audit_zoom_blocked():
 
     mobile_res = next(r for r in results if r.device == DeviceProfile.MOBILE)
     assert any(d.defect_type == ResponsiveDefectType.PINCH_TO_ZOOM_BLOCKED for d in mobile_res.defects)
+

@@ -20,6 +20,7 @@ import WAFResilienceView from "./WAFResilienceView";
 import ChaosEngineeringView from "./ChaosEngineeringView";
 import RateLimitResilienceView from "./RateLimitResilienceView";
 import MultiViewportView from "./MultiViewportView";
+import APIContractDriftView from "./APIContractDriftView";
 import {
   type Language,
   UI_STRINGS,
@@ -54,7 +55,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -407,6 +408,14 @@ export default function ScanDashboard() {
                 >
                   📱 {lang === "tr" ? "Çoklu Cihaz" : "Viewport"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "APICONTRACT" ? "active" : ""}`}
+                  onClick={() => setActiveTab("APICONTRACT")}
+                  title={lang === "tr" ? "API Sözleşme ve Şema Sapması Raporu" : "API Contract & Schema Drift"}
+                >
+                  📋 {lang === "tr" ? "API Sözleşme" : "API Contract"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -529,7 +538,19 @@ export default function ScanDashboard() {
               >
                 📱 {lang === "tr" ? "Çoklu Cihaz & Responsive" : "Multi-Viewport"} {result.multi_viewport_report ? `(${result.multi_viewport_report.overall_responsive_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "APICONTRACT" ? "active" : ""}`}
+                onClick={() => setActiveTab("APICONTRACT")}
+              >
+                📋 {lang === "tr" ? "API Sözleşme & Şema" : "API Contract"} {result.api_contract_drift ? `(${result.api_contract_drift.contract_compatibility_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol API Sözleşme ve Şema Sapması */}
+            {activeTab === "APICONTRACT" && (
+              <APIContractDriftView report={result.api_contract_drift} lang={lang} />
+            )}
 
             {/* TAB: Virgosol Çoklu Cihaz ve Duyarlı Tasarım */}
             {activeTab === "VIEWPORT" && (

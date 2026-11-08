@@ -43,6 +43,8 @@ class NetworkRequestTrace(BaseModel):
     duration_ms: float
     size_bytes: Optional[int] = None
     cors_allowed: Optional[bool] = None
+    content_type: Optional[str] = None
+    response_body: Optional[str] = None
 
 class Finding(BaseModel):
     id: str
@@ -179,6 +181,7 @@ class ScanResult(BaseModel):
     chaos_resilience: Optional['ChaosResilienceReport'] = None
     rate_limit_resilience: Optional['RateLimitResilienceReport'] = None
     multi_viewport_report: Optional['MultiViewportReport'] = None
+    api_contract_drift: Optional['APIContractDriftReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -411,6 +414,56 @@ class MultiViewportReport(BaseModel):
         "WCAG 2.5.5 Target Size (44x44px)",
         "Google Mobile-Friendly Standards",
         "Apple iOS HIG & Android Touch Targets"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── API Sözleşme ve Şema Sapması Modelleri (API Contract & Schema Drift) ──
+
+class SchemaDriftType(str, Enum):
+    TYPE_MISMATCH = "TYPE_MISMATCH"                      # Beklenen veri tipi ile gerçek tip uyuşmazlığı
+    MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD"    # Şemada zorunlu tanımlanan alan yanıtta eksik
+    UNEXPECTED_FIELD = "UNEXPECTED_FIELD"                # Dokümante edilmemiş ekstra alan
+    STATUS_CODE_UNSPECIFIED = "STATUS_CODE_UNSPECIFIED"  # Şartnamede tanımlanmamış HTTP yanıt kodu
+    UNDOCUMENTED_SHADOW_API = "UNDOCUMENTED_SHADOW_API"  # Şartnamede yer almayan gölge API çağrısı
+    DEPRECATED_ENDPOINT_ACTIVE = "DEPRECATED_ENDPOINT_ACTIVE"  # Kullanımdan kaldırılmış (deprecated) uç noktaya istek
+
+class SchemaDriftItem(BaseModel):
+    endpoint: str
+    method: str
+    drift_type: SchemaDriftType
+    severity: Severity
+    field_path: Optional[str] = None
+    expected_contract: str
+    actual_runtime: str
+    description: str
+    recommended_fix: str
+
+class APIEndpointContract(BaseModel):
+    path: str
+    method: str
+    summary: Optional[str] = None
+    documented_in_spec: bool = True
+    runtime_status_code: Optional[int] = None
+    is_deprecated: bool = False
+    drift_count: int = 0
+
+class APIContractDriftReport(BaseModel):
+    contract_compatibility_score: int = 100  # 0 - 100
+    spec_detected: bool = False
+    spec_url: Optional[str] = None
+    spec_title: Optional[str] = None
+    spec_version: Optional[str] = None
+    total_endpoints_evaluated: int = 0
+    documented_endpoints_count: int = 0
+    shadow_endpoints_count: int = 0
+    total_drifts_detected: int = 0
+    endpoints: List[APIEndpointContract] = []
+    drifts: List[SchemaDriftItem] = []
+    compliance_frameworks: List[str] = [
+        "OpenAPI 3.0 / 3.1 Specification",
+        "OWASP API8:2023 Lack of Protection from Improper Asset Management",
+        "OWASP API9:2023 Improper Inventory Management",
+        "JSON Schema Core Draft 2020-12"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 

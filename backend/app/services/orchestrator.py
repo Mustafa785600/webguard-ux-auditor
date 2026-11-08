@@ -27,6 +27,7 @@ from app.services.waf_leakage_prober import WAFLeakageProbingEngine
 from app.services.chaos_engine import ChaosFaultInjectionEngine
 from app.services.rate_limit_auditor import RateLimitingAuditor
 from app.services.responsive_auditor import ResponsiveLayoutAuditor
+from app.services.api_contract_auditor import APIContractDriftAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -208,6 +209,18 @@ async def execute_scan(
         if hasattr(scanner, "network_traces") and scanner.network_traces:
             network_traces.extend(scanner.network_traces)
 
+    # Virgosol & OWASP API Sözleşme ve Şema Sapması Denetimi (API Contract & Schema Drift)
+    api_contract_report = None
+    try:
+        api_auditor = APIContractDriftAuditor()
+        api_contract_report, api_contract_findings = await api_auditor.audit_contract_and_drift(
+            sanitized_url, network_traces=network_traces
+        )
+        all_findings.extend(api_contract_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[API Contract Audit Error] Failed on {sanitized_url}: {exc}")
+
     self_healing_events = []
     for scanner in active_scanners:
         if hasattr(scanner, "self_healing_events") and scanner.self_healing_events:
@@ -327,6 +340,7 @@ async def execute_scan(
         chaos_resilience=chaos_report,
         rate_limit_resilience=rate_limit_report,
         multi_viewport_report=multi_viewport_report,
+        api_contract_drift=api_contract_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()
