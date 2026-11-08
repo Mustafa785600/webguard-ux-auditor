@@ -150,6 +150,7 @@ export interface ScanResult {
   waf_resilience?: WAFResilienceReport;
   chaos_resilience?: ChaosResilienceReport;
   rate_limit_resilience?: RateLimitResilienceReport;
+  multi_viewport_report?: MultiViewportReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -328,6 +329,55 @@ export interface RateLimitResilienceReport {
   compliance_frameworks: string[];
   audited_at: string;
 }
+
+export type DeviceProfile = "MOBILE" | "TABLET" | "DESKTOP";
+
+export type ResponsiveDefectType =
+  | "HORIZONTAL_OVERFLOW"
+  | "TOUCH_TARGET_TOO_SMALL"
+  | "ILLEGIBLE_FONT_SIZE"
+  | "VIEWPORT_META_MISSING"
+  | "PINCH_TO_ZOOM_BLOCKED"
+  | "CONTENT_CLIPPED";
+
+export interface ResponsiveDefectItem {
+  defect_type: ResponsiveDefectType;
+  severity: Severity;
+  description: string;
+  selector?: string;
+  bounding_box?: Record<string, number>;
+  computed_value?: string;
+  recommended_fix: string;
+}
+
+export interface ViewportAuditResult {
+  device: DeviceProfile;
+  device_label: string;
+  width: number;
+  height: number;
+  scale_factor: number;
+  is_mobile: boolean;
+  has_touch: boolean;
+  score: number;
+  horizontal_overflow_px: number;
+  total_touch_targets_checked: number;
+  small_touch_targets_count: number;
+  small_fonts_count: number;
+  screenshot_b64?: string | null;
+  defects: ResponsiveDefectItem[];
+}
+
+export interface MultiViewportReport {
+  overall_responsive_score: number;
+  meta_viewport_tag_found: boolean;
+  meta_viewport_content?: string | null;
+  pinch_to_zoom_allowed: boolean;
+  total_defects: number;
+  tested_viewports: ViewportAuditResult[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

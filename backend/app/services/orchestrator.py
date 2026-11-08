@@ -26,6 +26,7 @@ from app.services.codebase_intelligence import CodebaseIntelligenceEngine
 from app.services.waf_leakage_prober import WAFLeakageProbingEngine
 from app.services.chaos_engine import ChaosFaultInjectionEngine
 from app.services.rate_limit_auditor import RateLimitingAuditor
+from app.services.responsive_auditor import ResponsiveLayoutAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -173,6 +174,16 @@ async def execute_scan(
             import logging
             logging.error(f"[Rate Limiting Audit Error] Failed on {sanitized_url}: {exc}")
 
+        # Virgosol & WCAG Çoklu Cihaz ve Duyarlı Tasarım Denetçisi (Multi-Viewport & Responsive Auditor)
+        multi_viewport_report = None
+        resp_findings = []
+        try:
+            resp_auditor = ResponsiveLayoutAuditor()
+            multi_viewport_report, resp_findings = await resp_auditor.audit_multi_viewport(sanitized_url, client=client)
+        except Exception as exc:
+            import logging
+            logging.error(f"[Multi-Viewport Audit Error] Failed on {sanitized_url}: {exc}")
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
@@ -180,6 +191,7 @@ async def execute_scan(
     all_findings.extend(perf_findings)
     all_findings.extend(waf_findings)
     all_findings.extend(rate_limit_findings)
+    all_findings.extend(resp_findings)
 
     # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
     chaos_report = None
@@ -314,6 +326,7 @@ async def execute_scan(
         waf_resilience=waf_report,
         chaos_resilience=chaos_report,
         rate_limit_resilience=rate_limit_report,
+        multi_viewport_report=multi_viewport_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

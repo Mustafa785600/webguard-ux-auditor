@@ -19,6 +19,7 @@ import CodebaseIntelligenceView from "./CodebaseIntelligenceView";
 import WAFResilienceView from "./WAFResilienceView";
 import ChaosEngineeringView from "./ChaosEngineeringView";
 import RateLimitResilienceView from "./RateLimitResilienceView";
+import MultiViewportView from "./MultiViewportView";
 import {
   type Language,
   UI_STRINGS,
@@ -53,7 +54,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -398,6 +399,14 @@ export default function ScanDashboard() {
                 >
                   ⏱️ {lang === "tr" ? "Hız Sınırı" : "Rate-Limit"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "VIEWPORT" ? "active" : ""}`}
+                  onClick={() => setActiveTab("VIEWPORT")}
+                  title={lang === "tr" ? "Çoklu Cihaz ve Duyarlı Tasarım Raporu" : "Multi-Viewport & Responsive Layout"}
+                >
+                  📱 {lang === "tr" ? "Çoklu Cihaz" : "Viewport"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -513,7 +522,19 @@ export default function ScanDashboard() {
               >
                 ⏱️ {lang === "tr" ? "Hız Sınırı & Kaba Kuvvet" : "Rate-Limiting"} {result.rate_limit_resilience ? `(${result.rate_limit_resilience.resilience_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "VIEWPORT" ? "active" : ""}`}
+                onClick={() => setActiveTab("VIEWPORT")}
+              >
+                📱 {lang === "tr" ? "Çoklu Cihaz & Responsive" : "Multi-Viewport"} {result.multi_viewport_report ? `(${result.multi_viewport_report.overall_responsive_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol Çoklu Cihaz ve Duyarlı Tasarım */}
+            {activeTab === "VIEWPORT" && (
+              <MultiViewportView report={result.multi_viewport_report} lang={lang} />
+            )}
 
             {/* TAB: Virgosol Hız Sınırı ve Kaba Kuvvet Direnci */}
             {activeTab === "RATELIMIT" && (

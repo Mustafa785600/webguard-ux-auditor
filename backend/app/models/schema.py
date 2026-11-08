@@ -178,6 +178,7 @@ class ScanResult(BaseModel):
     waf_resilience: Optional['WAFResilienceReport'] = None
     chaos_resilience: Optional['ChaosResilienceReport'] = None
     rate_limit_resilience: Optional['RateLimitResilienceReport'] = None
+    multi_viewport_report: Optional['MultiViewportReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -356,6 +357,61 @@ class RateLimitResilienceReport(BaseModel):
     rate_limit_headers: Dict[str, str] = {}
     attempts: List[RateLimitProbeAttempt] = []
     compliance_frameworks: List[str] = ["OWASP API4:2023", "BDDK Madde 34", "PCI-DSS 8.3.4"]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Çoklu Cihaz ve Duyarlı Tasarım Modelleri (Multi-Viewport & Responsive Layout) ──
+
+class DeviceProfile(str, Enum):
+    MOBILE = "MOBILE"        # Akıllı Telefon (390 x 844)
+    TABLET = "TABLET"        # Tablet (768 x 1024)
+    DESKTOP = "DESKTOP"      # Masaüstü HD (1920 x 1080)
+
+class ResponsiveDefectType(str, Enum):
+    HORIZONTAL_OVERFLOW = "HORIZONTAL_OVERFLOW"            # Yatay kaydırma çubuğu taşması
+    TOUCH_TARGET_TOO_SMALL = "TOUCH_TARGET_TOO_SMALL"      # Dokunma hedefi boyutu < 44x44px (WCAG 2.5.5)
+    ILLEGIBLE_FONT_SIZE = "ILLEGIBLE_FONT_SIZE"            # Okunamayacak kadar küçük yazı (< 12px)
+    VIEWPORT_META_MISSING = "VIEWPORT_META_MISSING"        # <meta name="viewport"> etiketi eksik
+    PINCH_TO_ZOOM_BLOCKED = "PINCH_TO_ZOOM_BLOCKED"        # user-scalable=no ile yakınlaştırma engellenmiş
+    CONTENT_CLIPPED = "CONTENT_CLIPPED"                    # Metin veya içerik kırpılmış
+
+class ResponsiveDefectItem(BaseModel):
+    defect_type: ResponsiveDefectType
+    severity: Severity
+    description: str
+    selector: Optional[str] = None
+    bounding_box: Optional[Dict[str, float]] = None
+    computed_value: Optional[str] = None
+    recommended_fix: str
+
+class ViewportAuditResult(BaseModel):
+    device: DeviceProfile
+    device_label: str
+    width: int
+    height: int
+    scale_factor: float = 1.0
+    is_mobile: bool
+    has_touch: bool
+    score: int = 100  # 0 - 100
+    horizontal_overflow_px: int = 0
+    total_touch_targets_checked: int = 0
+    small_touch_targets_count: int = 0
+    small_fonts_count: int = 0
+    screenshot_b64: Optional[str] = None
+    defects: List[ResponsiveDefectItem] = []
+
+class MultiViewportReport(BaseModel):
+    overall_responsive_score: int = 100  # 0 - 100
+    meta_viewport_tag_found: bool = True
+    meta_viewport_content: Optional[str] = None
+    pinch_to_zoom_allowed: bool = True
+    total_defects: int = 0
+    tested_viewports: List[ViewportAuditResult] = []
+    compliance_standards: List[str] = [
+        "WCAG 2.1 Reflow (1.4.10)",
+        "WCAG 2.5.5 Target Size (44x44px)",
+        "Google Mobile-Friendly Standards",
+        "Apple iOS HIG & Android Touch Targets"
+    ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()
