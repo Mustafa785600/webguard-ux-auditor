@@ -1,0 +1,91 @@
+# 🛡️ WebGuard - Proje Durumu ve Devir Özeti (Handover Document)
+
+Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kurumsal standart uyumluluklarını ve bir sonraki oturumda eksiksiz devam edebilmek için gereken bağlamı içerir.
+
+---
+
+## 📌 Genel Proje Bilgileri
+- **Proje Adı:** WebGuard (Enterprise Autonomous Security, Performance & UX Quality Assurance Platform)
+- **Teknoloji Yığını:**
+  - **Backend:** FastAPI (Python 3.12), Playwright, HTTPX, Pydantic V2, Pytest
+  - **Frontend:** Next.js 16 (App Router / Turbopack), React 19, TypeScript, Tailwind CSS
+- **Git Durumu:** `main` branch, commit `8164834` (Çalışma dizini temiz, tüm testler geçiyor, GitHub senkronize).
+
+---
+
+## 🚀 Tamamlanan ve Canlıda Olan Modüller
+
+### 1. Bütünsel Kod Tabanı ve Mimari Zeka (`CodebaseIntelligenceEngine`)
+- Python AST ile tüm backend ve frontend kodlarını analiz eder.
+- Mimari katmanları (`API_CONTROLLER`, `SERVICE_LOGIC`, `SECURITY_GUARD`, `DATA_MODEL`, `FRONTEND_UI`) tespit eder.
+- Semboller arası bağımlılık grafını, etki yarıçapını (Blast Radius) ve uçtan uca veri akışlarını (FullStackFlows) çıkarır.
+- **Arayüz:** `CodebaseIntelligenceView.tsx`
+
+### 2. Core Web Vitals ve Sayfa Yükleme Performansı (`PlaywrightQAScanner` & `PerformanceBenchmarkEngine`)
+- FCP (First Contentful Paint), LCP (Largest Contentful Paint), DOM Yükleme Süresi, TTFB, DOM Düğüm Sayısı ve Ağır Kaynakları (Heavy Assets) gerçek tarayıcı seviyesinde ölçer.
+- Virgosol tarzı yük ve gecikme SLA testi (p50, p90, p95, p99, throughput).
+- **Arayüz:** `PerformanceView.tsx`
+
+### 3. WAF ve Hata Sızıntısı Direnç Testi (`WAFLeakageProbingEngine`)
+- 8 temel sentetik saldırı probu (SQLi, XSS, Path Traversal, Bozuk JSON vb.) ile sunucu tepkilerini ölçer.
+- WAF sağlayıcısını (Cloudflare, AWS WAF, Akamai, Imperva vb.) parmak izinden saptar.
+- 500 çöküşleri ve kritik stack trace / veritabanı hata sızıntılarını yakalar.
+- **Arayüz:** `WAFResilienceView.tsx`
+
+### 4. Kaos Mühendisliği ve Ağ Hata Enjeksiyonu (`ChaosFaultInjectionEngine`)
+- Tarayıcı seviyesinde ağ arızaları enjekte eder (HTTP 500, Latency Spike, Network Abort, Malformed JSON).
+- Arayüzün zarafetle toparlanıp toparlanmadığını veya Beyaz Ekran Çöküşü (WSOD) yaşayıp yaşamadığını belirler.
+- **Arayüz:** `ChaosEngineeringView.tsx`
+
+### 5. Hız Sınırı ve Kaba Kuvvet Direnci (`RateLimitingAuditor`)
+- OWASP API4:2023, BDDK Madde 34 ve PCI-DSS 8.3.4 kurumsal standartlarında.
+- Kimlik doğrulama rotalarına zararsız sentetik istek patlamaları (burst requests) gönderir.
+- HTTP 429 Too Many Requests, `Retry-After` ve standart `RateLimit-*` başlıklarını denetler.
+- FastAPI (SlowAPI), Nginx (`limit_req_zone`) ve Express için hazır kod şablonları sunar.
+- **Arayüz:** `RateLimitResilienceView.tsx`
+
+### 6. Çoklu Cihaz ve Duyarlı Tasarım Denetimi (`ResponsiveLayoutAuditor`)
+- Web sitelerini Mobil (390x844), Tablet (768x1024) ve Masaüstü (1920x1080) çözünürlüklerinde inceler.
+- Yatay kaydırma çubuğu taşmasını (horizontal overflow) piksel bazında tespit eder.
+- WCAG 2.5.5 ve Apple HIG gereğince 44x44px'den küçük dokunma hedeflerini işaretler.
+- Her cihaz için görsel ekran görüntüsü (base64) yakalayarak cihaz mockup çerçevesi içinde sergiler.
+- **Arayüz:** `MultiViewportView.tsx`
+
+### 7. API Sözleşme ve Şema Sapması Denetimi (`APIContractDriftAuditor`)
+- OpenAPI 3.0/3.1 ve Swagger spesifikasyonlarını otomatik keşfeder.
+- Ön yüzün arka planla yaptığı gerçek zamanlı XHR/Fetch API çağrılarını (`network_traces`) sözleşmeyle karşılaştırır.
+- Tip uyuşmazlıkları (Type Mismatch), zorunlu alan eksiklikleri (Missing Required Field) ve belgelenmemiş Gölge API'leri (Shadow APIs - OWASP API9) tespit eder.
+- **Arayüz:** `APIContractDriftView.tsx`
+
+### 8. Canlı Yayın Paneli & CDP Screencast (`live_hub` & `CDPScreencastManager`)
+- Chrome DevTools Protocol (CDP) üzerinden tarayıcının form doldurma, tıklama ve tarama anlarını WebSocket ile canlı yayınlar.
+- **Arayüz:** `LiveScreencastPanel.tsx`
+
+### 9. Otonom E2E Auto-Heal & Flaky Test İyileştirici (`SelfHealingEngine`)
+- Kırılgan DOM seçicilerini (ID/XPath) semantik ve çok katmanlı akıllı alternatiflerle onarır.
+- **Arayüz:** `AutoHealView.tsx`
+
+### 10. PRD Zekası & Otomatik Test Üretimi (`analyze_prd_and_generate_tests`)
+- Ürün gereksinim dokümanından (PRD) sentetik kullanıcı senaryoları ve Playwright `.spec.ts` kodu üretir.
+- **Arayüz:** `PrdIntelligenceCard.tsx`
+
+### 11. Otonom Tarayıcı ve Site Ağacı Grafı (`AutonomousCrawler`)
+- Derinlik bazlı sayfa tarama, iç bağlantı keşfi ve site rotaları ağaç görselleştirmesi.
+- **Arayüz:** `CrawlGraphView.tsx`
+
+### 12. 4 Katmanlı Kök Neden Analizi (RCA) ve Ekip Ataması
+- Tüm bulguları `REAL_BUG`, `ENV_ISSUE`, `TEST_FRAGILITY`, `EXPECTED_BEHAVIOR` sınıflarına ayırır ve ilgili ekibe (Dev, QA, DevOps, Uyum) yönlendirir.
+
+---
+
+## 🧪 Doğrulama ve Test Durumu
+- **Backend Testleri:** 20/20 birim testi aktif ve başarılı (`test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
+
+---
+
+## 💡 Yeni Sohbette Neler Yapılabilir?
+1. **Güvenlik Açığı Otomatik İstismar Doğrulaması (DAST Exploit Verification):** Tespit edilen XSS veya SSRF zafiyetlerinin sandbox içinde güvenli şekilde teyit edilmesi.
+2. **Kullanıcı Oturum Kaydı ve Isı Haritası (Session Replay & Heatmap):** Kullanıcı tıklamalarını ve gezinme paternlerini görselleştiren DOM replay sistemi.
+3. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları ve N+1 problemlerinin tahmini.
+4. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
