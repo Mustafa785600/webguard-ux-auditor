@@ -175,6 +175,7 @@ class ScanResult(BaseModel):
     user_journeys: Optional[List[Dict[str, Any]]] = None
     crawl_graph: Optional[List[CrawlNode]] = None
     codebase_intelligence: Optional['CodebaseIntelligenceReport'] = None
+    waf_resilience: Optional['WAFResilienceReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -256,6 +257,37 @@ class CodebaseIntelligenceReport(BaseModel):
     architectural_health_score: int = 100
     detected_frameworks: List[str] = []
     analyzed_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── WAF ve Hata Sızıntısı Direnç Modelleri (Virgosol Enterprise) ──────────
+
+class WAFProbeStatus(str, Enum):
+    BLOCKED_BY_WAF = "BLOCKED_BY_WAF"          # WAF isteği 400/403 ile kibarca engelledi (Güvenli)
+    HANDLED_CLEANLY = "HANDLED_CLEANLY"        # Uygulama girdiyi süzüp temiz hata döndü (Güvenli)
+    UNHANDLED_500_CRASH = "UNHANDLED_500_CRASH"# Sunucu 500/502 verdi, çöküş yaşandı (Kusur)
+    STACK_TRACE_LEAK = "STACK_TRACE_LEAK"      # Stack trace, veritabanı veya dosya yolu sızdı (Kritik Zafiyet)
+
+class WAFProbeResult(BaseModel):
+    category: str  # SQLi, XSS, Path Traversal, Command Injection, Buffer/Header, Malformed JSON
+    probe_name: str
+    target_vector: str  # Query Param, HTTP Header, Body, Path
+    payload_sample: str
+    status_code: int
+    probe_status: WAFProbeStatus
+    detected_leakage: Optional[str] = None
+    waf_signature_matched: Optional[str] = None
+    response_time_ms: float
+
+class WAFResilienceReport(BaseModel):
+    waf_detected: bool
+    waf_vendor: str  # Cloudflare, AWS WAF, Akamai, ModSecurity, F5 BIG-IP, No WAF
+    waf_protection_score: int = 100  # 0 - 100
+    total_probes_executed: int
+    probes_blocked_by_waf: int
+    probes_handled_cleanly: int
+    unhandled_500_crashes: int
+    stack_trace_leaks: int
+    probe_results: List[WAFProbeResult] = []
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()
 

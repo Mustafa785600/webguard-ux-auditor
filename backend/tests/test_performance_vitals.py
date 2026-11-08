@@ -34,3 +34,4 @@ def test_performance_metrics_model_with_vitals():
     assert m.total_dom_nodes == 620
     assert len(m.heavy_resources) == 1
     assert m.sla_status == "EXCELLENT"
+

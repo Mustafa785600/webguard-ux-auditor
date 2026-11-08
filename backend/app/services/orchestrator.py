@@ -23,6 +23,7 @@ from app.services.notifier import dispatch_webhook
 from app.services.performance_tester import PerformanceBenchmarkEngine
 from app.services.live_screencast import live_hub
 from app.services.codebase_intelligence import CodebaseIntelligenceEngine
+from app.services.waf_leakage_prober import WAFLeakageProbingEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -150,11 +151,22 @@ async def execute_scan(
             import logging
             logging.error(f"[Performance Benchmark Error] Failed on {sanitized_url}: {exc}")
 
+        # Virgosol WAF ve Hata Sızıntısı Direnç Testi Motoru
+        waf_report = None
+        try:
+            waf_engine = WAFLeakageProbingEngine(concurrency=4)
+            waf_report, waf_findings = await waf_engine.audit_waf_and_error_leakage(sanitized_url, client=client)
+        except Exception as exc:
+            waf_findings = []
+            import logging
+            logging.error(f"[WAF Probing Error] Failed on {sanitized_url}: {exc}")
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
             all_findings.extend(res)
     all_findings.extend(perf_findings)
+    all_findings.extend(waf_findings)
 
     network_traces = []
     for scanner in active_scanners:
@@ -276,6 +288,7 @@ async def execute_scan(
         user_journeys=user_journeys,
         crawl_graph=crawl_graph,
         codebase_intelligence=codebase_report,
+        waf_resilience=waf_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

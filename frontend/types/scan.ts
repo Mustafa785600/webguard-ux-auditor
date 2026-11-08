@@ -147,6 +147,7 @@ export interface ScanResult {
   self_healing_events?: Record<string, unknown>[];
   crawl_graph?: CrawlNode[];
   codebase_intelligence?: CodebaseIntelligenceReport;
+  waf_resilience?: WAFResilienceReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -227,4 +228,36 @@ export interface CodebaseIntelligenceReport {
   detected_frameworks: string[];
   analyzed_at: string;
 }
+
+export type WAFProbeStatus =
+  | "BLOCKED_BY_WAF"
+  | "HANDLED_CLEANLY"
+  | "UNHANDLED_500_CRASH"
+  | "STACK_TRACE_LEAK";
+
+export interface WAFProbeResult {
+  category: string;
+  probe_name: string;
+  target_vector: string;
+  payload_sample: string;
+  status_code: number;
+  probe_status: WAFProbeStatus;
+  detected_leakage?: string;
+  waf_signature_matched?: string;
+  response_time_ms: number;
+}
+
+export interface WAFResilienceReport {
+  waf_detected: boolean;
+  waf_vendor: string;
+  waf_protection_score: number;
+  total_probes_executed: number;
+  probes_blocked_by_waf: number;
+  probes_handled_cleanly: number;
+  unhandled_500_crashes: number;
+  stack_trace_leaks: number;
+  probe_results: WAFProbeResult[];
+  audited_at: string;
+}
+
 

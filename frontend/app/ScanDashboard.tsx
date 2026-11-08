@@ -16,6 +16,7 @@ import RcaTriageBar from "./RcaTriageBar";
 import PerformanceView from "./PerformanceView";
 import LiveScreencastPanel from "./LiveScreencastPanel";
 import CodebaseIntelligenceView from "./CodebaseIntelligenceView";
+import WAFResilienceView from "./WAFResilienceView";
 import {
   type Language,
   UI_STRINGS,
@@ -50,7 +51,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -371,6 +372,14 @@ export default function ScanDashboard() {
                 >
                   🧠 {lang === "tr" ? "Kod Zeka" : "Codebase"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "WAF" ? "active" : ""}`}
+                  onClick={() => setActiveTab("WAF")}
+                  title={lang === "tr" ? "WAF ve Hata Sızıntısı Direnç Raporu" : "WAF & Error Leakage Resilience"}
+                >
+                  🛡️ {lang === "tr" ? "WAF Direnci" : "WAF"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -465,7 +474,19 @@ export default function ScanDashboard() {
               >
                 🧠 {lang === "tr" ? "Kod Zeka & Mimari" : "Codebase Architecture"} {result.codebase_intelligence ? `(${result.codebase_intelligence.total_symbols})` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "WAF" ? "active" : ""}`}
+                onClick={() => setActiveTab("WAF")}
+              >
+                🛡️ {lang === "tr" ? "WAF & Hata Direnci" : "WAF Resilience"} {result.waf_resilience ? `(${result.waf_resilience.waf_protection_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol WAF ve Hata Sızıntısı Direnci */}
+            {activeTab === "WAF" && (
+              <WAFResilienceView report={result.waf_resilience} lang={lang} />
+            )}
 
             {/* TAB: Bütünsel Kod Tabanı ve Mimari Zeka */}
             {activeTab === "CODEBASE" && (
