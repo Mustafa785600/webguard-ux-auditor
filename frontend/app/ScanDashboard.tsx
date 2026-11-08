@@ -17,6 +17,7 @@ import PerformanceView from "./PerformanceView";
 import LiveScreencastPanel from "./LiveScreencastPanel";
 import CodebaseIntelligenceView from "./CodebaseIntelligenceView";
 import WAFResilienceView from "./WAFResilienceView";
+import ChaosEngineeringView from "./ChaosEngineeringView";
 import {
   type Language,
   UI_STRINGS,
@@ -51,7 +52,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -380,6 +381,14 @@ export default function ScanDashboard() {
                 >
                   🛡️ {lang === "tr" ? "WAF Direnci" : "WAF"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "CHAOS" ? "active" : ""}`}
+                  onClick={() => setActiveTab("CHAOS")}
+                  title={lang === "tr" ? "Kaos Mühendisliği ve Ağ Hata Enjeksiyonu" : "Chaos Engineering & Fault Injection"}
+                >
+                  💥 {lang === "tr" ? "Kaos Testi" : "Chaos"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -481,7 +490,19 @@ export default function ScanDashboard() {
               >
                 🛡️ {lang === "tr" ? "WAF & Hata Direnci" : "WAF Resilience"} {result.waf_resilience ? `(${result.waf_resilience.waf_protection_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "CHAOS" ? "active" : ""}`}
+                onClick={() => setActiveTab("CHAOS")}
+              >
+                💥 {lang === "tr" ? "Kaos & Hata Enjeksiyonu" : "Chaos Engineering"} {result.chaos_resilience ? `(${result.chaos_resilience.chaos_resilience_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol & Netflix Kaos Mühendisliği */}
+            {activeTab === "CHAOS" && (
+              <ChaosEngineeringView report={result.chaos_resilience} lang={lang} />
+            )}
 
             {/* TAB: Virgosol WAF ve Hata Sızıntısı Direnci */}
             {activeTab === "WAF" && (

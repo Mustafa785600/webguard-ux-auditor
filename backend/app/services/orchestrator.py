@@ -24,6 +24,7 @@ from app.services.performance_tester import PerformanceBenchmarkEngine
 from app.services.live_screencast import live_hub
 from app.services.codebase_intelligence import CodebaseIntelligenceEngine
 from app.services.waf_leakage_prober import WAFLeakageProbingEngine
+from app.services.chaos_engine import ChaosFaultInjectionEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -168,6 +169,16 @@ async def execute_scan(
     all_findings.extend(perf_findings)
     all_findings.extend(waf_findings)
 
+    # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
+    chaos_report = None
+    try:
+        chaos_engine = ChaosFaultInjectionEngine()
+        chaos_report, chaos_findings = await chaos_engine.run_chaos_experiments(sanitized_url)
+        all_findings.extend(chaos_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Chaos Engineering Error] Failed on {sanitized_url}: {exc}")
+
     network_traces = []
     for scanner in active_scanners:
         if hasattr(scanner, "network_traces") and scanner.network_traces:
@@ -289,6 +300,7 @@ async def execute_scan(
         crawl_graph=crawl_graph,
         codebase_intelligence=codebase_report,
         waf_resilience=waf_report,
+        chaos_resilience=chaos_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

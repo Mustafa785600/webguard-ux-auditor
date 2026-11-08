@@ -73,3 +73,4 @@ async def test_audit_waf_mock_transport():
         assert report.probes_blocked_by_waf > 0
         assert report.stack_trace_leaks == 0
         assert report.waf_protection_score >= 80
+

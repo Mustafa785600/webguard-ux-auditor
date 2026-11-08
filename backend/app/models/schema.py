@@ -176,6 +176,7 @@ class ScanResult(BaseModel):
     crawl_graph: Optional[List[CrawlNode]] = None
     codebase_intelligence: Optional['CodebaseIntelligenceReport'] = None
     waf_resilience: Optional['WAFResilienceReport'] = None
+    chaos_resilience: Optional['ChaosResilienceReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -287,6 +288,43 @@ class WAFResilienceReport(BaseModel):
     unhandled_500_crashes: int
     stack_trace_leaks: int
     probe_results: List[WAFProbeResult] = []
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Kaos Mühendisliği ve Ağ Hata Enjeksiyonu Modelleri (Chaos Engineering) ─
+
+class ChaosFaultType(str, Enum):
+    API_500_SERVER_ERROR = "API_500_SERVER_ERROR"          # Enjekte edilen HTTP 500 hatası
+    API_LATENCY_SPIKE = "API_LATENCY_SPIKE"                # 3500ms yüksek gecikme simülasyonu
+    NETWORK_CONNECTION_ABORT = "NETWORK_CONNECTION_ABORT"  # Ağ kesintisi / zaman aşımı (abort)
+    MALFORMED_JSON_PAYLOAD = "MALFORMED_JSON_PAYLOAD"      # Bozuk / eksik JSON yanıtı enjeksiyonu
+    SLOW_3G_THROTTLING = "SLOW_3G_THROTTLING"              # Düşük bant genişliği simülasyonu
+
+class ChaosVerdict(str, Enum):
+    RESILIENT = "RESILIENT"                          # Uygulama şık hata veya loading gösterdi (Pass)
+    DEGRADED = "DEGRADED"                            # Kısmi UI bozulması ama çökmedi (Acceptable)
+    CRASH_UNHANDLED = "CRASH_UNHANDLED"              # JS hatası veya unhandled exception (Fail)
+    WHITE_SCREEN_OF_DEATH = "WHITE_SCREEN_OF_DEATH"  # Beyaz ekran çöküşü (Critical Fail)
+
+class ChaosExperimentResult(BaseModel):
+    experiment_id: str
+    name: str
+    fault_type: ChaosFaultType
+    target_pattern: str
+    injected_fault_description: str
+    ui_reaction: str
+    verdict: ChaosVerdict
+    js_exceptions: List[str] = []
+    white_screen_detected: bool = False
+    duration_ms: float
+
+class ChaosResilienceReport(BaseModel):
+    chaos_resilience_score: int = 100  # 0 - 100
+    total_experiments: int
+    resilient_experiments: int
+    degraded_experiments: int
+    crashed_experiments: int
+    white_screens_count: int
+    experiments: List[ChaosExperimentResult] = []
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()

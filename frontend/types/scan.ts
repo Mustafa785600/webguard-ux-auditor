@@ -148,6 +148,7 @@ export interface ScanResult {
   crawl_graph?: CrawlNode[];
   codebase_intelligence?: CodebaseIntelligenceReport;
   waf_resilience?: WAFResilienceReport;
+  chaos_resilience?: ChaosResilienceReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -259,5 +260,43 @@ export interface WAFResilienceReport {
   probe_results: WAFProbeResult[];
   audited_at: string;
 }
+
+export type ChaosFaultType =
+  | "API_500_SERVER_ERROR"
+  | "API_LATENCY_SPIKE"
+  | "NETWORK_CONNECTION_ABORT"
+  | "MALFORMED_JSON_PAYLOAD"
+  | "SLOW_3G_THROTTLING";
+
+export type ChaosVerdict =
+  | "RESILIENT"
+  | "DEGRADED"
+  | "CRASH_UNHANDLED"
+  | "WHITE_SCREEN_OF_DEATH";
+
+export interface ChaosExperimentResult {
+  experiment_id: string;
+  name: string;
+  fault_type: ChaosFaultType;
+  target_pattern: string;
+  injected_fault_description: string;
+  ui_reaction: string;
+  verdict: ChaosVerdict;
+  js_exceptions: string[];
+  white_screen_detected: boolean;
+  duration_ms: number;
+}
+
+export interface ChaosResilienceReport {
+  chaos_resilience_score: number;
+  total_experiments: number;
+  resilient_experiments: number;
+  degraded_experiments: number;
+  crashed_experiments: number;
+  white_screens_count: number;
+  experiments: ChaosExperimentResult[];
+  audited_at: string;
+}
+
 
 
