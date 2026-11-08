@@ -149,6 +149,7 @@ export interface ScanResult {
   codebase_intelligence?: CodebaseIntelligenceReport;
   waf_resilience?: WAFResilienceReport;
   chaos_resilience?: ChaosResilienceReport;
+  rate_limit_resilience?: RateLimitResilienceReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -297,6 +298,37 @@ export interface ChaosResilienceReport {
   experiments: ChaosExperimentResult[];
   audited_at: string;
 }
+
+export type RateLimitStatus =
+  | "ENFORCED_HTTP_429"
+  | "ENFORCED_ACCOUNT_LOCK"
+  | "PARTIAL_DELAY"
+  | "NOT_ENFORCED";
+
+export interface RateLimitProbeAttempt {
+  attempt_number: number;
+  status_code: number;
+  latency_ms: number;
+  rate_limit_remaining?: number;
+  retry_after_seconds?: number;
+  throttled: boolean;
+}
+
+export interface RateLimitResilienceReport {
+  rate_limiting_detected: boolean;
+  status: RateLimitStatus;
+  resilience_score: number;
+  tested_endpoint: string;
+  total_burst_requests: number;
+  throttled_at_attempt?: number;
+  http_429_received: boolean;
+  retry_after_header_present: boolean;
+  rate_limit_headers: Record<string, string>;
+  attempts: RateLimitProbeAttempt[];
+  compliance_frameworks: string[];
+  audited_at: string;
+}
+
 
 
 

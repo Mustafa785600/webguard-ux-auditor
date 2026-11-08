@@ -25,6 +25,7 @@ from app.services.live_screencast import live_hub
 from app.services.codebase_intelligence import CodebaseIntelligenceEngine
 from app.services.waf_leakage_prober import WAFLeakageProbingEngine
 from app.services.chaos_engine import ChaosFaultInjectionEngine
+from app.services.rate_limit_auditor import RateLimitingAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -162,12 +163,23 @@ async def execute_scan(
             import logging
             logging.error(f"[WAF Probing Error] Failed on {sanitized_url}: {exc}")
 
+        # Virgosol Hız Sınırı ve Kaba Kuvvet Direnç Testi Motoru (Rate-Limiting & Brute-Force Auditor)
+        rate_limit_report = None
+        rate_limit_findings = []
+        try:
+            rate_auditor = RateLimitingAuditor(burst_count=15)
+            rate_limit_report, rate_limit_findings = await rate_auditor.audit_rate_limiting(sanitized_url, client=client)
+        except Exception as exc:
+            import logging
+            logging.error(f"[Rate Limiting Audit Error] Failed on {sanitized_url}: {exc}")
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
             all_findings.extend(res)
     all_findings.extend(perf_findings)
     all_findings.extend(waf_findings)
+    all_findings.extend(rate_limit_findings)
 
     # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
     chaos_report = None
@@ -301,6 +313,7 @@ async def execute_scan(
         codebase_intelligence=codebase_report,
         waf_resilience=waf_report,
         chaos_resilience=chaos_report,
+        rate_limit_resilience=rate_limit_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

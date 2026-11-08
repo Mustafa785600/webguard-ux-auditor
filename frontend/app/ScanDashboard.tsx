@@ -18,6 +18,7 @@ import LiveScreencastPanel from "./LiveScreencastPanel";
 import CodebaseIntelligenceView from "./CodebaseIntelligenceView";
 import WAFResilienceView from "./WAFResilienceView";
 import ChaosEngineeringView from "./ChaosEngineeringView";
+import RateLimitResilienceView from "./RateLimitResilienceView";
 import {
   type Language,
   UI_STRINGS,
@@ -52,7 +53,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -389,6 +390,14 @@ export default function ScanDashboard() {
                 >
                   💥 {lang === "tr" ? "Kaos Testi" : "Chaos"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "RATELIMIT" ? "active" : ""}`}
+                  onClick={() => setActiveTab("RATELIMIT")}
+                  title={lang === "tr" ? "Hız Sınırı ve Kaba Kuvvet Direnç Raporu" : "Rate-Limiting & Brute-Force Resilience"}
+                >
+                  ⏱️ {lang === "tr" ? "Hız Sınırı" : "Rate-Limit"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -497,7 +506,19 @@ export default function ScanDashboard() {
               >
                 💥 {lang === "tr" ? "Kaos & Hata Enjeksiyonu" : "Chaos Engineering"} {result.chaos_resilience ? `(${result.chaos_resilience.chaos_resilience_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "RATELIMIT" ? "active" : ""}`}
+                onClick={() => setActiveTab("RATELIMIT")}
+              >
+                ⏱️ {lang === "tr" ? "Hız Sınırı & Kaba Kuvvet" : "Rate-Limiting"} {result.rate_limit_resilience ? `(${result.rate_limit_resilience.resilience_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol Hız Sınırı ve Kaba Kuvvet Direnci */}
+            {activeTab === "RATELIMIT" && (
+              <RateLimitResilienceView report={result.rate_limit_resilience} lang={lang} />
+            )}
 
             {/* TAB: Virgosol & Netflix Kaos Mühendisliği */}
             {activeTab === "CHAOS" && (

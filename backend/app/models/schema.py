@@ -177,6 +177,7 @@ class ScanResult(BaseModel):
     codebase_intelligence: Optional['CodebaseIntelligenceReport'] = None
     waf_resilience: Optional['WAFResilienceReport'] = None
     chaos_resilience: Optional['ChaosResilienceReport'] = None
+    rate_limit_resilience: Optional['RateLimitResilienceReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -325,6 +326,36 @@ class ChaosResilienceReport(BaseModel):
     crashed_experiments: int
     white_screens_count: int
     experiments: List[ChaosExperimentResult] = []
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Hız Sınırı ve Kaba Kuvvet Direnci Modelleri (Rate Limiting Resilience) ──
+
+class RateLimitStatus(str, Enum):
+    ENFORCED_HTTP_429 = "ENFORCED_HTTP_429"          # HTTP 429 Too Many Requests başarıyla uygulandı (Mükemmel)
+    ENFORCED_ACCOUNT_LOCK = "ENFORCED_ACCOUNT_LOCK"  # Hesap kilitleme / geçici IP kısıtlaması uygulandı
+    PARTIAL_DELAY = "PARTIAL_DELAY"                  # Gecikme artırıldı (Tarpit)
+    NOT_ENFORCED = "NOT_ENFORCED"                    # Hız sınırı yok, kaba kuvvete açık (Zafiyet)
+
+class RateLimitProbeAttempt(BaseModel):
+    attempt_number: int
+    status_code: int
+    latency_ms: float
+    rate_limit_remaining: Optional[int] = None
+    retry_after_seconds: Optional[int] = None
+    throttled: bool = False
+
+class RateLimitResilienceReport(BaseModel):
+    rate_limiting_detected: bool
+    status: RateLimitStatus
+    resilience_score: int = 100  # 0 - 100
+    tested_endpoint: str
+    total_burst_requests: int
+    throttled_at_attempt: Optional[int] = None
+    http_429_received: bool
+    retry_after_header_present: bool
+    rate_limit_headers: Dict[str, str] = {}
+    attempts: List[RateLimitProbeAttempt] = []
+    compliance_frameworks: List[str] = ["OWASP API4:2023", "BDDK Madde 34", "PCI-DSS 8.3.4"]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()
