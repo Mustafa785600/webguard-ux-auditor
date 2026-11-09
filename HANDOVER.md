@@ -95,15 +95,24 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **Kaydırma Şelalesi (Scroll Waterfall):** %25, %50, %75, %100 derinlik basamaklarında ziyaretçi tutunma ve düşüş analizini sunar.
 - **Arayüz:** `SessionReplayHeatmapView.tsx` (İnteraktif Sanal Tarayıcı Oynatıcı, Hız Ayarı, Isı Haritası ve Sürtünme Raporu).
 
+### 15. Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (`DatabaseLeakSlowQueryProber`)
+- **OWASP Top 10 A05:2021, CWE-209, CWE-200, PCI-DSS v4.0 ve BDDK Madde 31 Kurumsal Standardı.**
+- **SQL / ORM Hata Sızıntıları:** PostgreSQL, MySQL/MariaDB, SQLite, MSSQL, Oracle ve MongoDB hata sözdizimlerinin HTTP yanıtlarına sızmasını denetler.
+- **Bağlantı Dizesi (Connection URI) İfşası:** Yanıt gövdesinde sızan veritabanı bağlantı URI'lerini yakalar ve şifreleri maskeler (`postgres://admin:*****@host/db`).
+- **Yavaş Sorgu & SLA İhlalleri:** >800ms (Medium), >1500ms (High), >2500ms (Critical) API uç noktalarını tespit eder.
+- **N+1 Sorgu Patern Şüphesi:** Bir sayfa yükünde ilişkili alt rotalara gönderilen ardışık tekil istekleri saptar ve Eager Loading / Toplu API tavsiyesi üretir.
+- **Zaman Bazlı Gecikme Problama (Time-Delay Probing):** Sentetik hesaplama yükleriyle sunucunun zaman sapmasını (drift) ve Blind SQLi direncini ölçer.
+- **Arayüz:** `DatabaseSlowQueryView.tsx` (Sızıntı Listesi, Yavaş Sorgu & N+1 Paternleri, Zaman Probu ve ORM/İndeks Çözüm Rehberi).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 29/29 birim testi aktif ve başarılı (`test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 33/33 birim testi aktif ve başarılı (`test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları, N+1 sızıntıları, hassas DB hata izleri ve zaman bazlı sorgu gecikmesi analizi.
-2. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
+1. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
+2. **Gelişmiş Bellek & DOM Sızıntı Denetimi (Memory & DOM Leak Profiler):** SPA sayfalarında ayrılmamış event listener'lar ve detach edilmiş DOM düğümlerinin tespiti.
 

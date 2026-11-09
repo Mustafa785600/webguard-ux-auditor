@@ -24,6 +24,9 @@ export interface NetworkRequestTrace {
   duration_ms: number;
   size_bytes?: number;
   cors_allowed?: boolean;
+  content_type?: string;
+  headers?: Record<string, string>;
+  response_body?: string;
 }
 
 export interface Finding {
@@ -154,6 +157,7 @@ export interface ScanResult {
   api_contract_drift?: APIContractDriftReport;
   dast_verification?: DASTVerificationReport;
   session_replay?: SessionReplayReport;
+  database_leak_report?: DatabaseLeakReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -514,6 +518,62 @@ export interface SessionReplayReport {
   page_screenshot_b64?: string | null;
   compliance_notes?: string[];
   recorded_at: string;
+}
+
+export type DatabaseLeakType =
+  | "SQL_SYNTAX_ERROR"
+  | "STACK_TRACE_EXPOSURE"
+  | "CONNECTION_STRING"
+  | "DATABASE_NAME_LEAK"
+  | "DEBUG_METRIC_LEAK";
+
+export type SlowQuerySeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+
+export interface DatabaseLeakItem {
+  leak_type: DatabaseLeakType;
+  severity: Severity;
+  endpoint: string;
+  parameter_or_header?: string;
+  detected_engine: string;
+  leak_sample: string;
+  description: string;
+  remediation: string;
+}
+
+export interface SlowQueryCandidate {
+  endpoint: string;
+  method: string;
+  observed_latency_ms: number;
+  status_code: number;
+  severity: SlowQuerySeverity;
+  suspected_cause: string;
+  query_pattern_hint?: string;
+  orm_fix_recommendation: string;
+}
+
+export interface TimeProbeResult {
+  endpoint: string;
+  probe_name: string;
+  baseline_latency_ms: number;
+  probed_latency_ms: number;
+  latency_delta_ms: number;
+  is_time_delay_suspect: boolean;
+  status: "SAFE" | "SUSPICIOUS_DELAY" | "TIMED_OUT";
+  detail: string;
+}
+
+export interface DatabaseLeakReport {
+  db_health_score: number;
+  detected_engines: string[];
+  total_leaks_count: number;
+  slow_queries_count: number;
+  n_plus_one_suspects_count: number;
+  leaks: DatabaseLeakItem[];
+  slow_queries: SlowQueryCandidate[];
+  time_probes: TimeProbeResult[];
+  orm_recommendations: string[];
+  compliance_standards?: string[];
+  audited_at: string;
 }
 
 

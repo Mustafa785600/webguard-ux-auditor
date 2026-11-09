@@ -23,6 +23,7 @@ import MultiViewportView from "./MultiViewportView";
 import APIContractDriftView from "./APIContractDriftView";
 import DASTVerificationView from "./DASTVerificationView";
 import SessionReplayHeatmapView from "./SessionReplayHeatmapView";
+import DatabaseSlowQueryView from "./DatabaseSlowQueryView";
 import {
   type Language,
   UI_STRINGS,
@@ -57,7 +58,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -434,6 +435,14 @@ export default function ScanDashboard() {
                 >
                   🎬 {lang === "tr" ? "Isı Haritası" : "Heatmap"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "DATABASE" ? "active" : ""}`}
+                  onClick={() => setActiveTab("DATABASE")}
+                  title={lang === "tr" ? "Veritabanı ve Yavaş Sorgu Sızıntı Denetimi" : "Database & Slow Query Prober"}
+                >
+                  🗄️ {lang === "tr" ? "Veritabanı" : "Database"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -577,7 +586,19 @@ export default function ScanDashboard() {
               >
                 🎬 {lang === "tr" ? "Oturum Kaydı & Isı Haritası" : "Session Replay & Heatmap"} {result.session_replay ? `(${result.session_replay.rage_clicks_count} Rage)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "DATABASE" ? "active" : ""}`}
+                onClick={() => setActiveTab("DATABASE")}
+              >
+                🗄️ {lang === "tr" ? "Veritabanı & Yavaş Sorgu" : "DB & Slow Query"} {result.database_leak_report ? `(${result.database_leak_report.total_leaks_count > 0 ? `${result.database_leak_report.total_leaks_count} Sızıntı` : `${result.database_leak_report.db_health_score}%`})` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol Veritabanı ve Yavaş Sorgu Sızıntı Denetimi */}
+            {activeTab === "DATABASE" && (
+              <DatabaseSlowQueryView report={result.database_leak_report} lang={lang} />
+            )}
 
             {/* TAB: Virgosol & Hotjar Tarzı Kullanıcı Oturum Kaydı & Isı Haritası */}
             {activeTab === "SESSION_REPLAY" && (

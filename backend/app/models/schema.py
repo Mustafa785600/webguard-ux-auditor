@@ -44,6 +44,7 @@ class NetworkRequestTrace(BaseModel):
     size_bytes: Optional[int] = None
     cors_allowed: Optional[bool] = None
     content_type: Optional[str] = None
+    headers: Optional[Dict[str, str]] = None
     response_body: Optional[str] = None
 
 class Finding(BaseModel):
@@ -184,6 +185,7 @@ class ScanResult(BaseModel):
     api_contract_drift: Optional['APIContractDriftReport'] = None
     dast_verification: Optional['DASTVerificationReport'] = None
     session_replay: Optional['SessionReplayReport'] = None
+    database_leak_report: Optional['DatabaseLeakReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -565,6 +567,70 @@ class SessionReplayReport(BaseModel):
         "WCAG 2.1 Operable - Girdi Mekanizmaları"
     ]
     recorded_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Veritabanı ve Yavaş Sorgu Sızıntı Denetimi Modelleri (Database Leak & Slow Query Prober) ──
+
+class DatabaseLeakType(str, Enum):
+    SQL_SYNTAX_ERROR = "SQL_SYNTAX_ERROR"          # Yanıtta ham SQL hata mesajı (PostgreSQL, MySQL, SQLite vb.)
+    STACK_TRACE_EXPOSURE = "STACK_TRACE_EXPOSURE"  # ORM / DB sürücüsü stack trace ifşası
+    CONNECTION_STRING = "CONNECTION_STRING"        # Kimlik bilgisi / bağlantı dizesi sızıntısı (postgres://, mysql://, redis://)
+    DATABASE_NAME_LEAK = "DATABASE_NAME_LEAK"      # Tablo, sütun veya şema adı ifşası
+    DEBUG_METRIC_LEAK = "DEBUG_METRIC_LEAK"        # X-Debug-Query-Count, X-Database-Time vb. başlık sızıntıları
+
+class SlowQuerySeverity(str, Enum):
+    CRITICAL = "CRITICAL"  # > 2500ms
+    HIGH = "HIGH"          # > 1500ms
+    MEDIUM = "MEDIUM"      # > 800ms
+    LOW = "LOW"            # > 400ms
+
+class DatabaseLeakItem(BaseModel):
+    leak_type: DatabaseLeakType
+    severity: Severity  # CRITICAL, HIGH, MEDIUM, LOW
+    endpoint: str
+    parameter_or_header: Optional[str] = None
+    detected_engine: str  # PostgreSQL, MySQL, SQLite, MSSQL, Oracle, MongoDB, Redis, Unknown
+    leak_sample: str      # Sızıntının sansürlü/özet kesiti
+    description: str
+    remediation: str
+
+class SlowQueryCandidate(BaseModel):
+    endpoint: str
+    method: str
+    observed_latency_ms: float
+    status_code: int
+    severity: SlowQuerySeverity
+    suspected_cause: str  # "N+1 Query Pattern", "Unindexed Table Scan", "Heavy Cartesian Join", "Unbounded Collection Fetch"
+    query_pattern_hint: Optional[str] = None
+    orm_fix_recommendation: str
+
+class TimeProbeResult(BaseModel):
+    endpoint: str
+    probe_name: str
+    baseline_latency_ms: float
+    probed_latency_ms: float
+    latency_delta_ms: float
+    is_time_delay_suspect: bool
+    status: str  # "SAFE", "SUSPICIOUS_DELAY", "TIMED_OUT"
+    detail: str
+
+class DatabaseLeakReport(BaseModel):
+    db_health_score: int = 100  # 0 - 100
+    detected_engines: List[str] = []  # ["PostgreSQL", "Redis"]
+    total_leaks_count: int = 0
+    slow_queries_count: int = 0
+    n_plus_one_suspects_count: int = 0
+    leaks: List[DatabaseLeakItem] = []
+    slow_queries: List[SlowQueryCandidate] = []
+    time_probes: List[TimeProbeResult] = []
+    orm_recommendations: List[str] = []
+    compliance_standards: List[str] = [
+        "OWASP Top 10 A05:2021 Security Misconfiguration",
+        "CWE-209: Generation of Error Message Containing Sensitive Information",
+        "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+        "PCI-DSS v4.0 Requirement 6.4 (Public-facing Web Applications)",
+        "BDDK Madde 31 Bilgi Güvenliği ve Sistem Sağlığı"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()
 

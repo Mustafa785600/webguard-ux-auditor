@@ -30,6 +30,7 @@ from app.services.responsive_auditor import ResponsiveLayoutAuditor
 from app.services.api_contract_auditor import APIContractDriftAuditor
 from app.services.dast_verifier import DASTExploitVerifier
 from app.services.session_heatmap_engine import SessionHeatmapEngine
+from app.services.database_leak_prober import DatabaseLeakSlowQueryProber
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -256,6 +257,18 @@ async def execute_scan(
         import logging
         logging.error(f"[Session Heatmap Error] Failed on {sanitized_url}: {exc}")
 
+    # Veritabanı ve Yavaş Sorgu Sızıntı Denetimi Motoru (Database Leak & Slow Query Prober)
+    db_leak_report = None
+    try:
+        db_prober = DatabaseLeakSlowQueryProber()
+        db_leak_report, db_findings = await db_prober.audit(
+            sanitized_url, network_traces=network_traces
+        )
+        all_findings.extend(db_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Database Leak Prober Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -368,6 +381,7 @@ async def execute_scan(
         api_contract_drift=api_contract_report,
         dast_verification=dast_report,
         session_replay=session_replay_report,
+        database_leak_report=db_leak_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()
