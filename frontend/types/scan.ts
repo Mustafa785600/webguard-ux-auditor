@@ -152,6 +152,7 @@ export interface ScanResult {
   rate_limit_resilience?: RateLimitResilienceReport;
   multi_viewport_report?: MultiViewportReport;
   api_contract_drift?: APIContractDriftReport;
+  dast_verification?: DASTVerificationReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -424,6 +425,45 @@ export interface APIContractDriftReport {
   compliance_frameworks?: string[];
   audited_at: string;
 }
+
+export type DASTVerificationStatus =
+  | "CONFIRMED"
+  | "POTENTIAL_RISK"
+  | "SAFE_OR_FALSE_POSITIVE";
+
+export type DASTTestCategory =
+  | "REFLECTED_INPUT_SANITIZATION"
+  | "SENSITIVE_EXPOSURE"
+  | "CORS_MISCONFIGURATION"
+  | "OPEN_REDIRECT"
+  | "SSRF_FILTER_RESILIENCE";
+
+export interface DASTVerificationItem {
+  test_id: string;
+  category: DASTTestCategory;
+  test_name: string;
+  target_endpoint: string;
+  parameter_tested?: string;
+  verification_status: DASTVerificationStatus;
+  severity: Severity;
+  canary_payload: string;
+  evidence_response_snippet?: string;
+  confidence_percentage: number;
+  description: string;
+  remediation: string;
+}
+
+export interface DASTVerificationReport {
+  dast_confidence_score: number;
+  total_tests_executed: number;
+  confirmed_vulnerabilities_count: number;
+  potential_risks_count: number;
+  false_positives_filtered_count: number;
+  verifications: DASTVerificationItem[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

@@ -28,6 +28,7 @@ from app.services.chaos_engine import ChaosFaultInjectionEngine
 from app.services.rate_limit_auditor import RateLimitingAuditor
 from app.services.responsive_auditor import ResponsiveLayoutAuditor
 from app.services.api_contract_auditor import APIContractDriftAuditor
+from app.services.dast_verifier import DASTExploitVerifier
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -185,6 +186,16 @@ async def execute_scan(
             import logging
             logging.error(f"[Multi-Viewport Audit Error] Failed on {sanitized_url}: {exc}")
 
+        # Virgosol & OWASP Güvenlik Açığı Otomatik Doğrulama Motoru (DAST Exploit Verification)
+        dast_report = None
+        dast_findings = []
+        try:
+            dast_verifier = DASTExploitVerifier()
+            dast_report, dast_findings = await dast_verifier.verify_vulnerabilities(sanitized_url, client=client)
+        except Exception as exc:
+            import logging
+            logging.error(f"[DAST Verification Error] Failed on {sanitized_url}: {exc}")
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
@@ -193,6 +204,7 @@ async def execute_scan(
     all_findings.extend(waf_findings)
     all_findings.extend(rate_limit_findings)
     all_findings.extend(resp_findings)
+    all_findings.extend(dast_findings)
 
     # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
     chaos_report = None
@@ -341,6 +353,7 @@ async def execute_scan(
         rate_limit_resilience=rate_limit_report,
         multi_viewport_report=multi_viewport_report,
         api_contract_drift=api_contract_report,
+        dast_verification=dast_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

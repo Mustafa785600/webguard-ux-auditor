@@ -21,6 +21,7 @@ import ChaosEngineeringView from "./ChaosEngineeringView";
 import RateLimitResilienceView from "./RateLimitResilienceView";
 import MultiViewportView from "./MultiViewportView";
 import APIContractDriftView from "./APIContractDriftView";
+import DASTVerificationView from "./DASTVerificationView";
 import {
   type Language,
   UI_STRINGS,
@@ -55,7 +56,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -416,6 +417,14 @@ export default function ScanDashboard() {
                 >
                   📋 {lang === "tr" ? "API Sözleşme" : "API Contract"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "DAST" ? "active" : ""}`}
+                  onClick={() => setActiveTab("DAST")}
+                  title={lang === "tr" ? "Güvenlik Açığı Otomatik Doğrulaması (DAST)" : "DAST Exploit Verification"}
+                >
+                  🎯 {lang === "tr" ? "DAST Doğrulama" : "DAST Verify"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -545,7 +554,19 @@ export default function ScanDashboard() {
               >
                 📋 {lang === "tr" ? "API Sözleşme & Şema" : "API Contract"} {result.api_contract_drift ? `(${result.api_contract_drift.contract_compatibility_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "DAST" ? "active" : ""}`}
+                onClick={() => setActiveTab("DAST")}
+              >
+                🎯 {lang === "tr" ? "DAST Doğrulama" : "DAST Verify"} {result.dast_verification ? `(${result.dast_verification.confirmed_vulnerabilities_count > 0 ? `${result.dast_verification.confirmed_vulnerabilities_count} Açık` : "Temiz"})` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol DAST Güvenlik Açığı Otomatik Doğrulama */}
+            {activeTab === "DAST" && (
+              <DASTVerificationView report={result.dast_verification} lang={lang} />
+            )}
 
             {/* TAB: Virgosol API Sözleşme ve Şema Sapması */}
             {activeTab === "APICONTRACT" && (

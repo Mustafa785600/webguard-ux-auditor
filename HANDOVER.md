@@ -57,35 +57,45 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - Tip uyuşmazlıkları (Type Mismatch), zorunlu alan eksiklikleri (Missing Required Field) ve belgelenmemiş Gölge API'leri (Shadow APIs - OWASP API9) tespit eder.
 - **Arayüz:** `APIContractDriftView.tsx`
 
-### 8. Canlı Yayın Paneli & CDP Screencast (`live_hub` & `CDPScreencastManager`)
+### 8. Güvenlik Açığı Otomatik Doğrulaması (`DASTExploitVerifier`)
+- OWASP Top 10 ve CWE standartlarında zararsız sentetik kanaryalar (benign canaries) koşturur.
+- Yanlış pozitifleri (False Positives) güvenli şekilde ayıklar:
+  * Reflected Input / Sanitizasyon ve XSS yansıması (CWE-79)
+  * Hassas Dosya ve Konfigürasyon İfşası (.env, .git, backup, actuator - CWE-200)
+  * Güvensiz CORS / Arbitrary Origin Yansıması (CWE-942)
+  * Açık Yönlendirme (Open Redirect - CWE-601)
+  * SSRF İç Ağ Filtreleme Direnci (CWE-918)
+- **Arayüz:** `DASTVerificationView.tsx`
+
+### 9. Canlı Yayın Paneli & CDP Screencast (`live_hub` & `CDPScreencastManager`)
 - Chrome DevTools Protocol (CDP) üzerinden tarayıcının form doldurma, tıklama ve tarama anlarını WebSocket ile canlı yayınlar.
 - **Arayüz:** `LiveScreencastPanel.tsx`
 
-### 9. Otonom E2E Auto-Heal & Flaky Test İyileştirici (`SelfHealingEngine`)
+### 10. Otonom E2E Auto-Heal & Flaky Test İyileştirici (`SelfHealingEngine`)
 - Kırılgan DOM seçicilerini (ID/XPath) semantik ve çok katmanlı akıllı alternatiflerle onarır.
 - **Arayüz:** `AutoHealView.tsx`
 
-### 10. PRD Zekası & Otomatik Test Üretimi (`analyze_prd_and_generate_tests`)
+### 11. PRD Zekası & Otomatik Test Üretimi (`analyze_prd_and_generate_tests`)
 - Ürün gereksinim dokümanından (PRD) sentetik kullanıcı senaryoları ve Playwright `.spec.ts` kodu üretir.
 - **Arayüz:** `PrdIntelligenceCard.tsx`
 
-### 11. Otonom Tarayıcı ve Site Ağacı Grafı (`AutonomousCrawler`)
+### 12. Otonom Tarayıcı ve Site Ağacı Grafı (`AutonomousCrawler`)
 - Derinlik bazlı sayfa tarama, iç bağlantı keşfi ve site rotaları ağaç görselleştirmesi.
 - **Arayüz:** `CrawlGraphView.tsx`
 
-### 12. 4 Katmanlı Kök Neden Analizi (RCA) ve Ekip Ataması
+### 13. 4 Katmanlı Kök Neden Analizi (RCA) ve Ekip Ataması
 - Tüm bulguları `REAL_BUG`, `ENV_ISSUE`, `TEST_FRAGILITY`, `EXPECTED_BEHAVIOR` sınıflarına ayırır ve ilgili ekibe (Dev, QA, DevOps, Uyum) yönlendirir.
 
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 20/20 birim testi aktif ve başarılı (`test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 25/25 birim testi aktif ve başarılı (`test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
-## 💡 Yeni Sohbette Neler Yapılabilir?
-1. **Güvenlik Açığı Otomatik İstismar Doğrulaması (DAST Exploit Verification):** Tespit edilen XSS veya SSRF zafiyetlerinin sandbox içinde güvenli şekilde teyit edilmesi.
-2. **Kullanıcı Oturum Kaydı ve Isı Haritası (Session Replay & Heatmap):** Kullanıcı tıklamalarını ve gezinme paternlerini görselleştiren DOM replay sistemi.
-3. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları ve N+1 problemlerinin tahmini.
-4. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
+## 💡 Sıradaki Olası Adımlar:
+1. **Kullanıcı Oturum Kaydı ve Isı Haritası (Session Replay & Heatmap):** Kullanıcı tıklamalarını ve gezinme paternlerini görselleştiren DOM replay sistemi.
+2. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları ve N+1 problemlerinin tahmini.
+3. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
+

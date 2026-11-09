@@ -182,6 +182,7 @@ class ScanResult(BaseModel):
     rate_limit_resilience: Optional['RateLimitResilienceReport'] = None
     multi_viewport_report: Optional['MultiViewportReport'] = None
     api_contract_drift: Optional['APIContractDriftReport'] = None
+    dast_verification: Optional['DASTVerificationReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -464,6 +465,50 @@ class APIContractDriftReport(BaseModel):
         "OWASP API8:2023 Lack of Protection from Improper Asset Management",
         "OWASP API9:2023 Improper Inventory Management",
         "JSON Schema Core Draft 2020-12"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Güvenlik Açığı Otomatik Doğrulama Modelleri (DAST Verification & False-Positive Elimination) ──
+
+class DASTVerificationStatus(str, Enum):
+    CONFIRMED = "CONFIRMED"                              # Güvenlik açığı sentetik kanarya ile kesin doğrulandı (Gerçek Zafiyet)
+    POTENTIAL_RISK = "POTENTIAL_RISK"                    # Şüpheli davranış / kısmi yansıma (Potansiyel Risk)
+    SAFE_OR_FALSE_POSITIVE = "SAFE_OR_FALSE_POSITIVE"    # Yanlış pozitif / sistem tarafından güvenli şekilde reddedildi
+
+class DASTTestCategory(str, Enum):
+    REFLECTED_INPUT_SANITIZATION = "REFLECTED_INPUT_SANITIZATION"    # Girdi filtreleme ve XSS yansıma teyidi
+    SENSITIVE_EXPOSURE = "SENSITIVE_EXPOSURE"                        # Hassas yapılandırma / kaynak dosyası ifşası (.env, .git)
+    CORS_MISCONFIGURATION = "CORS_MISCONFIGURATION"                  # Güvensiz CORS ve yetkisiz Origin yansıması
+    OPEN_REDIRECT = "OPEN_REDIRECT"                                  # Açık yönlendirme (Open Redirect) doğrulaması
+    SSRF_FILTER_RESILIENCE = "SSRF_FILTER_RESILIENCE"                # Sunucu taraflı istek sahteciliği (SSRF) filtre direnci
+
+class DASTVerificationItem(BaseModel):
+    test_id: str
+    category: DASTTestCategory
+    test_name: str
+    target_endpoint: str
+    parameter_tested: Optional[str] = None
+    verification_status: DASTVerificationStatus
+    severity: Severity
+    canary_payload: str
+    evidence_response_snippet: Optional[str] = None
+    confidence_percentage: int = 100  # 0 - 100
+    description: str
+    remediation: str
+
+class DASTVerificationReport(BaseModel):
+    dast_confidence_score: int = 100  # 0 - 100 (100 = hiç teyit edilmiş zafiyet yok, sistem temiz)
+    total_tests_executed: int = 0
+    confirmed_vulnerabilities_count: int = 0
+    potential_risks_count: int = 0
+    false_positives_filtered_count: int = 0
+    verifications: List[DASTVerificationItem] = []
+    compliance_standards: List[str] = [
+        "OWASP Top 10:2021 (A01 Broken Access Control, A03 Injection, A05 Security Misconfiguration)",
+        "CWE-79 Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+        "CWE-200 Exposure of Sensitive Information to an Unauthorized Actor",
+        "CWE-918 Server-Side Request Forgery (SSRF)",
+        "CWE-601 URL Redirection to Untrusted Site ('Open Redirect')"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
