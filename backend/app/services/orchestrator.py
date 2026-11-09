@@ -31,6 +31,7 @@ from app.services.api_contract_auditor import APIContractDriftAuditor
 from app.services.dast_verifier import DASTExploitVerifier
 from app.services.session_heatmap_engine import SessionHeatmapEngine
 from app.services.database_leak_prober import DatabaseLeakSlowQueryProber
+from app.services.localization_auditor import LocalizationI18nAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -269,6 +270,18 @@ async def execute_scan(
         import logging
         logging.error(f"[Database Leak Prober Error] Failed on {sanitized_url}: {exc}")
 
+    # Virgosol Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi (Localization & i18n Auditor)
+    l10n_report = None
+    try:
+        l10n_auditor = LocalizationI18nAuditor()
+        l10n_report, l10n_findings = await l10n_auditor.audit_localization(
+            sanitized_url, client=client
+        )
+        all_findings.extend(l10n_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Localization Audit Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -382,6 +395,7 @@ async def execute_scan(
         dast_verification=dast_report,
         session_replay=session_replay_report,
         database_leak_report=db_leak_report,
+        localization_audit=l10n_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

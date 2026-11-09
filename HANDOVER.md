@@ -104,15 +104,23 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **Zaman Bazlı Gecikme Problama (Time-Delay Probing):** Sentetik hesaplama yükleriyle sunucunun zaman sapmasını (drift) ve Blind SQLi direncini ölçer.
 - **Arayüz:** `DatabaseSlowQueryView.tsx` (Sızıntı Listesi, Yavaş Sorgu & N+1 Paternleri, Zaman Probu ve ORM/İndeks Çözüm Rehberi).
 
+### 16. Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi (`LocalizationI18nAuditor`)
+- **W3C Internationalization, WCAG 2.1 SC 3.1.1 (Language of Page), BCP 47 ve Google Search Central hreflang Standardı.**
+- **Çevrilmemiş Anahtar Sızıntıları (Key Leaks):** Kullanıcıya yansıyan `auth.login.title`, `common.buttons.submit` gibi ham i18n anahtarlarını ve `{{ username }}` şablon kalıntılarını yakalar.
+- **HTML lang ve BCP 47 Denetimi:** `<html lang="...">` eksikliği veya geçersizliği (WCAG Seviye A kusuru).
+- **RTL & Çift Yönlü Metin (BiDi):** Arapça, İbranice, Farsça gibi dillerde `dir="rtl"` ve CSS ayna simetrisi gereksinimini denetler.
+- **Hreflang Bölgesel SEO:** `<link rel="alternate" hreflang="xx">` etiketlerini ve `x-default` yapılandırmasını doğrular.
+- **Arayüz:** `LocalizationAuditView.tsx` (Kusur Listesi, Hreflang Tablosu, Desteklenen Diller ve Modern i18n Kod Rehberi).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 33/33 birim testi aktif ve başarılı (`test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 38/38 birim testi aktif ve başarılı (`test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
-2. **Gelişmiş Bellek & DOM Sızıntı Denetimi (Memory & DOM Leak Profiler):** SPA sayfalarında ayrılmamış event listener'lar ve detach edilmiş DOM düğümlerinin tespiti.
+1. **Gelişmiş Bellek & DOM Sızıntı Denetimi (Memory & DOM Leak Profiler):** SPA sayfalarında ayrılmamış event listener'lar, detach edilmiş DOM düğümleri ve JavaScript heap bellek şişkinliğinin tespiti.
+2. **Third-Party Script & Çerez Güvenlik Denetimi (Third-Party Tracker & CSP Sandbox Auditor):** Üçüncü taraf analiz, reklam ve izleyici script'lerinin CSP sandbox ve GDPR çerez rızası denetimi.
 

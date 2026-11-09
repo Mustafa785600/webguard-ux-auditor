@@ -158,6 +158,7 @@ export interface ScanResult {
   dast_verification?: DASTVerificationReport;
   session_replay?: SessionReplayReport;
   database_leak_report?: DatabaseLeakReport;
+  localization_audit?: LocalizationAuditReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -572,6 +573,45 @@ export interface DatabaseLeakReport {
   slow_queries: SlowQueryCandidate[];
   time_probes: TimeProbeResult[];
   orm_recommendations: string[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
+export type LocalizationDefectType =
+  | "UNTRANSLATED_KEY_LEAK"
+  | "MISSING_LANG_ATTRIBUTE"
+  | "RTL_BIDI_DEFECT"
+  | "HARDCODED_LOCALE_FORMAT"
+  | "HREFLANG_MISCONFIGURATION"
+  | "TEXT_EXPANSION_OVERFLOW";
+
+export interface LocalizationDefectItem {
+  defect_type: LocalizationDefectType;
+  severity: Severity;
+  element_or_selector?: string;
+  detected_snippet: string;
+  expected_standard: string;
+  description: string;
+  remediation: string;
+}
+
+export interface HreflangEntry {
+  locale: string;
+  url: string;
+  is_valid: boolean;
+}
+
+export interface LocalizationAuditReport {
+  l10n_score: number;
+  declared_lang?: string;
+  detected_languages: string[];
+  has_rtl_support: boolean;
+  untranslated_keys_count: number;
+  formatting_defects_count: number;
+  total_defects_count: number;
+  hreflang_tags: HreflangEntry[];
+  defects: LocalizationDefectItem[];
+  supported_locales_detected: string[];
   compliance_standards?: string[];
   audited_at: string;
 }

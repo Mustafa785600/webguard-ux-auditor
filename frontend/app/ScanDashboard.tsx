@@ -24,6 +24,7 @@ import APIContractDriftView from "./APIContractDriftView";
 import DASTVerificationView from "./DASTVerificationView";
 import SessionReplayHeatmapView from "./SessionReplayHeatmapView";
 import DatabaseSlowQueryView from "./DatabaseSlowQueryView";
+import LocalizationAuditView from "./LocalizationAuditView";
 import {
   type Language,
   UI_STRINGS,
@@ -58,7 +59,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -443,6 +444,14 @@ export default function ScanDashboard() {
                 >
                   🗄️ {lang === "tr" ? "Veritabanı" : "Database"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "LOCALIZATION" ? "active" : ""}`}
+                  onClick={() => setActiveTab("LOCALIZATION")}
+                  title={lang === "tr" ? "Çok Dilli (i18n) ve Lokalizasyon Denetimi" : "Localization & i18n Quality"}
+                >
+                  🌐 {lang === "tr" ? "Çok Dilli / i18n" : "i18n / L10n"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -593,7 +602,19 @@ export default function ScanDashboard() {
               >
                 🗄️ {lang === "tr" ? "Veritabanı & Yavaş Sorgu" : "DB & Slow Query"} {result.database_leak_report ? `(${result.database_leak_report.total_leaks_count > 0 ? `${result.database_leak_report.total_leaks_count} Sızıntı` : `${result.database_leak_report.db_health_score}%`})` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "LOCALIZATION" ? "active" : ""}`}
+                onClick={() => setActiveTab("LOCALIZATION")}
+              >
+                🌐 {lang === "tr" ? "Çok Dilli / i18n" : "i18n / L10n"} {result.localization_audit ? `(${result.localization_audit.total_defects_count > 0 ? `${result.localization_audit.total_defects_count} Kusur` : `${result.localization_audit.l10n_score}%`})` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol Çok Dilli (i18n) ve Lokalizasyon Kusurları */}
+            {activeTab === "LOCALIZATION" && (
+              <LocalizationAuditView report={result.localization_audit} lang={lang} />
+            )}
 
             {/* TAB: Virgosol Veritabanı ve Yavaş Sorgu Sızıntı Denetimi */}
             {activeTab === "DATABASE" && (

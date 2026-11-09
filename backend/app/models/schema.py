@@ -186,6 +186,7 @@ class ScanResult(BaseModel):
     dast_verification: Optional['DASTVerificationReport'] = None
     session_replay: Optional['SessionReplayReport'] = None
     database_leak_report: Optional['DatabaseLeakReport'] = None
+    localization_audit: Optional['LocalizationAuditReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -629,6 +630,49 @@ class DatabaseLeakReport(BaseModel):
         "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
         "PCI-DSS v4.0 Requirement 6.4 (Public-facing Web Applications)",
         "BDDK Madde 31 Bilgi Güvenliği ve Sistem Sağlığı"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Çok Dilli / i18n & Lokalizasyon Kusurları Denetim Modelleri ──────────────
+
+class LocalizationDefectType(str, Enum):
+    UNTRANSLATED_KEY_LEAK = "UNTRANSLATED_KEY_LEAK"          # Çevrilmemiş i18n anahtarı (auth.login.title, common.submit vb.)
+    MISSING_LANG_ATTRIBUTE = "MISSING_LANG_ATTRIBUTE"        # <html lang="..."> eksik veya BCP 47 standart dışı
+    RTL_BIDI_DEFECT = "RTL_BIDI_DEFECT"                      # Sağdan sola (Arapça vb.) dillerde dir="rtl" eksikliği
+    HARDCODED_LOCALE_FORMAT = "HARDCODED_LOCALE_FORMAT"      # Para birimi, tarih veya sayı yerelleştirme kusuru
+    HREFLANG_MISCONFIGURATION = "HREFLANG_MISCONFIGURATION"  # hreflang alternatif dil bağıntısı hatası
+    TEXT_EXPANSION_OVERFLOW = "TEXT_EXPANSION_OVERFLOW"      # Çeviri metin uzaması sebebiyle arayüzde taşma
+
+class LocalizationDefectItem(BaseModel):
+    defect_type: LocalizationDefectType
+    severity: Severity  # HIGH, MEDIUM, LOW, INFO
+    element_or_selector: Optional[str] = None
+    detected_snippet: str
+    expected_standard: str
+    description: str
+    remediation: str
+
+class HreflangEntry(BaseModel):
+    locale: str
+    url: str
+    is_valid: bool = True
+
+class LocalizationAuditReport(BaseModel):
+    l10n_score: int = 100  # 0 - 100
+    declared_lang: Optional[str] = None
+    detected_languages: List[str] = []
+    has_rtl_support: bool = False
+    untranslated_keys_count: int = 0
+    formatting_defects_count: int = 0
+    total_defects_count: int = 0
+    hreflang_tags: List[HreflangEntry] = []
+    defects: List[LocalizationDefectItem] = []
+    supported_locales_detected: List[str] = []
+    compliance_standards: List[str] = [
+        "W3C Internationalization (i18n) Standards",
+        "WCAG 2.1 Success Criterion 3.1.1 Language of Page",
+        "ISO 639-1 / BCP 47 Language Tags",
+        "Google Search Central hreflang Guidelines"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
