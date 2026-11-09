@@ -86,16 +86,24 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 ### 13. 4 Katmanlı Kök Neden Analizi (RCA) ve Ekip Ataması
 - Tüm bulguları `REAL_BUG`, `ENV_ISSUE`, `TEST_FRAGILITY`, `EXPECTED_BEHAVIOR` sınıflarına ayırır ve ilgili ekibe (Dev, QA, DevOps, Uyum) yönlendirir.
 
+### 14. Kullanıcı Oturum Kaydı & Isı Haritası (`SessionHeatmapEngine`)
+- **Hotjar & FullStory Kurumsal Standardı / KVKK & GDPR Uyumlu.**
+- Kullanıcı oturumundaki imleç koordinatlarını, tıklamaları, kaydırma derinliğini ve form etkileşimlerini zaman damgalı kaydeder.
+- **Kızgın Tıklama (Rage Click):** 800ms içinde aynı koordinat veya öğeye yapılan 3+ ardışık tıklamaları kümeleyip `UX_RAGE_CLICK_DETECTED` bulgusu üretir.
+- **Ölü Tıklama (Dead Click):** Tıklanabilir olmayan (div, p vb.) statik metinlere yapılan yanıtsız tıklamaları `UX_DEAD_CLICK_DETECTED` olarak işaretler.
+- **Radyal Tıklama Isı Haritası (Click Heatmap):** Yoğunluk derecelendirmesi (0.1 - 1.0) ile görsel sıcak noktalar oluşturur.
+- **Kaydırma Şelalesi (Scroll Waterfall):** %25, %50, %75, %100 derinlik basamaklarında ziyaretçi tutunma ve düşüş analizini sunar.
+- **Arayüz:** `SessionReplayHeatmapView.tsx` (İnteraktif Sanal Tarayıcı Oynatıcı, Hız Ayarı, Isı Haritası ve Sürtünme Raporu).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 25/25 birim testi aktif ve başarılı (`test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 29/29 birim testi aktif ve başarılı (`test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Kullanıcı Oturum Kaydı ve Isı Haritası (Session Replay & Heatmap):** Kullanıcı tıklamalarını ve gezinme paternlerini görselleştiren DOM replay sistemi.
-2. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları ve N+1 problemlerinin tahmini.
-3. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
+1. **Veritabanı ve Yavaş Sorgu Sızıntı Denetimi (Database Leak & Slow Query Prober):** API yanıt sürelerine göre yavaş SQL sorguları, N+1 sızıntıları, hassas DB hata izleri ve zaman bazlı sorgu gecikmesi analizi.
+2. **Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi:** Eksik çeviriler, RTL dil desteği ve metin taşmalarının denetlenmesi.
 

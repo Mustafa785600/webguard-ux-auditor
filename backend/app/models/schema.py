@@ -183,6 +183,7 @@ class ScanResult(BaseModel):
     multi_viewport_report: Optional['MultiViewportReport'] = None
     api_contract_drift: Optional['APIContractDriftReport'] = None
     dast_verification: Optional['DASTVerificationReport'] = None
+    session_replay: Optional['SessionReplayReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -511,6 +512,59 @@ class DASTVerificationReport(BaseModel):
         "CWE-601 URL Redirection to Untrusted Site ('Open Redirect')"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Kullanıcı Oturum Kaydı & Isı Haritası Modelleri (Session Replay & Heatmap) ──
+
+class SessionEventType(str, Enum):
+    CLICK = "CLICK"                      # Normal tıklama
+    RAGE_CLICK = "RAGE_CLICK"            # Kızgın tıklama (kullanıcının aynı noktaya üst üste tıklaması)
+    DEAD_CLICK = "DEAD_CLICK"            # Ölü tıklama (etkileşimsiz öğeye tıklama)
+    SCROLL = "SCROLL"                    # Kaydırma olayı
+    MOUSE_MOVE = "MOUSE_MOVE"            # Fare hareketi
+    NAVIGATION = "NAVIGATION"            # Sayfa geçişi
+    INPUT_MASKED = "INPUT_MASKED"        # KVKK/GDPR uyumlu maskeli veri girişi
+
+class SessionEvent(BaseModel):
+    timestamp_ms: int
+    event_type: SessionEventType
+    x_pct: float                         # 0.0 - 100.0 (Viewport yüzdesi)
+    y_pct: float                         # 0.0 - 100.0
+    selector: Optional[str] = None
+    element_text: Optional[str] = None
+    scroll_depth_pct: Optional[float] = None
+
+class ClickHotspot(BaseModel):
+    x_pct: float
+    y_pct: float
+    intensity: float = 0.5               # 0.1 - 1.0 (Isı yoğunluğu)
+    click_count: int = 1
+    selector: Optional[str] = None
+    element_text: Optional[str] = None
+    is_rage_click: bool = False
+
+class ScrollDepthMilestone(BaseModel):
+    depth_percentage: int                # 25, 50, 75, 100
+    visitors_reached_pct: float          # Bu derinliğe ulaşan kullanıcı yüzdesi (örn: %85)
+    avg_time_spent_seconds: float        # Bu bölümde geçirilen ortalama süre
+
+class SessionReplayReport(BaseModel):
+    session_id: str
+    duration_seconds: float
+    total_clicks: int = 0
+    rage_clicks_count: int = 0
+    dead_clicks_count: int = 0
+    max_scroll_depth_pct: float = 100.0
+    ux_friction_score: int = 100         # 0 - 100 (100 = Sıfır sürtünme / akıcı UX)
+    events: List[SessionEvent] = []
+    click_hotspots: List[ClickHotspot] = []
+    scroll_milestones: List[ScrollDepthMilestone] = []
+    page_screenshot_b64: Optional[str] = None
+    compliance_notes: List[str] = [
+        "KVKK / GDPR Madde 5 Uyumlu Otomatik Veri Maskeleme",
+        "W3C Pointer Events Standardı",
+        "WCAG 2.1 Operable - Girdi Mekanizmaları"
+    ]
+    recorded_at: datetime = Field(default_factory=datetime.utcnow)
 
 ScanResult.model_rebuild()
 

@@ -29,6 +29,7 @@ from app.services.rate_limit_auditor import RateLimitingAuditor
 from app.services.responsive_auditor import ResponsiveLayoutAuditor
 from app.services.api_contract_auditor import APIContractDriftAuditor
 from app.services.dast_verifier import DASTExploitVerifier
+from app.services.session_heatmap_engine import SessionHeatmapEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -243,6 +244,18 @@ async def execute_scan(
         if hasattr(scanner, "user_journeys") and scanner.user_journeys:
             user_journeys.extend(scanner.user_journeys)
 
+    # Virgosol & Hotjar Kullanıcı Oturum Kaydı ve Isı Haritası Motoru (Session Replay & Heatmap)
+    session_replay_report = None
+    try:
+        heatmap_engine = SessionHeatmapEngine()
+        session_replay_report, heatmap_findings = heatmap_engine.analyze_or_generate_session(
+            sanitized_url, user_journeys=user_journeys
+        )
+        all_findings.extend(heatmap_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Session Heatmap Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -354,6 +367,7 @@ async def execute_scan(
         multi_viewport_report=multi_viewport_report,
         api_contract_drift=api_contract_report,
         dast_verification=dast_report,
+        session_replay=session_replay_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

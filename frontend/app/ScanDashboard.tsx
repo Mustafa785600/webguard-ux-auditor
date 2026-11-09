@@ -22,6 +22,7 @@ import RateLimitResilienceView from "./RateLimitResilienceView";
 import MultiViewportView from "./MultiViewportView";
 import APIContractDriftView from "./APIContractDriftView";
 import DASTVerificationView from "./DASTVerificationView";
+import SessionReplayHeatmapView from "./SessionReplayHeatmapView";
 import {
   type Language,
   UI_STRINGS,
@@ -56,7 +57,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -425,6 +426,14 @@ export default function ScanDashboard() {
                 >
                   🎯 {lang === "tr" ? "DAST Doğrulama" : "DAST Verify"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "SESSION_REPLAY" ? "active" : ""}`}
+                  onClick={() => setActiveTab("SESSION_REPLAY")}
+                  title={lang === "tr" ? "Kullanıcı Oturum Kaydı & Isı Haritası" : "Session Replay & Heatmap"}
+                >
+                  🎬 {lang === "tr" ? "Isı Haritası" : "Heatmap"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -561,7 +570,19 @@ export default function ScanDashboard() {
               >
                 🎯 {lang === "tr" ? "DAST Doğrulama" : "DAST Verify"} {result.dast_verification ? `(${result.dast_verification.confirmed_vulnerabilities_count > 0 ? `${result.dast_verification.confirmed_vulnerabilities_count} Açık` : "Temiz"})` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "SESSION_REPLAY" ? "active" : ""}`}
+                onClick={() => setActiveTab("SESSION_REPLAY")}
+              >
+                🎬 {lang === "tr" ? "Oturum Kaydı & Isı Haritası" : "Session Replay & Heatmap"} {result.session_replay ? `(${result.session_replay.rage_clicks_count} Rage)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Virgosol & Hotjar Tarzı Kullanıcı Oturum Kaydı & Isı Haritası */}
+            {activeTab === "SESSION_REPLAY" && (
+              <SessionReplayHeatmapView report={result.session_replay} lang={lang} />
+            )}
 
             {/* TAB: Virgosol DAST Güvenlik Açığı Otomatik Doğrulama */}
             {activeTab === "DAST" && (

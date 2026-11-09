@@ -459,3 +459,4 @@ class DASTExploitVerifier:
         )
 
         return item, findings
+

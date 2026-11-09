@@ -153,6 +153,7 @@ export interface ScanResult {
   multi_viewport_report?: MultiViewportReport;
   api_contract_drift?: APIContractDriftReport;
   dast_verification?: DASTVerificationReport;
+  session_replay?: SessionReplayReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -463,6 +464,58 @@ export interface DASTVerificationReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type SessionEventType =
+  | "CLICK"
+  | "RAGE_CLICK"
+  | "DEAD_CLICK"
+  | "SCROLL"
+  | "MOUSE_MOVE"
+  | "NAVIGATION"
+  | "INPUT_MASKED";
+
+export interface SessionEvent {
+  timestamp_ms: number;
+  event_type: SessionEventType;
+  x_pct: number;
+  y_pct: number;
+  selector?: string;
+  element_text?: string;
+  scroll_depth_pct?: number;
+}
+
+export interface ClickHotspot {
+  x_pct: number;
+  y_pct: number;
+  intensity: number;
+  click_count: number;
+  selector?: string;
+  element_text?: string;
+  is_rage_click: boolean;
+}
+
+export interface ScrollDepthMilestone {
+  depth_percentage: number;
+  visitors_reached_pct: number;
+  avg_time_spent_seconds: number;
+}
+
+export interface SessionReplayReport {
+  session_id: string;
+  duration_seconds: number;
+  total_clicks: number;
+  rage_clicks_count: number;
+  dead_clicks_count: number;
+  max_scroll_depth_pct: number;
+  ux_friction_score: number;
+  events: SessionEvent[];
+  click_hotspots: ClickHotspot[];
+  scroll_milestones: ScrollDepthMilestone[];
+  page_screenshot_b64?: string | null;
+  compliance_notes?: string[];
+  recorded_at: string;
+}
+
 
 
 
