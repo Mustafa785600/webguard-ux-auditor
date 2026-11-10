@@ -148,15 +148,24 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **Canlı Simülasyon & cURL:** Tek tıkla cURL komutu kopyalama, canlı webhook test gönderimi simülatörü (200 OK • 118ms) ve kopya pano geri bildirimi.
 - **Arayüz:** `IncidentHubView.tsx` (Kanal Filtreleri, Öncelik Seçimi, Platform Mockup Önizlemeleri, Ham JSON ve cURL Komut Paneli).
 
+### 21. SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (`SEOStructuredDataAuditor`)
+- **Google Search Central Rich Results, Schema.org Community Specifications, The Open Graph Protocol (ogp.me) ve W3C HTML5 Standardı.**
+- **JSON-LD & Microdata Doğrulama:** Sayfadaki `<script type="application/ld+json">` bloklarını RFC 8259 JSON sözdizimi, zorunlu `@context`, `@type` ve tip bazlı alanlar (`Organization`, `WebSite`, `Article`, `Product`) açısından inceler; geçersiz yapısal verileri ve sözdizimi hatalarını yakalar.
+- **OpenGraph & Twitter Card Analizi:** `og:title`, `og:image` (1200x630px tavsiyesi ve HTTPS protokol zorunluluğu), `og:description`, `og:url` ve `twitter:card` (`summary_large_image`) eksikliklerini ve kalitesini denetler.
+- **Canonical & Meta Robots İndeksleme:** `<link rel="canonical">` eksikliği, HTTP güvensiz canonical, sayfa başlığı (`<title>`) 30-60 karakter ideal SERP aralığı, meta açıklama 120-160 karakter aralığı ve canlı ortamda yanlışlıkla açık kalan `<meta name="robots" content="noindex">` engellerini saptar.
+- **Canlı Sosyal Kart Simülatörü:** Google SERP, Facebook / LinkedIn, Twitter / X ve Slack / Discord için birebir gerçekçi arama ve paylaşım kartı simülasyonu.
+- **Hazır Kod Üretimi:** Next.js 14/15/16 App Router `export const metadata: Metadata` ve Schema.org JSON-LD kod şablonları.
+- **Arayüz:** `SEOStructuredDataView.tsx` (Sosyal Önizleme Simülatörü, Meta & Etiket Denetçisi, Schema.org JSON-LD Listesi, Kusurlar Tablosu, Kod Üreticisi).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 170/170 birim testi aktif ve başarılı (`test_incident_dispatcher`, `test_tls_crypto_auditor`, `test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 175/175 birim testi aktif ve başarılı (`test_seo_structured_data_auditor`, `test_incident_dispatcher`, `test_tls_crypto_auditor`, `test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (Schema.org & OpenGraph Rich Snippets Auditor):** JSON-LD / Microdata (Schema.org), OpenGraph (`og:image`, `og:title`) ve Twitter Card etiketlerinin sözdizim ve zengin arama sonuçları doğrulaması.
-2. **Konteyner ve Altyapı Güvenlik Yapılandırma Analizörü (Infrastructure & Dockerfile Security Linter):** Dockerfile, Kubernetes manifest ve Nginx güvenlik direktiflerini (`no-new-privileges`, `read_only_root_filesystem`) denetleme.
+1. **🐳 Konteyner ve Bulut Altyapı Güvenlik Yapılandırma Analizörü (Infrastructure & Dockerfile Security Linter):** Dockerfile, docker-compose.yml ve Kubernetes manifestlerini statik güvenlik kuralları (`root` kullanıcı engeli, `read_only_root_filesystem`, açık portlar) açısından denetleme.
+2. **📊 Otonom SLA ve Regresyon Analitiği (Longitudinal Health & Regression Tracker):** Geçmiş tarama sonuçlarını zaman ekseninde kıyaslayarak performans ve güvenlik regresyonlarını tespit etme.
 

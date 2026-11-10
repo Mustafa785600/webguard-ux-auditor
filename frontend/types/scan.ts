@@ -163,6 +163,7 @@ export interface ScanResult {
   third_party_security_report?: ThirdPartySecurityReport;
   tls_crypto_report?: TLSCryptoReport;
   incident_hub_report?: IncidentHubReport;
+  seo_structured_data_report?: SEOStructuredDataReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -835,6 +836,63 @@ export interface IncidentHubReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type StructuredDataType =
+  | "JSON_LD"
+  | "MICRODATA"
+  | "OPEN_GRAPH"
+  | "TWITTER_CARD"
+  | "CANONICAL"
+  | "META_TAGS";
+
+export interface StructuredDataDefect {
+  defect_id: string;
+  data_type: StructuredDataType;
+  title: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+  description: string;
+  remediation: string;
+  element_tag: string;
+  expected_format: string;
+  actual_value?: string;
+}
+
+export interface SchemaOrgEntity {
+  entity_id: string;
+  schema_type: string;
+  raw_properties: Record<string, unknown>;
+  is_valid: boolean;
+  validation_errors: string[];
+}
+
+export interface SocialCardPreview {
+  platform: string;
+  title: string;
+  description: string;
+  image_url?: string;
+  display_url: string;
+  aspect_ratio: string;
+}
+
+export interface SEOStructuredDataReport {
+  seo_health_score: number;
+  google_rich_result_eligible: boolean;
+  total_defects_count: number;
+  schema_entities: SchemaOrgEntity[];
+  open_graph_tags: Record<string, string>;
+  twitter_tags: Record<string, string>;
+  canonical_url?: string;
+  meta_robots?: string;
+  title_tag?: string;
+  meta_description?: string;
+  defects: StructuredDataDefect[];
+  social_previews: SocialCardPreview[];
+  recommended_nextjs_metadata_code: string;
+  recommended_json_ld_code: string;
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

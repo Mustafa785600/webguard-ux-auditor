@@ -487,3 +487,4 @@ export const IncidentHubView: React.FC<IncidentHubViewProps> = ({ report }) => {
     </div>
   );
 };
+

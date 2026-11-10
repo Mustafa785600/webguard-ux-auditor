@@ -36,6 +36,7 @@ from app.services.memory_leak_profiler import MemoryLeakProfilerEngine
 from app.services.third_party_security_auditor import ThirdPartySecurityAuditor
 from app.services.tls_crypto_auditor import TLSCryptoAuditor
 from app.services.incident_dispatcher import IncidentDispatcherHub
+from app.services.seo_structured_data_auditor import SEOStructuredDataAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -322,6 +323,22 @@ async def execute_scan(
         import logging
         logging.error(f"[TLS Crypto Audit Error] Failed on {sanitized_url}: {exc}")
 
+    # Google Search Central & Schema.org / OpenGraph Yapısal Veri Denetleyicisi
+    seo_report = None
+    try:
+        raw_html = None
+        for scanner in active_scanners:
+            if hasattr(scanner, "last_html_content") and scanner.last_html_content:
+                raw_html = scanner.last_html_content
+                break
+        seo_report, seo_findings = SEOStructuredDataAuditor.audit(
+            sanitized_url, html_content=raw_html
+        )
+        all_findings.extend(seo_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[SEO Structured Data Audit Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -455,6 +472,7 @@ async def execute_scan(
         third_party_security_report=third_party_report,
         tls_crypto_report=tls_report,
         incident_hub_report=incident_hub_report,
+        seo_structured_data_report=seo_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

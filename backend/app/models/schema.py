@@ -191,6 +191,7 @@ class ScanResult(BaseModel):
     third_party_security_report: Optional['ThirdPartySecurityReport'] = None
     tls_crypto_report: Optional['TLSCryptoReport'] = None
     incident_hub_report: Optional['IncidentHubReport'] = None
+    seo_structured_data_report: Optional['SEOStructuredDataReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -914,6 +915,66 @@ class IncidentHubReport(BaseModel):
         "NIST SP 800-61 Rev. 2 (Computer Security Incident Handling Guide)",
         "SOC 2 Type II Incident Alerting & Triage SLA",
         "PagerDuty / Jira Service Management Automation Specs"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── SEO & Sosyal Paylaşım Yapısal Veri Modelleri (Schema.org & OpenGraph) ──
+
+class StructuredDataType(str, Enum):
+    JSON_LD = "JSON_LD"
+    MICRODATA = "MICRODATA"
+    OPEN_GRAPH = "OPEN_GRAPH"
+    TWITTER_CARD = "TWITTER_CARD"
+    CANONICAL = "CANONICAL"
+    META_TAGS = "META_TAGS"
+
+class StructuredDataDefect(BaseModel):
+    defect_id: str
+    data_type: StructuredDataType
+    title: str
+    severity: Severity
+    description: str
+    remediation: str
+    element_tag: str
+    expected_format: str
+    actual_value: Optional[str] = None
+
+class SchemaOrgEntity(BaseModel):
+    entity_id: str
+    schema_type: str                  # Organization, WebSite, Article, Product, BreadcrumbList, etc.
+    raw_properties: Dict[str, Any] = {}
+    is_valid: bool = True
+    validation_errors: List[str] = []
+
+class SocialCardPreview(BaseModel):
+    platform: str                     # Google SERP, Facebook / LinkedIn, Twitter / X, Slack / Discord
+    title: str
+    description: str
+    image_url: Optional[str] = None
+    display_url: str
+    aspect_ratio: str = "1.91:1"
+
+class SEOStructuredDataReport(BaseModel):
+    seo_health_score: int = 100       # 0 - 100
+    google_rich_result_eligible: bool = True
+    total_defects_count: int = 0
+    schema_entities: List[SchemaOrgEntity] = []
+    open_graph_tags: Dict[str, str] = {}
+    twitter_tags: Dict[str, str] = {}
+    canonical_url: Optional[str] = None
+    meta_robots: Optional[str] = None
+    title_tag: Optional[str] = None
+    meta_description: Optional[str] = None
+    defects: List[StructuredDataDefect] = []
+    social_previews: List[SocialCardPreview] = []
+    recommended_nextjs_metadata_code: str = ""
+    recommended_json_ld_code: str = ""
+    compliance_standards: List[str] = [
+        "Google Search Central - Understand How Structured Data Works",
+        "Schema.org Community Vocabularies & Draft Specifications",
+        "The Open Graph Protocol (ogp.me)",
+        "Twitter Cards Documentation & Best Practices",
+        "W3C HTML5 Specification & Semantic Head Metadata"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 

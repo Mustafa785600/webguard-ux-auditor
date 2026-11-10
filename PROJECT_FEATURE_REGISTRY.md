@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Master Mimari ve Modül Matrisi (20/20 Tamamlandı)
+## 📌 Master Mimari ve Modül Matrisi (21/21 Tamamlandı)
 
 | # | Modül Adı | Kategori | Backend Servisi / Motor | Frontend Arayüzü | Birim Test Dosyası | Kurumsal Standart & Uyum |
 |---|---|---|---|---|---|---|
@@ -28,6 +28,7 @@
 | **18** | 3. Taraf Script, İzleyici & CSP Sandbox | Güvenlik / Gizlilik / Tedarik | `backend/app/services/third_party_security_auditor.py` | `frontend/app/ThirdPartySecurityView.tsx` | `test_third_party_security_auditor.py` (5 test) | W3C CSP3, SRI Hash, KVKK Madde 5-7, GDPR Madde 6, PCI-DSS |
 | **19** | SSL/TLS Sertifika & Kriptografi Sağlığı | Kriptografi / Altyapı / Güvenlik | `backend/app/services/tls_crypto_auditor.py` | `frontend/app/TLSCryptoView.tsx` | `test_tls_crypto_auditor.py` (5 test) | PCI-DSS v4.0 Req 4, NIST SP 800-52r2, BDDK Tebliği, RFC 8446 |
 | **20** | Otonom Olay Köprüsü & Webhook Hub | Olay Yönetimi / Entegrasyon | `backend/app/services/incident_dispatcher.py` | `frontend/app/IncidentHubView.tsx` | `test_incident_dispatcher.py` (5 test) | ISO/IEC 27035, NIST SP 800-61, SOC 2 Alerting SLA, Slack/Teams/Discord/Jira/SIEM |
+| **21** | SEO & Sosyal Paylaşım Yapısal Veri | SEO / Veri / Sosyal | `backend/app/services/seo_structured_data_auditor.py` | `frontend/app/SEOStructuredDataView.tsx` | `test_seo_structured_data_auditor.py` (5 test) | Google Search Central Rich Results, Schema.org, Open Graph, Twitter Cards |
 
 ---
 
@@ -113,10 +114,14 @@
 - **Dosyalar:** `backend/app/services/incident_dispatcher.py` -> `frontend/app/IncidentHubView.tsx`
 - **Yetenek:** Tarama bulgularını (özellikle CRITICAL ve HIGH seviyeli güvenlik/dayanıklılık olayları) analiz eder. Kurumsal iletişim ve biletleme sistemlerine (Slack Block Kit, Microsoft Teams Adaptive Cards, Discord Rich Embeds, Jira Cloud REST API v3 Issue formatı ve SIEM RFC 3339 / CEF standardı) uygun zengin olay yüklerine dönüştürür. Tek tıkla cURL simülasyonu, canlı webhook test gönderimi ve SHA256 bütünlük imzası sunar (ISO/IEC 27035, NIST SP 800-61 Rev 2, SOC 2 Type II Alerting SLA).
 
+### 21. SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (Schema.org & OpenGraph Rich Snippets Auditor)
+- **Dosyalar:** `backend/app/services/seo_structured_data_auditor.py` -> `frontend/app/SEOStructuredDataView.tsx`
+- **Yetenek:** Google Rich Results, Schema.org JSON-LD (`Organization`, `WebSite`, `Article`, `Product`), OpenGraph (`og:title`, `og:image`, `og:description`), Twitter Card (`summary_large_image`), Canonical URL ve Meta Robots indeksleme etiketlerini denetler. Google SERP, Facebook/LinkedIn, Twitter/X ve Slack için canlı sosyal kart önizleme simülasyonu sunar; Next.js 16 Metadata API ve JSON-LD hazır kod şablonları üretir (Google Search Central, OGP, Schema.org).
+
 ---
 
 ## 🧪 Aktif Test Kapsamı ve Sağlık Durumu
-- **Backend Test Sayısı:** 170/170 Test (Tamamı Geçiyor, 0 Hata)
+- **Backend Test Sayısı:** 175/175 Test (Tamamı Geçiyor, 0 Hata)
 - **Frontend Derleme Durumu:** Next.js 16 App Router (Turbopack) 0 Hata
 - **Git Branch:** `main`, Çalışma alanı tertemiz.
 

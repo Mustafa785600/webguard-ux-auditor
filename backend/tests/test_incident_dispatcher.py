@@ -149,3 +149,4 @@ def test_clean_state_and_generic_webhook():
     assert "integrity_hash" in payload
     assert payload["integrity_hash"].startswith("sha256:")
     assert "CEF:0|WebGuard" in payload["cef_format"]
+

@@ -29,6 +29,7 @@ import MemoryLeakView from "./MemoryLeakView";
 import ThirdPartySecurityView from "./ThirdPartySecurityView";
 import TLSCryptoView from "./TLSCryptoView";
 import { IncidentHubView } from "./IncidentHubView";
+import SEOStructuredDataView from "./SEOStructuredDataView";
 import {
   type Language,
   UI_STRINGS,
@@ -63,7 +64,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY" | "TLS_CRYPTO" | "INCIDENT_HUB">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY" | "TLS_CRYPTO" | "INCIDENT_HUB" | "SEO_DATA">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -488,6 +489,14 @@ export default function ScanDashboard() {
                 >
                   📢 {lang === "tr" ? "Olay Köprüsü" : "Incident Hub"} {result.incident_hub_report && result.incident_hub_report.critical_count > 0 ? `(${result.incident_hub_report.critical_count} Kritik)` : ""}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "SEO_DATA" ? "active" : ""}`}
+                  onClick={() => setActiveTab("SEO_DATA")}
+                  title={lang === "tr" ? "SEO ve Sosyal Paylaşım Yapısal Veri Denetleyicisi" : "SEO & Social Structured Data"}
+                >
+                  🏷️ {lang === "tr" ? "SEO & Yapısal Veri" : "SEO & Schema"} {result.seo_structured_data_report && result.seo_structured_data_report.total_defects_count > 0 ? `(${result.seo_structured_data_report.total_defects_count} Kusur)` : ""}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -673,7 +682,19 @@ export default function ScanDashboard() {
               >
                 📢 {lang === "tr" ? "Olay Köprüsü & Webhook" : "Incident Hub & Webhook"} {result.incident_hub_report ? `(${result.incident_hub_report.total_incidents_generated} Olay)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "SEO_DATA" ? "active" : ""}`}
+                onClick={() => setActiveTab("SEO_DATA")}
+              >
+                🏷️ {lang === "tr" ? "SEO & Sosyal Paylaşım" : "SEO & Social"} {result.seo_structured_data_report ? `(${result.seo_structured_data_report.seo_health_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi */}
+            {activeTab === "SEO_DATA" && (
+              <SEOStructuredDataView report={result.seo_structured_data_report} lang={lang} />
+            )}
 
             {/* TAB: Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi */}
             {activeTab === "INCIDENT_HUB" && result.incident_hub_report && (

@@ -497,3 +497,4 @@ class IncidentDispatcherHub:
         # Bash / PowerShell uyumlu tek satır curl komutu
         escaped_payload = payload_json.replace('"', '\\"')
         return f'curl -X POST -H "Content-Type: application/json" -d "{escaped_payload}" "{endpoint}"'
+
