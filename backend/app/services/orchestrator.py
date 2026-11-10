@@ -34,6 +34,7 @@ from app.services.database_leak_prober import DatabaseLeakSlowQueryProber
 from app.services.localization_auditor import LocalizationI18nAuditor
 from app.services.memory_leak_profiler import MemoryLeakProfilerEngine
 from app.services.third_party_security_auditor import ThirdPartySecurityAuditor
+from app.services.tls_crypto_auditor import TLSCryptoAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -308,6 +309,18 @@ async def execute_scan(
         import logging
         logging.error(f"[Third-Party Security Audit Error] Failed on {sanitized_url}: {exc}")
 
+    # Virgosol & NIST/PCI-DSS SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor)
+    tls_report = None
+    try:
+        tls_auditor = TLSCryptoAuditor()
+        tls_report, tls_findings = await tls_auditor.audit_tls_crypto(
+            sanitized_url, client=client
+        )
+        all_findings.extend(tls_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[TLS Crypto Audit Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -424,6 +437,7 @@ async def execute_scan(
         localization_audit=l10n_report,
         memory_leak_report=memory_report,
         third_party_security_report=third_party_report,
+        tls_crypto_report=tls_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

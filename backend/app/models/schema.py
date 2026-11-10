@@ -189,6 +189,7 @@ class ScanResult(BaseModel):
     localization_audit: Optional['LocalizationAuditReport'] = None
     memory_leak_report: Optional['MemoryLeakReport'] = None
     third_party_security_report: Optional['ThirdPartySecurityReport'] = None
+    tls_crypto_report: Optional['TLSCryptoReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -796,6 +797,78 @@ class ThirdPartySecurityReport(BaseModel):
         "KVKK Madde 5, 6, 7 & GDPR Madde 6 (Rıza Olmaksızın Takip Yasağı)",
         "OWASP Top 10 A05:2021 Security Misconfiguration",
         "PCI-DSS v4.0 Requirement 6.4.3 (Payment Page Script Management)"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı Modelleri ────────
+
+class TLSProtocolVersion(str, Enum):
+    TLS_1_3 = "TLSv1.3"
+    TLS_1_2 = "TLSv1.2"
+    TLS_1_1 = "TLSv1.1"
+    TLS_1_0 = "TLSv1.0"
+    SSL_3_0 = "SSLv3"
+    SSL_2_0 = "SSLv2"
+    PLAINTEXT_HTTP = "PLAINTEXT_HTTP"
+
+class CipherSecurityLevel(str, Enum):
+    AEAD_MODERN = "AEAD_MODERN"      # TLS_AES_256_GCM_SHA384, CHACHA20-POLY1305 (Kusursuz)
+    SECURE = "SECURE"                # ECDHE-RSA-AES128-GCM-SHA256 (PFS ile Güvenli)
+    WEAK_CBC = "WEAK_CBC"            # CBC modlu şifreler (Lucky13 riski)
+    BROKEN_LEGACY = "BROKEN_LEGACY"  # RC4, 3DES, DES, MD5, NULL, EXPORT (Kritik Açık)
+
+class CipherSuiteItem(BaseModel):
+    cipher_name: str
+    protocol: str
+    security_level: CipherSecurityLevel
+    has_pfs: bool = True             # Perfect Forward Secrecy (ECDHE/DHE)
+    key_exchange: str                # ECDHE, DHE, RSA
+    encryption: str                  # AES-GCM, CHACHA20, AES-CBC, 3DES, RC4
+    mac: str                         # AEAD, SHA256, SHA384, SHA1, MD5
+    is_recommended: bool = True
+
+class CertChainNode(BaseModel):
+    common_name: str
+    organization: Optional[str] = None
+    issuer_name: str
+    valid_from: str
+    valid_to: str
+    days_remaining: int
+    key_type: str                    # RSA, ECDSA (ECC)
+    key_size_bits: int               # 2048, 4096, 256 (ECC)
+    signature_algorithm: str         # SHA256withRSA, SHA384withECDSA
+    is_expired: bool = False
+    is_trusted_ca: bool = True
+
+class HSTSStatus(BaseModel):
+    is_enabled: bool = False
+    max_age_seconds: int = 0
+    include_subdomains: bool = False
+    preload_ready: bool = False
+    raw_header: Optional[str] = None
+    warnings: List[str] = []
+
+class TLSCryptoReport(BaseModel):
+    crypto_score: int = 100          # 0 - 100
+    ssl_labs_grade: str = "A+"       # A+, A, B, C, F
+    negotiated_protocol: TLSProtocolVersion = TLSProtocolVersion.TLS_1_3
+    negotiated_cipher: str = "TLS_AES_256_GCM_SHA384"
+    has_pfs: bool = True
+    supports_tls13: bool = True
+    supports_legacy_tls: bool = False
+    cert_chain: List[CertChainNode] = []
+    ciphers: List[CipherSuiteItem] = []
+    hsts_status: HSTSStatus = Field(default_factory=HSTSStatus)
+    days_until_cert_expiry: int = 365
+    recommended_nginx_conf: str = ""
+    recommended_apache_conf: str = ""
+    remediation_steps: List[str] = []
+    compliance_standards: List[str] = [
+        "PCI-DSS v4.0 Requirement 4 (Protect Cardholder Data with Strong Cryptography)",
+        "NIST Special Publication 800-52 Revision 2 (TLS Guidelines)",
+        "BDDK Bilgi Sistemleri Tebliği (Güçlü Kriptografik Protokol Zorunluluğu)",
+        "RFC 8446 (The Transport Layer Security Protocol Version 1.3)",
+        "RFC 6797 (HTTP Strict Transport Security - HSTS)"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 

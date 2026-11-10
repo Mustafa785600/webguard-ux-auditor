@@ -27,6 +27,7 @@ import DatabaseSlowQueryView from "./DatabaseSlowQueryView";
 import LocalizationAuditView from "./LocalizationAuditView";
 import MemoryLeakView from "./MemoryLeakView";
 import ThirdPartySecurityView from "./ThirdPartySecurityView";
+import TLSCryptoView from "./TLSCryptoView";
 import {
   type Language,
   UI_STRINGS,
@@ -61,7 +62,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY" | "TLS_CRYPTO">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -470,6 +471,14 @@ export default function ScanDashboard() {
                 >
                   🛡️ {lang === "tr" ? "3. Taraf & CSP" : "3rd-Party & CSP"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "TLS_CRYPTO" ? "active" : ""}`}
+                  onClick={() => setActiveTab("TLS_CRYPTO")}
+                  title={lang === "tr" ? "SSL/TLS Sertifika Zinciri ve Modern Kriptografi" : "SSL/TLS & Cryptography Auditor"}
+                >
+                  🔐 {lang === "tr" ? "SSL/TLS & Kripto" : "TLS & Crypto"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -641,7 +650,19 @@ export default function ScanDashboard() {
               >
                 🛡️ {lang === "tr" ? "3. Taraf Script & CSP" : "3rd-Party & CSP"} {result.third_party_security_report ? `(${result.third_party_security_report.csp_grade} / ${result.third_party_security_report.security_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "TLS_CRYPTO" ? "active" : ""}`}
+                onClick={() => setActiveTab("TLS_CRYPTO")}
+              >
+                🔐 {lang === "tr" ? "SSL/TLS & Kripto" : "TLS & Crypto"} {result.tls_crypto_report ? `(${result.tls_crypto_report.ssl_labs_grade} / ${result.tls_crypto_report.crypto_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı */}
+            {activeTab === "TLS_CRYPTO" && (
+              <TLSCryptoView report={result.tls_crypto_report} lang={lang} />
+            )}
 
             {/* TAB: Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi */}
             {activeTab === "THIRDPARTY" && (

@@ -129,15 +129,23 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **KVKK & GDPR Çerez Rızası:** OneTrust, Cookiebot vb. CMP olmaksızın rıza öncesi (Pre-consent) tetiklenen izleyicileri raporlar.
 - **Arayüz:** `ThirdPartySecurityView.tsx` (Güvenlik Skoru, CSP Derecesi, İzleyici Listesi, Direktif Analizi, CMP Uyumu, Next.js Middleware ve Nginx CSP Şablonu).
 
+### 19. SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı (`TLSCryptoAuditor`)
+- **PCI-DSS v4.0 Requirement 4, NIST SP 800-52r2, BDDK Bilgi Sistemleri Tebliği, RFC 8446 (TLS 1.3) ve RFC 6797 (HSTS) Standardı.**
+- **Protokol Güvenliği:** TLS 1.3 ve TLS 1.2 desteği; güvensiz eski protokollerin (TLS 1.0, TLS 1.1, SSLv3) tespiti.
+- **Şifreleme Süitleri (Cipher Suites):** AEAD (AES-GCM, ChaCha20-Poly1305) şifreleri, Perfect Forward Secrecy (PFS) ve kırılmış algoritmaların (RC4, 3DES Sweet32) engellenmesi.
+- **Sertifika Zinciri & Güvenlik:** Kalan geçerlilik süresi (<7 gün acil uyarısı), RSA/ECC anahtar boyutu (2048/4096-bit), CA güven doğrulaması.
+- **HSTS Preload:** `max-age` (>= 1 yıl), `includeSubDomains` ve `preload` hazır bulunuşluğu.
+- **Arayüz:** `TLSCryptoView.tsx` (SSL Labs Notu A+, Kriptografi Skoru, Sertifika Kartları, Şifreleme Tablosu, HSTS Uyarıları, Nginx ve Apache Modern SSL Konfigürasyonu).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 48/48 birim testi aktif ve başarılı (`test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 53/53 birim testi aktif ve başarılı (`test_tls_crypto_auditor`, `test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **SSL/TLS Sertifika Zinciri ve Modern Şifreleme Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor):** TLS 1.3/1.2 desteği, eski şifreleme süitleri (RC4/3DES), sertifika geçerlilik bitiş süresi ve HSTS preload denetimi (PCI-DSS 4.0 Madde 4, NIST SP 800-52r2).
-2. **Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (Automated Incident & Webhook Integration Hub):** Kritik (CRITICAL/HIGH) RCA güvenlik ve performans bulgularını Slack, Microsoft Teams, Discord, Jira veya GitHub Issues formatında zengin kartlara dönüştürme.
+1. **Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (Automated Incident & Webhook Integration Hub):** Kritik (CRITICAL/HIGH) RCA güvenlik ve performans bulgularını Slack, Microsoft Teams, Discord, Jira veya GitHub Issues formatında zengin kartlara dönüştürme.
+2. **SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (Schema.org & OpenGraph Rich Snippets Auditor):** JSON-LD / Microdata (Schema.org), OpenGraph (`og:image`, `og:title`) ve Twitter Card etiketlerinin sözdizim ve zengin arama sonuçları doğrulaması.
 

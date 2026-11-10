@@ -160,3 +160,4 @@ async def test_clean_hardened_site_perfect_score():
     assert report.consent_status.gdpr_kvkk_compliant is True
     assert report.security_score == 100
     assert len(findings) == 0
+

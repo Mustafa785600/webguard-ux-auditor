@@ -161,6 +161,7 @@ export interface ScanResult {
   localization_audit?: LocalizationAuditReport;
   memory_leak_report?: MemoryLeakReport;
   third_party_security_report?: ThirdPartySecurityReport;
+  tls_crypto_report?: TLSCryptoReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -732,6 +733,75 @@ export interface ThirdPartySecurityReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type TLSProtocolVersion =
+  | "TLSv1.3"
+  | "TLSv1.2"
+  | "TLSv1.1"
+  | "TLSv1.0"
+  | "SSLv3"
+  | "SSLv2"
+  | "PLAINTEXT_HTTP";
+
+export type CipherSecurityLevel =
+  | "AEAD_MODERN"
+  | "SECURE"
+  | "WEAK_CBC"
+  | "BROKEN_LEGACY";
+
+export interface CipherSuiteItem {
+  cipher_name: string;
+  protocol: string;
+  security_level: CipherSecurityLevel;
+  has_pfs: boolean;
+  key_exchange: string;
+  encryption: string;
+  mac: string;
+  is_recommended: boolean;
+}
+
+export interface CertChainNode {
+  common_name: string;
+  organization?: string;
+  issuer_name: string;
+  valid_from: string;
+  valid_to: string;
+  days_remaining: number;
+  key_type: string;
+  key_size_bits: number;
+  signature_algorithm: string;
+  is_expired: boolean;
+  is_trusted_ca: boolean;
+}
+
+export interface HSTSStatus {
+  is_enabled: boolean;
+  max_age_seconds: number;
+  include_subdomains: boolean;
+  preload_ready: boolean;
+  raw_header?: string;
+  warnings: string[];
+}
+
+export interface TLSCryptoReport {
+  crypto_score: number;
+  ssl_labs_grade: "A+" | "A" | "B" | "C" | "F";
+  negotiated_protocol: TLSProtocolVersion;
+  negotiated_cipher: string;
+  has_pfs: boolean;
+  supports_tls13: boolean;
+  supports_legacy_tls: boolean;
+  cert_chain: CertChainNode[];
+  ciphers: CipherSuiteItem[];
+  hsts_status: HSTSStatus;
+  days_until_cert_expiry: number;
+  recommended_nginx_conf: string;
+  recommended_apache_conf: string;
+  remediation_steps: string[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Master Mimari ve Modül Matrisi (18/18 Tamamlandı)
+## 📌 Master Mimari ve Modül Matrisi (19/19 Tamamlandı)
 
 | # | Modül Adı | Kategori | Backend Servisi / Motor | Frontend Arayüzü | Birim Test Dosyası | Kurumsal Standart & Uyum |
 |---|---|---|---|---|---|---|
@@ -26,6 +26,7 @@
 | **16** | Çok Dilli (i18n) & Lokalizasyon Denetimi | UX / L10n / Erişilebilirlik | `backend/app/services/localization_auditor.py` | `frontend/app/LocalizationAuditView.tsx` | `test_localization_auditor.py` (5 test) | W3C i18n, WCAG 3.1.1, BCP 47, hreflang |
 | **17** | SPA Bellek & DOM Sızıntı Radarı | Performans / Bellek / UX | `backend/app/services/memory_leak_profiler.py` | `frontend/app/MemoryLeakView.tsx` | `test_memory_leak_profiler.py` (5 test) | W3C Memory Spec, Chrome Heap Profiler, Detached DOM |
 | **18** | 3. Taraf Script, İzleyici & CSP Sandbox | Güvenlik / Gizlilik / Tedarik | `backend/app/services/third_party_security_auditor.py` | `frontend/app/ThirdPartySecurityView.tsx` | `test_third_party_security_auditor.py` (5 test) | W3C CSP3, SRI Hash, KVKK Madde 5-7, GDPR Madde 6, PCI-DSS |
+| **19** | SSL/TLS Sertifika & Kriptografi Sağlığı | Kriptografi / Altyapı / Güvenlik | `backend/app/services/tls_crypto_auditor.py` | `frontend/app/TLSCryptoView.tsx` | `test_tls_crypto_auditor.py` (5 test) | PCI-DSS v4.0 Req 4, NIST SP 800-52r2, BDDK Tebliği, RFC 8446 |
 
 ---
 
@@ -103,10 +104,14 @@
 - **Dosyalar:** `backend/app/services/third_party_security_auditor.py` -> `frontend/app/ThirdPartySecurityView.tsx`
 - **Yetenek:** Sayfaya enjekte edilen tüm harici script ve izleyicileri (Meta Pixel, Google Tag Manager, Hotjar, TikTok Pixel vb.) envanterler. Dış CDN'lerde Subresource Integrity (SRI `integrity="sha384-..."`) eksikliklerini saptar. Sunucu Content-Security-Policy (CSP Level 3) sandbox başlıklarını directif bazlı ('unsafe-inline', wildcards) puanlar (A+, A, B, C, F). CMP çerez rıza banner'ı olmadan kullanıcı izleyen ihlalleri (KVKK Madde 5-7 ve GDPR Madde 6) raporlar ve üretime hazır sıkı CSP şablonları üretir.
 
+### 19. SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor)
+- **Dosyalar:** `backend/app/services/tls_crypto_auditor.py` -> `frontend/app/TLSCryptoView.tsx`
+- **Yetenek:** TLS 1.3 ve TLS 1.2 protokol desteğini, Perfect Forward Secrecy (PFS - ECDHE/DHE) anahtar değişimini, kırılmış/eski şifreleri (RC4, 3DES/Sweet32, CBC) denetler. Sertifika otoritesi (CA), RSA/ECC anahtar boyutu ve kalan gün sayısını (<7 gün acil uyarısı) izler. Strict-Transport-Security (HSTS) başlığını max-age, includeSubDomains ve Preload hazır bulunuşluğu açısından inceler; SSL Labs tarzı harf notu (A+, A, B, C, F) ve hazır Nginx/Apache modern SSL şablonları sunar (PCI-DSS v4.0 Req 4, NIST SP 800-52r2, BDDK Tebliği).
+
 ---
 
 ## 🧪 Aktif Test Kapsamı ve Sağlık Durumu
-- **Backend Test Sayısı:** 48/48 Test (Tamamı Geçiyor)
+- **Backend Test Sayısı:** 53/53 Test (Tamamı Geçiyor)
 - **Frontend Derleme Durumu:** Next.js 16 App Router (Turbopack) 0 Hata
 - **Git Branch:** `main`, Çalışma alanı tertemiz.
 
