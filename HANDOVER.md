@@ -120,15 +120,24 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **JavaScript Heap Metrikleri & Büyüme Hızı:** V8 Heap kullanımını (Used / Total / Limit MB) ve sayfa geçişleri sonrası +MB büyüme deltasını izler; bellek şişmesini (Bloat) raporlar.
 - **Arayüz:** `MemoryLeakView.tsx` (Bellek Sağlık Skoru, Heap Çubuğu, Detached Ağaçlar, Yetim Dinleyiciler, Hazır `useEventListener` ve `WeakMap` Kod Rehberi).
 
+### 18. Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi (`ThirdPartySecurityAuditor`)
+- **W3C Content Security Policy Level 3 (CSP3), Subresource Integrity (SRI), KVKK Madde 5-7, GDPR Madde 6 ve PCI-DSS v4.0 Req 6.4.3 Standardı.**
+- **İzleyici & Piksel Envanteri:** Meta (Facebook) Pixel, Google Tag Manager, Google Analytics 4, TikTok Pixel, Criteo ve LinkedIn etiketlerini sınıflandırır.
+- **Oturum Kayıt & Keylogger Riski:** Hotjar, FullStory, Clarity ve Yandex Metrica gibi form girdilerini ve hassas kullanıcı hareketlerini kaydeden araçları ve PII riskini belirler.
+- **Tedarik Zinciri Koruması (SRI):** Harici CDN'lerden (cdnjs, jsdelivr, unpkg) yüklenen script'lerde `integrity="sha384-..."` hash ve `crossorigin="anonymous"` eksikliklerini tespit eder.
+- **CSP Sandbox Direktif Analizi:** `script-src`, `object-src`, `base-uri` direktiflerini inceler; `'unsafe-inline'`, `'unsafe-eval'` ve `*` açıklarını denetleyip A+, A, B, C, F derecelendirmesi yapar.
+- **KVKK & GDPR Çerez Rızası:** OneTrust, Cookiebot vb. CMP olmaksızın rıza öncesi (Pre-consent) tetiklenen izleyicileri raporlar.
+- **Arayüz:** `ThirdPartySecurityView.tsx` (Güvenlik Skoru, CSP Derecesi, İzleyici Listesi, Direktif Analizi, CMP Uyumu, Next.js Middleware ve Nginx CSP Şablonu).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 43/43 birim testi aktif ve başarılı (`test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 48/48 birim testi aktif ve başarılı (`test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Third-Party Script, Tracker & CSP Sandbox Güvenlik Denetimi (Third-Party Tracker & CSP Sandbox Auditor):** GTM, Meta Pixel, Hotjar vb. üçüncü taraf script'lerin DOM/ağ erişimlerinin analizi, veri sızdırma riskleri ve CSP Level 3 / SRI bütünlük denetimi.
-2. **SSL/TLS Sertifika Zinciri ve Modern Şifreleme Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor):** TLS 1.3/1.2 desteği, eski şifreleme süitleri (RC4/3DES), sertifika geçerlilik bitiş süresi ve HSTS preload denetimi.
+1. **SSL/TLS Sertifika Zinciri ve Modern Şifreleme Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor):** TLS 1.3/1.2 desteği, eski şifreleme süitleri (RC4/3DES), sertifika geçerlilik bitiş süresi ve HSTS preload denetimi (PCI-DSS 4.0 Madde 4, NIST SP 800-52r2).
+2. **Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (Automated Incident & Webhook Integration Hub):** Kritik (CRITICAL/HIGH) RCA güvenlik ve performans bulgularını Slack, Microsoft Teams, Discord, Jira veya GitHub Issues formatında zengin kartlara dönüştürme.
 

@@ -33,6 +33,7 @@ from app.services.session_heatmap_engine import SessionHeatmapEngine
 from app.services.database_leak_prober import DatabaseLeakSlowQueryProber
 from app.services.localization_auditor import LocalizationI18nAuditor
 from app.services.memory_leak_profiler import MemoryLeakProfilerEngine
+from app.services.third_party_security_auditor import ThirdPartySecurityAuditor
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -295,6 +296,18 @@ async def execute_scan(
         import logging
         logging.error(f"[Memory Leak Profiler Error] Failed on {sanitized_url}: {exc}")
 
+    # Virgosol & W3C Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi (Third-Party Tracker & CSP Sandbox Auditor)
+    third_party_report = None
+    try:
+        tp_auditor = ThirdPartySecurityAuditor()
+        third_party_report, tp_findings = await tp_auditor.audit_third_party_and_csp(
+            sanitized_url, client=client, network_traces=network_traces
+        )
+        all_findings.extend(tp_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Third-Party Security Audit Error] Failed on {sanitized_url}: {exc}")
+
     # Browser In-Page Core Web Vitals & Loading Speed Metriklerini Entegre Et
     if perf_metrics:
         for scanner in active_scanners:
@@ -410,6 +423,7 @@ async def execute_scan(
         database_leak_report=db_leak_report,
         localization_audit=l10n_report,
         memory_leak_report=memory_report,
+        third_party_security_report=third_party_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

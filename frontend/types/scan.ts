@@ -160,6 +160,7 @@ export interface ScanResult {
   database_leak_report?: DatabaseLeakReport;
   localization_audit?: LocalizationAuditReport;
   memory_leak_report?: MemoryLeakReport;
+  third_party_security_report?: ThirdPartySecurityReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -676,6 +677,62 @@ export interface MemoryLeakReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type ThirdPartyCategory =
+  | "ANALYTICS"
+  | "ADVERTISING_TRACKER"
+  | "SESSION_RECORDING"
+  | "CUSTOMER_SUPPORT_CHAT"
+  | "CDN_LIBRARY"
+  | "UNKNOWN_THIRD_PARTY";
+
+export interface ThirdPartyScriptItem {
+  tracker_name: string;
+  category: ThirdPartyCategory;
+  script_url: string;
+  domain: string;
+  has_sri: boolean;
+  sri_hash?: string;
+  severity: Severity;
+  pii_leak_risk: boolean;
+  description: string;
+  remediation: string;
+}
+
+export interface CSPDirectiveAudit {
+  directive: string;
+  raw_value: string;
+  is_secure: boolean;
+  warnings: string[];
+  recommendation: string;
+}
+
+export interface ConsentComplianceStatus {
+  has_consent_banner: boolean;
+  detected_cmp_vendor?: string;
+  unconsented_trackers_count: number;
+  gdpr_kvkk_compliant: boolean;
+  detail: string;
+}
+
+export interface ThirdPartySecurityReport {
+  security_score: number;
+  total_scripts_count: number;
+  third_party_scripts_count: number;
+  trackers_count: number;
+  missing_sri_count: number;
+  session_recording_count: number;
+  csp_configured: boolean;
+  csp_grade: "A+" | "A" | "B" | "C" | "F";
+  consent_status: ConsentComplianceStatus;
+  scripts: ThirdPartyScriptItem[];
+  csp_directives: CSPDirectiveAudit[];
+  recommended_csp_header: string;
+  remediation_recipes: string[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

@@ -154,3 +154,4 @@ async def test_clean_spa_page_perfect_score():
     assert report.memory_health_score == 100
     assert len(findings) == 0
     assert report.heap_metrics.growth_rate_status == "HEALTHY"
+

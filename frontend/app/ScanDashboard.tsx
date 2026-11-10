@@ -26,6 +26,7 @@ import SessionReplayHeatmapView from "./SessionReplayHeatmapView";
 import DatabaseSlowQueryView from "./DatabaseSlowQueryView";
 import LocalizationAuditView from "./LocalizationAuditView";
 import MemoryLeakView from "./MemoryLeakView";
+import ThirdPartySecurityView from "./ThirdPartySecurityView";
 import {
   type Language,
   UI_STRINGS,
@@ -60,7 +61,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -461,6 +462,14 @@ export default function ScanDashboard() {
                 >
                   🧠 {lang === "tr" ? "Bellek Radarı" : "Memory Leaks"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "THIRDPARTY" ? "active" : ""}`}
+                  onClick={() => setActiveTab("THIRDPARTY")}
+                  title={lang === "tr" ? "Üçüncü Taraf Script ve CSP Sandbox Denetimi" : "Third-Party Trackers & CSP Sandbox"}
+                >
+                  🛡️ {lang === "tr" ? "3. Taraf & CSP" : "3rd-Party & CSP"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -625,7 +634,19 @@ export default function ScanDashboard() {
               >
                 🧠 {lang === "tr" ? "Bellek & DOM Sızıntısı" : "Memory & DOM Leak"} {result.memory_leak_report ? `(${result.memory_leak_report.total_leaks_count > 0 ? `${result.memory_leak_report.total_leaks_count} Sızıntı` : `${result.memory_leak_report.memory_health_score}%`})` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "THIRDPARTY" ? "active" : ""}`}
+                onClick={() => setActiveTab("THIRDPARTY")}
+              >
+                🛡️ {lang === "tr" ? "3. Taraf Script & CSP" : "3rd-Party & CSP"} {result.third_party_security_report ? `(${result.third_party_security_report.csp_grade} / ${result.third_party_security_report.security_score}%)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi */}
+            {activeTab === "THIRDPARTY" && (
+              <ThirdPartySecurityView report={result.third_party_security_report} lang={lang} />
+            )}
 
             {/* TAB: SPA Bellek ve DOM Sızıntı Radarı */}
             {activeTab === "MEMORY" && (

@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Master Mimari ve Modül Matrisi (17/17 Tamamlandı)
+## 📌 Master Mimari ve Modül Matrisi (18/18 Tamamlandı)
 
 | # | Modül Adı | Kategori | Backend Servisi / Motor | Frontend Arayüzü | Birim Test Dosyası | Kurumsal Standart & Uyum |
 |---|---|---|---|---|---|---|
@@ -25,6 +25,7 @@
 | **15** | Veritabanı & Yavaş Sorgu Sızıntı Denetimi | Veritabanı / Güvenlik | `backend/app/services/database_leak_prober.py` | `frontend/app/DatabaseSlowQueryView.tsx` | `test_database_leak_prober.py` (4 test) | OWASP A05, CWE-209, CWE-200, N+1 Analizi |
 | **16** | Çok Dilli (i18n) & Lokalizasyon Denetimi | UX / L10n / Erişilebilirlik | `backend/app/services/localization_auditor.py` | `frontend/app/LocalizationAuditView.tsx` | `test_localization_auditor.py` (5 test) | W3C i18n, WCAG 3.1.1, BCP 47, hreflang |
 | **17** | SPA Bellek & DOM Sızıntı Radarı | Performans / Bellek / UX | `backend/app/services/memory_leak_profiler.py` | `frontend/app/MemoryLeakView.tsx` | `test_memory_leak_profiler.py` (5 test) | W3C Memory Spec, Chrome Heap Profiler, Detached DOM |
+| **18** | 3. Taraf Script, İzleyici & CSP Sandbox | Güvenlik / Gizlilik / Tedarik | `backend/app/services/third_party_security_auditor.py` | `frontend/app/ThirdPartySecurityView.tsx` | `test_third_party_security_auditor.py` (5 test) | W3C CSP3, SRI Hash, KVKK Madde 5-7, GDPR Madde 6, PCI-DSS |
 
 ---
 
@@ -98,10 +99,14 @@
 - **Dosyalar:** `backend/app/services/memory_leak_profiler.py` -> `frontend/app/MemoryLeakView.tsx`
 - **Yetenek:** React / Next.js SPA uygulamalarında unmount sonrası kopuk kalan DOM düğümlerini (Detached DOM Nodes), temizlenmemiş yetim event listener'ları (`window.addEventListener` cleanup eksikliği), periyodik zamanlayıcıları (`setInterval` leaks), kapatılmamış `ResizeObserver` / `MutationObserver` nesnelerini ve JavaScript Heap şişmesini (Bloat) otonom olarak profiller ve hazır React TypeScript kod çözümleri üretir.
 
+### 18. Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi (Third-Party Tracker & CSP Sandbox Auditor)
+- **Dosyalar:** `backend/app/services/third_party_security_auditor.py` -> `frontend/app/ThirdPartySecurityView.tsx`
+- **Yetenek:** Sayfaya enjekte edilen tüm harici script ve izleyicileri (Meta Pixel, Google Tag Manager, Hotjar, TikTok Pixel vb.) envanterler. Dış CDN'lerde Subresource Integrity (SRI `integrity="sha384-..."`) eksikliklerini saptar. Sunucu Content-Security-Policy (CSP Level 3) sandbox başlıklarını directif bazlı ('unsafe-inline', wildcards) puanlar (A+, A, B, C, F). CMP çerez rıza banner'ı olmadan kullanıcı izleyen ihlalleri (KVKK Madde 5-7 ve GDPR Madde 6) raporlar ve üretime hazır sıkı CSP şablonları üretir.
+
 ---
 
 ## 🧪 Aktif Test Kapsamı ve Sağlık Durumu
-- **Backend Test Sayısı:** 43/43 Test (Tamamı Geçiyor)
+- **Backend Test Sayısı:** 48/48 Test (Tamamı Geçiyor)
 - **Frontend Derleme Durumu:** Next.js 16 App Router (Turbopack) 0 Hata
 - **Git Branch:** `main`, Çalışma alanı tertemiz.
 

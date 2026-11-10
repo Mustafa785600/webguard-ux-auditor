@@ -188,6 +188,7 @@ class ScanResult(BaseModel):
     database_leak_report: Optional['DatabaseLeakReport'] = None
     localization_audit: Optional['LocalizationAuditReport'] = None
     memory_leak_report: Optional['MemoryLeakReport'] = None
+    third_party_security_report: Optional['ThirdPartySecurityReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -736,6 +737,65 @@ class MemoryLeakReport(BaseModel):
         "Chrome DevTools Memory Profiler & Detached DOM Trees",
         "React & Next.js Lifecycle Memory Cleanup Best Practices (RFC 0021)",
         "WCAG 2.1 Principle 4: Robustness (Client-side Crash Prevention)"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi Modelleri ──────────
+
+class ThirdPartyCategory(str, Enum):
+    ANALYTICS = "ANALYTICS"                          # Google Analytics, Mixpanel, Amplitude
+    ADVERTISING_TRACKER = "ADVERTISING_TRACKER"      # Meta Pixel, TikTok Pixel, Google Ads, Criteo
+    SESSION_RECORDING = "SESSION_RECORDING"          # Hotjar, FullStory, Clarity, Smartlook (Yüksek gizlilik riski)
+    CUSTOMER_SUPPORT_CHAT = "CUSTOMER_SUPPORT_CHAT"  # Intercom, Zendesk, Crisp, Tawk.to
+    CDN_LIBRARY = "CDN_LIBRARY"                      # cdnjs, unpkg, jsdelivr, googleapis (SRI kontrolü)
+    UNKNOWN_THIRD_PARTY = "UNKNOWN_THIRD_PARTY"      # Sınıflandırılmamış dış kaynak
+
+class ThirdPartyScriptItem(BaseModel):
+    tracker_name: str
+    category: ThirdPartyCategory
+    script_url: str
+    domain: str
+    has_sri: bool = False
+    sri_hash: Optional[str] = None
+    severity: Severity = Severity.MEDIUM
+    pii_leak_risk: bool = False                      # Form veya tuş vuruşu izleme riski
+    description: str
+    remediation: str
+
+class CSPDirectiveAudit(BaseModel):
+    directive: str                                   # script-src, default-src, connect-src vb.
+    raw_value: str
+    is_secure: bool
+    warnings: List[str] = []
+    recommendation: str
+
+class ConsentComplianceStatus(BaseModel):
+    has_consent_banner: bool = False
+    detected_cmp_vendor: Optional[str] = None        # OneTrust, Cookiebot, Klaro, Didomi vb.
+    unconsented_trackers_count: int = 0
+    gdpr_kvkk_compliant: bool = False
+    detail: str
+
+class ThirdPartySecurityReport(BaseModel):
+    security_score: int = 100                        # 0 - 100
+    total_scripts_count: int = 0
+    third_party_scripts_count: int = 0
+    trackers_count: int = 0
+    missing_sri_count: int = 0
+    session_recording_count: int = 0
+    csp_configured: bool = False
+    csp_grade: str = "F"                             # A+, A, B, C, F
+    consent_status: ConsentComplianceStatus
+    scripts: List[ThirdPartyScriptItem] = []
+    csp_directives: List[CSPDirectiveAudit] = []
+    recommended_csp_header: str = ""
+    remediation_recipes: List[str] = []
+    compliance_standards: List[str] = [
+        "W3C Content Security Policy Level 3 (CSP3)",
+        "W3C Subresource Integrity (SRI) Specification",
+        "KVKK Madde 5, 6, 7 & GDPR Madde 6 (Rıza Olmaksızın Takip Yasağı)",
+        "OWASP Top 10 A05:2021 Security Misconfiguration",
+        "PCI-DSS v4.0 Requirement 6.4.3 (Payment Page Script Management)"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 
