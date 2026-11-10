@@ -187,6 +187,7 @@ class ScanResult(BaseModel):
     session_replay: Optional['SessionReplayReport'] = None
     database_leak_report: Optional['DatabaseLeakReport'] = None
     localization_audit: Optional['LocalizationAuditReport'] = None
+    memory_leak_report: Optional['MemoryLeakReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -673,6 +674,68 @@ class LocalizationAuditReport(BaseModel):
         "WCAG 2.1 Success Criterion 3.1.1 Language of Page",
         "ISO 639-1 / BCP 47 Language Tags",
         "Google Search Central hreflang Guidelines"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── SPA Bellek ve DOM Sızıntı Radarı Modelleri (Memory & DOM Leak Profiler) ──
+
+class MemoryLeakType(str, Enum):
+    DETACHED_DOM_NODES = "DETACHED_DOM_NODES"               # DOM ağacından silinmiş ama bellekte referansı kalan düğümler
+    DANGLING_EVENT_LISTENER = "DANGLING_EVENT_LISTENER"     # useEffect içinde temizlenmemiş (removeEventListener eksik) dinleyiciler
+    UNBOUNDED_HEAP_GROWTH = "UNBOUNDED_HEAP_GROWTH"         # Tekrarlı gezinmede JS Heap şişmesi (bloat)
+    UNRELEASED_TIMER_INTERVAL = "UNRELEASED_TIMER_INTERVAL" # Temizlenmemiş setInterval / setTimeout
+    UNCLEANED_OBSERVER = "UNCLEANED_OBSERVER"               # ResizeObserver, MutationObserver, IntersectionObserver .disconnect() eksik
+    GLOBAL_WINDOW_POLLUTION = "GLOBAL_WINDOW_POLLUTION"     # window nesnesine eklenip sızıntı yapan veriler
+
+class DetachedDOMCluster(BaseModel):
+    tag_name: str
+    class_or_id: Optional[str] = None
+    count: int
+    retained_size_bytes_est: int
+    suspected_component: Optional[str] = None
+    description: str
+
+class DanglingListenerItem(BaseModel):
+    target_object: str  # "window", "document", "element"
+    event_type: str     # "resize", "scroll", "keydown", "message", "storage"
+    detected_count: int
+    suspected_pattern: str
+    remediation_code: str
+
+class JSHeapMetric(BaseModel):
+    total_js_heap_size_mb: float
+    used_js_heap_size_mb: float
+    js_heap_size_limit_mb: float
+    heap_utilization_pct: float
+    heap_growth_delta_mb: float  # Navigasyon veya eylemler sonrası artış
+    growth_rate_status: str      # "HEALTHY", "MODERATE_RISK", "CRITICAL_GROWTH"
+
+class MemoryLeakItem(BaseModel):
+    leak_type: MemoryLeakType
+    severity: Severity
+    title: str
+    component_or_symbol: Optional[str] = None
+    metric_snippet: str
+    impact_explanation: str
+    remediation: str
+    code_fix_template: Optional[str] = None
+
+class MemoryLeakReport(BaseModel):
+    memory_health_score: int = 100       # 0 - 100 (100 = Sıfır sızıntı, optimize heap)
+    heap_metrics: JSHeapMetric
+    total_leaks_count: int = 0
+    detached_dom_nodes_count: int = 0
+    dangling_listeners_count: int = 0
+    uncleaned_timers_count: int = 0
+    detached_clusters: List[DetachedDOMCluster] = []
+    dangling_listeners: List[DanglingListenerItem] = []
+    leaks: List[MemoryLeakItem] = []
+    remediation_recipes: List[str] = []
+    compliance_standards: List[str] = [
+        "W3C Web Performance & Memory Specification",
+        "Chrome DevTools Memory Profiler & Detached DOM Trees",
+        "React & Next.js Lifecycle Memory Cleanup Best Practices (RFC 0021)",
+        "WCAG 2.1 Principle 4: Robustness (Client-side Crash Prevention)"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 

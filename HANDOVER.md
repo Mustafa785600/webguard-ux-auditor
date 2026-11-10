@@ -112,15 +112,23 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **Hreflang Bölgesel SEO:** `<link rel="alternate" hreflang="xx">` etiketlerini ve `x-default` yapılandırmasını doğrular.
 - **Arayüz:** `LocalizationAuditView.tsx` (Kusur Listesi, Hreflang Tablosu, Desteklenen Diller ve Modern i18n Kod Rehberi).
 
+### 17. SPA Bellek ve DOM Sızıntı Radarı (`MemoryLeakProfilerEngine`)
+- **W3C Web Performance & Memory, Chrome DevTools Memory Profiler & Detached DOM Trees, React RFC 0021 Standardı.**
+- **Yetim Event Listener'lar (Dangling Listeners):** `window.addEventListener('resize')`, `scroll`, `keydown` gibi dinleyicilerin bileşen unmount olduğunda temizlenmemesini tespit eder.
+- **Kopuk DOM Ağaçları (Detached DOM Nodes):** Modal, dialog, drawer, portal ve Canvas öğelerinin DOM'dan kaldırıldıktan sonra JS closure'larında asılı kalmasını saptar.
+- **Zamanlayıcılar & Gözlemciler (Timers & Observers):** Açık bırakılan `setInterval` ve `.disconnect()` çağrılmamış `ResizeObserver` / `MutationObserver` nesnelerini yakalar.
+- **JavaScript Heap Metrikleri & Büyüme Hızı:** V8 Heap kullanımını (Used / Total / Limit MB) ve sayfa geçişleri sonrası +MB büyüme deltasını izler; bellek şişmesini (Bloat) raporlar.
+- **Arayüz:** `MemoryLeakView.tsx` (Bellek Sağlık Skoru, Heap Çubuğu, Detached Ağaçlar, Yetim Dinleyiciler, Hazır `useEventListener` ve `WeakMap` Kod Rehberi).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 38/38 birim testi aktif ve başarılı (`test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 43/43 birim testi aktif ve başarılı (`test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Gelişmiş Bellek & DOM Sızıntı Denetimi (Memory & DOM Leak Profiler):** SPA sayfalarında ayrılmamış event listener'lar, detach edilmiş DOM düğümleri ve JavaScript heap bellek şişkinliğinin tespiti.
-2. **Third-Party Script & Çerez Güvenlik Denetimi (Third-Party Tracker & CSP Sandbox Auditor):** Üçüncü taraf analiz, reklam ve izleyici script'lerinin CSP sandbox ve GDPR çerez rızası denetimi.
+1. **Third-Party Script, Tracker & CSP Sandbox Güvenlik Denetimi (Third-Party Tracker & CSP Sandbox Auditor):** GTM, Meta Pixel, Hotjar vb. üçüncü taraf script'lerin DOM/ağ erişimlerinin analizi, veri sızdırma riskleri ve CSP Level 3 / SRI bütünlük denetimi.
+2. **SSL/TLS Sertifika Zinciri ve Modern Şifreleme Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor):** TLS 1.3/1.2 desteği, eski şifreleme süitleri (RC4/3DES), sertifika geçerlilik bitiş süresi ve HSTS preload denetimi.
 

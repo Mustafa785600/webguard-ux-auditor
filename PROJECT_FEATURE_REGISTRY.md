@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Master Mimari ve Modül Matrisi (16/16 Tamamlandı)
+## 📌 Master Mimari ve Modül Matrisi (17/17 Tamamlandı)
 
 | # | Modül Adı | Kategori | Backend Servisi / Motor | Frontend Arayüzü | Birim Test Dosyası | Kurumsal Standart & Uyum |
 |---|---|---|---|---|---|---|
@@ -24,6 +24,7 @@
 | **14** | Kullanıcı Oturum Kaydı & Isı Haritası | UX / Telemetri | `backend/app/services/session_heatmap_engine.py` | `frontend/app/SessionReplayHeatmapView.tsx` | `test_session_heatmap_engine.py` (4 test) | Hotjar / FullStory, KVKK/GDPR Madde 5 |
 | **15** | Veritabanı & Yavaş Sorgu Sızıntı Denetimi | Veritabanı / Güvenlik | `backend/app/services/database_leak_prober.py` | `frontend/app/DatabaseSlowQueryView.tsx` | `test_database_leak_prober.py` (4 test) | OWASP A05, CWE-209, CWE-200, N+1 Analizi |
 | **16** | Çok Dilli (i18n) & Lokalizasyon Denetimi | UX / L10n / Erişilebilirlik | `backend/app/services/localization_auditor.py` | `frontend/app/LocalizationAuditView.tsx` | `test_localization_auditor.py` (5 test) | W3C i18n, WCAG 3.1.1, BCP 47, hreflang |
+| **17** | SPA Bellek & DOM Sızıntı Radarı | Performans / Bellek / UX | `backend/app/services/memory_leak_profiler.py` | `frontend/app/MemoryLeakView.tsx` | `test_memory_leak_profiler.py` (5 test) | W3C Memory Spec, Chrome Heap Profiler, Detached DOM |
 
 ---
 
@@ -93,10 +94,14 @@
 - **Dosyalar:** `backend/app/services/localization_auditor.py` -> `frontend/app/LocalizationAuditView.tsx`
 - **Yetenek:** Kullanıcıya yansıyan çevrilmemiş i18n anahtar sızıntıları (`auth.login.title`), eksik veya BCP-47 standart dışı `<html lang="...">` özniteliği (WCAG 3.1.1), sağdan sola dillerde (RTL) `dir="rtl"` ve BiDi metin uyumu, `hreflang` arama motoru bölgesel SEO etiketleri ve para birimi/tarih formatlama kusurları.
 
+### 17. SPA Bellek ve DOM Sızıntı Radarı (Memory & DOM Leak Profiler)
+- **Dosyalar:** `backend/app/services/memory_leak_profiler.py` -> `frontend/app/MemoryLeakView.tsx`
+- **Yetenek:** React / Next.js SPA uygulamalarında unmount sonrası kopuk kalan DOM düğümlerini (Detached DOM Nodes), temizlenmemiş yetim event listener'ları (`window.addEventListener` cleanup eksikliği), periyodik zamanlayıcıları (`setInterval` leaks), kapatılmamış `ResizeObserver` / `MutationObserver` nesnelerini ve JavaScript Heap şişmesini (Bloat) otonom olarak profiller ve hazır React TypeScript kod çözümleri üretir.
+
 ---
 
 ## 🧪 Aktif Test Kapsamı ve Sağlık Durumu
-- **Backend Test Sayısı:** 38/38 Test (Tamamı Geçiyor)
+- **Backend Test Sayısı:** 43/43 Test (Tamamı Geçiyor)
 - **Frontend Derleme Durumu:** Next.js 16 App Router (Turbopack) 0 Hata
 - **Git Branch:** `main`, Çalışma alanı tertemiz.
 

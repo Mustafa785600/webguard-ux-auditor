@@ -159,6 +159,7 @@ export interface ScanResult {
   session_replay?: SessionReplayReport;
   database_leak_report?: DatabaseLeakReport;
   localization_audit?: LocalizationAuditReport;
+  memory_leak_report?: MemoryLeakReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -615,6 +616,67 @@ export interface LocalizationAuditReport {
   compliance_standards?: string[];
   audited_at: string;
 }
+
+export type MemoryLeakType =
+  | "DETACHED_DOM_NODES"
+  | "DANGLING_EVENT_LISTENER"
+  | "UNBOUNDED_HEAP_GROWTH"
+  | "UNRELEASED_TIMER_INTERVAL"
+  | "UNCLEANED_OBSERVER"
+  | "GLOBAL_WINDOW_POLLUTION";
+
+export interface DetachedDOMCluster {
+  tag_name: string;
+  class_or_id?: string;
+  count: number;
+  retained_size_bytes_est: number;
+  suspected_component?: string;
+  description: string;
+}
+
+export interface DanglingListenerItem {
+  target_object: string;
+  event_type: string;
+  detected_count: number;
+  suspected_pattern: string;
+  remediation_code: string;
+}
+
+export interface JSHeapMetric {
+  total_js_heap_size_mb: number;
+  used_js_heap_size_mb: number;
+  js_heap_size_limit_mb: number;
+  heap_utilization_pct: number;
+  heap_growth_delta_mb: number;
+  growth_rate_status: "HEALTHY" | "MODERATE_RISK" | "CRITICAL_GROWTH";
+}
+
+export interface MemoryLeakItem {
+  leak_type: MemoryLeakType;
+  severity: Severity;
+  title: string;
+  component_or_symbol?: string;
+  metric_snippet: string;
+  impact_explanation: string;
+  remediation: string;
+  code_fix_template?: string;
+}
+
+export interface MemoryLeakReport {
+  memory_health_score: number;
+  heap_metrics: JSHeapMetric;
+  total_leaks_count: number;
+  detached_dom_nodes_count: number;
+  dangling_listeners_count: number;
+  uncleaned_timers_count: number;
+  detached_clusters: DetachedDOMCluster[];
+  dangling_listeners: DanglingListenerItem[];
+  leaks: MemoryLeakItem[];
+  remediation_recipes: string[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
 
 
 

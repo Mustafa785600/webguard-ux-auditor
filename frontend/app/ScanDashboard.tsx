@@ -25,6 +25,7 @@ import DASTVerificationView from "./DASTVerificationView";
 import SessionReplayHeatmapView from "./SessionReplayHeatmapView";
 import DatabaseSlowQueryView from "./DatabaseSlowQueryView";
 import LocalizationAuditView from "./LocalizationAuditView";
+import MemoryLeakView from "./MemoryLeakView";
 import {
   type Language,
   UI_STRINGS,
@@ -59,7 +60,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -452,6 +453,14 @@ export default function ScanDashboard() {
                 >
                   🌐 {lang === "tr" ? "Çok Dilli / i18n" : "i18n / L10n"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "MEMORY" ? "active" : ""}`}
+                  onClick={() => setActiveTab("MEMORY")}
+                  title={lang === "tr" ? "SPA Bellek ve DOM Sızıntı Radarı" : "SPA Memory & DOM Leak Profiler"}
+                >
+                  🧠 {lang === "tr" ? "Bellek Radarı" : "Memory Leaks"}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -609,7 +618,19 @@ export default function ScanDashboard() {
               >
                 🌐 {lang === "tr" ? "Çok Dilli / i18n" : "i18n / L10n"} {result.localization_audit ? `(${result.localization_audit.total_defects_count > 0 ? `${result.localization_audit.total_defects_count} Kusur` : `${result.localization_audit.l10n_score}%`})` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "MEMORY" ? "active" : ""}`}
+                onClick={() => setActiveTab("MEMORY")}
+              >
+                🧠 {lang === "tr" ? "Bellek & DOM Sızıntısı" : "Memory & DOM Leak"} {result.memory_leak_report ? `(${result.memory_leak_report.total_leaks_count > 0 ? `${result.memory_leak_report.total_leaks_count} Sızıntı` : `${result.memory_leak_report.memory_health_score}%`})` : ""}
+              </button>
             </div>
+
+            {/* TAB: SPA Bellek ve DOM Sızıntı Radarı */}
+            {activeTab === "MEMORY" && (
+              <MemoryLeakView report={result.memory_leak_report} lang={lang} />
+            )}
 
             {/* TAB: Virgosol Çok Dilli (i18n) ve Lokalizasyon Kusurları */}
             {activeTab === "LOCALIZATION" && (
