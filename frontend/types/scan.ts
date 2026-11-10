@@ -162,6 +162,7 @@ export interface ScanResult {
   memory_leak_report?: MemoryLeakReport;
   third_party_security_report?: ThirdPartySecurityReport;
   tls_crypto_report?: TLSCryptoReport;
+  incident_hub_report?: IncidentHubReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;
@@ -798,6 +799,39 @@ export interface TLSCryptoReport {
   recommended_nginx_conf: string;
   recommended_apache_conf: string;
   remediation_steps: string[];
+  compliance_standards?: string[];
+  audited_at: string;
+}
+
+export type IncidentChannel =
+  | "SLACK"
+  | "TEAMS"
+  | "DISCORD"
+  | "JIRA"
+  | "GENERIC_WEBHOOK";
+
+export interface IncidentPayloadCard {
+  card_id: string;
+  channel: IncidentChannel;
+  target_url: string;
+  title: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+  category: "SECURITY" | "UX";
+  formatted_payload: Record<string, unknown>;
+  curl_preview: string;
+  status: "READY_TO_DISPATCH" | "DISPATCHED" | "SIMULATED_SUCCESS";
+  recommended_action?: string;
+  created_at: string;
+}
+
+export interface IncidentHubReport {
+  total_incidents_generated: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  channels_supported: string[];
+  cards: IncidentPayloadCard[];
+  webhook_endpoints_configured: string[];
   compliance_standards?: string[];
   audited_at: string;
 }

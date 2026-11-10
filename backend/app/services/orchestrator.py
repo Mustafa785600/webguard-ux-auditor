@@ -35,6 +35,7 @@ from app.services.localization_auditor import LocalizationI18nAuditor
 from app.services.memory_leak_profiler import MemoryLeakProfilerEngine
 from app.services.third_party_security_auditor import ThirdPartySecurityAuditor
 from app.services.tls_crypto_auditor import TLSCryptoAuditor
+from app.services.incident_dispatcher import IncidentDispatcherHub
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -406,6 +407,21 @@ async def execute_scan(
     except Exception:
         pass
 
+    incident_hub_report = None
+    try:
+        hub_report, incident_findings = IncidentDispatcherHub.generate_incident_hub(
+            target_url=sanitized_url,
+            findings=all_findings,
+            scan_id=scan_id,
+        )
+        incident_hub_report = hub_report
+        for f in incident_findings:
+            classify_finding_rca_and_team(f)
+        all_findings.extend(incident_findings)
+    except Exception as exc:
+        import logging
+        logging.error(f"[Incident Hub Error] Failed to generate incident hub: {exc}", exc_info=True)
+
     result = ScanResult(
         scan_id=scan_id,
         target_url=sanitized_url,
@@ -438,6 +454,7 @@ async def execute_scan(
         memory_leak_report=memory_report,
         third_party_security_report=third_party_report,
         tls_crypto_report=tls_report,
+        incident_hub_report=incident_hub_report,
         crawled_pages_count=crawled_pages_count,
         started_at=started_at,
         completed_at=datetime.utcnow()

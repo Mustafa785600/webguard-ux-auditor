@@ -137,15 +137,26 @@ Bu belge, WebGuard projesinin mevcut mimarisini, tamamlanan tüm modülleri, kur
 - **HSTS Preload:** `max-age` (>= 1 yıl), `includeSubDomains` ve `preload` hazır bulunuşluğu.
 - **Arayüz:** `TLSCryptoView.tsx` (SSL Labs Notu A+, Kriptografi Skoru, Sertifika Kartları, Şifreleme Tablosu, HSTS Uyarıları, Nginx ve Apache Modern SSL Konfigürasyonu).
 
+### 20. Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (`IncidentDispatcherHub`)
+- **ISO/IEC 27035 Information Security Incident Management, NIST SP 800-61 Rev. 2, SOC 2 Type II Incident Alerting & Triage SLA Standardı.**
+- **Çok Kanallı Biçimlendirme (Multi-Channel Dispatching):**
+  * **Slack:** Zengin Block Kit yapısı (başlık, mrkdwn alanlar, kritiklik rengi ve buton bağlantıları).
+  * **Microsoft Teams:** Adaptive Card v1.4 formatı (FactSet, TextBlock ve OpenUrl buton aksiyonları).
+  * **Discord:** Rich Embeds formatı (ISO 27035 footer, dinamik renk kodları [Kırmızı: CRITICAL, Turuncu: HIGH, Sarı: MEDIUM, Yeşil: INFO/Sağlıklı]).
+  * **Jira Cloud:** Atlassian Document Format (ADF) ile yapılandırılmış issue REST API v3 formatı (`issuetype: Bug`, `project: SEC`, öncelik eşlemesi).
+  * **SIEM / Generic Webhook:** RFC 3339 zaman damgalı, CEF (Common Event Format) formatlı ve SHA256 bütünlük imzalı veri paketi.
+- **Canlı Simülasyon & cURL:** Tek tıkla cURL komutu kopyalama, canlı webhook test gönderimi simülatörü (200 OK • 118ms) ve kopya pano geri bildirimi.
+- **Arayüz:** `IncidentHubView.tsx` (Kanal Filtreleri, Öncelik Seçimi, Platform Mockup Önizlemeleri, Ham JSON ve cURL Komut Paneli).
+
 ---
 
 ## 🧪 Doğrulama ve Test Durumu
-- **Backend Testleri:** 53/53 birim testi aktif ve başarılı (`test_tls_crypto_auditor`, `test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
+- **Backend Testleri:** 170/170 birim testi aktif ve başarılı (`test_incident_dispatcher`, `test_tls_crypto_auditor`, `test_third_party_security_auditor`, `test_memory_leak_profiler`, `test_localization_auditor`, `test_database_leak_prober`, `test_session_heatmap_engine`, `test_dast_verifier`, `test_api_contract_auditor`, `test_responsive_auditor`, `test_rate_limit_auditor`, `test_waf_leakage_prober`, `test_chaos_engine`).
 - **Frontend Derlemesi:** `npm run build` Turbopack ve TypeScript doğrulaması 0 hata ile derlenmektedir.
 
 ---
 
 ## 💡 Sıradaki Olası Adımlar:
-1. **Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (Automated Incident & Webhook Integration Hub):** Kritik (CRITICAL/HIGH) RCA güvenlik ve performans bulgularını Slack, Microsoft Teams, Discord, Jira veya GitHub Issues formatında zengin kartlara dönüştürme.
-2. **SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (Schema.org & OpenGraph Rich Snippets Auditor):** JSON-LD / Microdata (Schema.org), OpenGraph (`og:image`, `og:title`) ve Twitter Card etiketlerinin sözdizim ve zengin arama sonuçları doğrulaması.
+1. **SEO & Sosyal Paylaşım Yapısal Veri Denetleyicisi (Schema.org & OpenGraph Rich Snippets Auditor):** JSON-LD / Microdata (Schema.org), OpenGraph (`og:image`, `og:title`) ve Twitter Card etiketlerinin sözdizim ve zengin arama sonuçları doğrulaması.
+2. **Konteyner ve Altyapı Güvenlik Yapılandırma Analizörü (Infrastructure & Dockerfile Security Linter):** Dockerfile, Kubernetes manifest ve Nginx güvenlik direktiflerini (`no-new-privileges`, `read_only_root_filesystem`) denetleme.
 

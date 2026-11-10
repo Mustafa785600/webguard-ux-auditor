@@ -136,3 +136,4 @@ async def test_modern_hardened_tls13_perfect_a_plus_score():
     assert report.hsts_status.preload_ready is True
     assert len(findings) == 0
     assert "ssl_protocols TLSv1.2 TLSv1.3;" in report.recommended_nginx_conf
+

@@ -190,6 +190,7 @@ class ScanResult(BaseModel):
     memory_leak_report: Optional['MemoryLeakReport'] = None
     third_party_security_report: Optional['ThirdPartySecurityReport'] = None
     tls_crypto_report: Optional['TLSCryptoReport'] = None
+    incident_hub_report: Optional['IncidentHubReport'] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime
@@ -869,6 +870,50 @@ class TLSCryptoReport(BaseModel):
         "BDDK Bilgi Sistemleri Tebliği (Güçlü Kriptografik Protokol Zorunluluğu)",
         "RFC 8446 (The Transport Layer Security Protocol Version 1.3)",
         "RFC 6797 (HTTP Strict Transport Security - HSTS)"
+    ]
+    audited_at: datetime = Field(default_factory=datetime.utcnow)
+
+# ── Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi (Incident Hub) ──────
+
+class IncidentChannel(str, Enum):
+    SLACK = "SLACK"
+    TEAMS = "TEAMS"
+    DISCORD = "DISCORD"
+    JIRA = "JIRA"
+    GENERIC_WEBHOOK = "GENERIC_WEBHOOK"
+
+class IncidentPayloadCard(BaseModel):
+    card_id: str
+    channel: IncidentChannel
+    target_url: str
+    title: str
+    severity: Severity
+    category: Category
+    formatted_payload: Dict[str, Any]
+    curl_preview: str
+    status: str = "READY_TO_DISPATCH"  # READY_TO_DISPATCH, DISPATCHED, SIMULATED_SUCCESS
+    recommended_action: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class IncidentHubReport(BaseModel):
+    total_incidents_generated: int = 0
+    critical_count: int = 0
+    high_count: int = 0
+    medium_count: int = 0
+    channels_supported: List[str] = ["Slack", "Microsoft Teams", "Discord", "Jira Cloud", "SIEM / Generic Webhook"]
+    cards: List[IncidentPayloadCard] = []
+    webhook_endpoints_configured: List[str] = [
+        "https://hooks.slack.com/services/T00/B00/XXXX",
+        "https://outlook.office.com/webhook/XXXX",
+        "https://discord.com/api/webhooks/XXXX",
+        "https://your-domain.atlassian.net/rest/api/3/issue",
+        "https://siem.corp.internal/v1/incidents"
+    ]
+    compliance_standards: List[str] = [
+        "ISO/IEC 27035 Information Security Incident Management",
+        "NIST SP 800-61 Rev. 2 (Computer Security Incident Handling Guide)",
+        "SOC 2 Type II Incident Alerting & Triage SLA",
+        "PagerDuty / Jira Service Management Automation Specs"
     ]
     audited_at: datetime = Field(default_factory=datetime.utcnow)
 

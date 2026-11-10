@@ -28,6 +28,7 @@ import LocalizationAuditView from "./LocalizationAuditView";
 import MemoryLeakView from "./MemoryLeakView";
 import ThirdPartySecurityView from "./ThirdPartySecurityView";
 import TLSCryptoView from "./TLSCryptoView";
+import { IncidentHubView } from "./IncidentHubView";
 import {
   type Language,
   UI_STRINGS,
@@ -62,7 +63,7 @@ export default function ScanDashboard() {
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
   const [selectedRouteUrl, setSelectedRouteUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY" | "TLS_CRYPTO">("FINDINGS");
+  const [activeTab, setActiveTab] = useState<"FINDINGS" | "PRD" | "CRAWL_GRAPH" | "AUTO_HEAL" | "PERFORMANCE" | "CODEBASE" | "WAF" | "CHAOS" | "RATELIMIT" | "VIEWPORT" | "APICONTRACT" | "DAST" | "SESSION_REPLAY" | "DATABASE" | "LOCALIZATION" | "MEMORY" | "THIRDPARTY" | "TLS_CRYPTO" | "INCIDENT_HUB">("FINDINGS");
   const [showCodebaseStandalone, setShowCodebaseStandalone] = useState<boolean>(false);
   const [showGeneralControl, setShowGeneralControl] = useState<boolean>(false);
   const [showAuditReport, setShowAuditReport] = useState<boolean>(false);
@@ -479,6 +480,14 @@ export default function ScanDashboard() {
                 >
                   🔐 {lang === "tr" ? "SSL/TLS & Kripto" : "TLS & Crypto"}
                 </button>
+                <button
+                  type="button"
+                  className={`btn-action ${activeTab === "INCIDENT_HUB" ? "active" : ""}`}
+                  onClick={() => setActiveTab("INCIDENT_HUB")}
+                  title={lang === "tr" ? "Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi" : "Automated Incident & Webhook Integration Hub"}
+                >
+                  📢 {lang === "tr" ? "Olay Köprüsü" : "Incident Hub"} {result.incident_hub_report && result.incident_hub_report.critical_count > 0 ? `(${result.incident_hub_report.critical_count} Kritik)` : ""}
+                </button>
                 <button className="btn-action" onClick={handleExportJson} title="Export JSON">
                   {t.exportJson}
                 </button>
@@ -657,7 +666,19 @@ export default function ScanDashboard() {
               >
                 🔐 {lang === "tr" ? "SSL/TLS & Kripto" : "TLS & Crypto"} {result.tls_crypto_report ? `(${result.tls_crypto_report.ssl_labs_grade} / ${result.tls_crypto_report.crypto_score}%)` : ""}
               </button>
+              <button
+                type="button"
+                className={`view-tab-btn ${activeTab === "INCIDENT_HUB" ? "active" : ""}`}
+                onClick={() => setActiveTab("INCIDENT_HUB")}
+              >
+                📢 {lang === "tr" ? "Olay Köprüsü & Webhook" : "Incident Hub & Webhook"} {result.incident_hub_report ? `(${result.incident_hub_report.total_incidents_generated} Olay)` : ""}
+              </button>
             </div>
+
+            {/* TAB: Otonom Olay Köprüsü ve Webhook Entegrasyon Merkezi */}
+            {activeTab === "INCIDENT_HUB" && result.incident_hub_report && (
+              <IncidentHubView report={result.incident_hub_report} />
+            )}
 
             {/* TAB: SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı */}
             {activeTab === "TLS_CRYPTO" && (
