@@ -1,4 +1,4 @@
-import { ScanResult, PRDAnalysisResponse, SectorType, AutoHealResponse, CodebaseIntelligenceReport } from "@/types/scan";
+import { ScanResult, PRDAnalysisResponse, SectorType, AutoHealResponse, CodebaseIntelligenceReport, AuditMode, UserPersona } from "@/types/scan";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -10,6 +10,8 @@ export async function startScan(
     maxPages?: number;
     crawlDepth?: number;
     sector?: SectorType;
+    auditMode?: AuditMode;
+    persona?: UserPersona;
   }
 ): Promise<ScanResult> {
   const res = await fetch(`${API_BASE}/scan`, {
@@ -22,6 +24,8 @@ export async function startScan(
       max_pages: crawlerOptions?.maxPages ?? 5,
       crawl_depth: crawlerOptions?.crawlDepth ?? 2,
       sector: crawlerOptions?.sector ?? "AUTO",
+      audit_mode: crawlerOptions?.auditMode ?? "UX_PERSONA",
+      persona: crawlerOptions?.persona ?? "SHOPPER",
     }),
   });
   if (!res.ok) {

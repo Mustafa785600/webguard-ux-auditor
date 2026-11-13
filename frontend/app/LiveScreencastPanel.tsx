@@ -17,13 +17,22 @@ interface LiveScreencastPanelProps {
   targetUrl: string;
   isActive: boolean;
   lang?: "tr" | "en";
+  persona?: string;
   onClose?: () => void;
 }
+
+const PERSONA_BADGES: Record<string, { icon: string; title: string }> = {
+  SHOPPER: { icon: "🛒", title: "Alışverişçi" },
+  RAGE_TESTER: { icon: "⚡", title: "Sabırsız" },
+  ACCESSIBILITY: { icon: "👴", title: "Erişilebilirlik" },
+  POWER_EXPLORER: { icon: "🔍", title: "Kaşif" },
+};
 
 export default function LiveScreencastPanel({
   targetUrl,
   isActive,
   lang = "tr",
+  persona = "SHOPPER",
   onClose,
 }: LiveScreencastPanelProps) {
   const [frame, setFrame] = useState<string | null>(null);
@@ -74,6 +83,7 @@ export default function LiveScreencastPanel({
 
   const { baseHttp, httpUrl, wsUrl } = getBackendUrls();
   const proxyViewportUrl = `${baseHttp}/api/v1/proxy/viewport?url=${encodeURIComponent(targetUrl || "https://example.com")}`;
+  const activePersonaBadge = PERSONA_BADGES[persona] || PERSONA_BADGES.SHOPPER;
 
   // Sync cursor & simulated element behaviors with the active action
   useEffect(() => {
@@ -289,6 +299,9 @@ export default function LiveScreencastPanel({
             <span className="address-live-tag">
               {isActive ? "LIVE CHROMIUM DOM" : "AUDIT COMPLETED"}
             </span>
+            <span className="address-persona-tag" title="Aktif Kullanıcı Kimliği">
+              {activePersonaBadge.icon} {activePersonaBadge.title}
+            </span>
           </div>
 
           <div className="screencast-meta-actions">
@@ -395,7 +408,7 @@ export default function LiveScreencastPanel({
               >
                 <span className="ai-cursor-icon">👆</span>
                 <span className="ai-cursor-tag">
-                  {activeAction ? activeAction.action_type : "AUDIT"}
+                  {activePersonaBadge.icon} {activeAction ? activeAction.action_type : activePersonaBadge.title}
                 </span>
                 <span className="ai-cursor-ripple" />
               </div>

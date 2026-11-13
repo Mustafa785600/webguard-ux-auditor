@@ -16,6 +16,31 @@ export type SectorType =
   | "SAAS_API"
   | "FINTECH_BANKING";
 
+export type AuditMode = "UX_PERSONA" | "ETHICAL_SECURITY";
+
+export type UserPersona = "SHOPPER" | "RAGE_TESTER" | "ACCESSIBILITY" | "POWER_EXPLORER";
+
+export interface PersonaInteractionEvent {
+  timestamp: string;
+  persona: UserPersona;
+  action_type: string;
+  target: string;
+  description: string;
+  outcome: "SUCCESS" | "OBSTACLE" | "FRUSTRATION" | "ACCESSIBILITY_GAP";
+  latency_ms?: number;
+}
+
+export interface PersonaAuditReport {
+  persona: UserPersona;
+  persona_title: string;
+  persona_icon: string;
+  total_actions: number;
+  satisfaction_score: number;
+  friction_points: string[];
+  key_observations: string[];
+  events: PersonaInteractionEvent[];
+}
+
 export interface NetworkRequestTrace {
   url: string;
   method: string;
@@ -164,6 +189,9 @@ export interface ScanResult {
   tls_crypto_report?: TLSCryptoReport;
   incident_hub_report?: IncidentHubReport;
   seo_structured_data_report?: SEOStructuredDataReport;
+  audit_mode?: AuditMode;
+  persona?: UserPersona;
+  persona_audit_report?: PersonaAuditReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;

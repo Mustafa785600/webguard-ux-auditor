@@ -30,6 +30,8 @@ import ThirdPartySecurityView from "./ThirdPartySecurityView";
 import TLSCryptoView from "./TLSCryptoView";
 import { IncidentHubView } from "./IncidentHubView";
 import SEOStructuredDataView from "./SEOStructuredDataView";
+import UserPersonaReportView from "./UserPersonaReportView";
+import { AuditMode, UserPersona } from "@/types/scan";
 import {
   type Language,
   UI_STRINGS,
@@ -52,6 +54,7 @@ const STORAGE_KEY = "webguard_recent_scans";
 export type DashboardTab =
   | "OVERVIEW"
   | "FINDINGS"
+  | "PERSONA"
   | "DAST"
   | "WAF"
   | "THIRDPARTY"
@@ -106,6 +109,10 @@ export default function ScanDashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("OVERVIEW");
   const [sidebarFilter, setSidebarFilter] = useState<string>("");
   const [showConfigDrawer, setShowConfigDrawer] = useState<boolean>(false);
+
+  // Audit Mode & User Persona state
+  const [auditMode, setAuditMode] = useState<AuditMode>("UX_PERSONA");
+  const [selectedPersona, setSelectedPersona] = useState<UserPersona>("SHOPPER");
 
   // Autonomous Crawler state
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
@@ -166,6 +173,8 @@ export default function ScanDashboard() {
         enableCrawler,
         maxPages,
         sector: selectedSector,
+        auditMode,
+        persona: selectedPersona,
       });
       if (data.status === "FAILED") {
         setError(data.error_message ?? "Scan failed.");
@@ -372,6 +381,15 @@ export default function ScanDashboard() {
             badgeVariant: "neutral",
           },
           {
+            id: "PERSONA",
+            label: lang === "tr" ? "Kullanıcı Kimliği (Persona)" : "User Persona Audit",
+            icon: "🎭",
+            badge: result.persona_audit_report
+              ? `${result.persona_audit_report.persona_icon} %${result.persona_audit_report.satisfaction_score}`
+              : null,
+            badgeVariant: result.persona_audit_report && result.persona_audit_report.satisfaction_score >= 80 ? "success" : "warning",
+          },
+          {
             id: "SESSION_REPLAY",
             label: lang === "tr" ? "Isı Haritası & Rage Click" : "Session Replay & Heatmap",
             icon: "🎬",
@@ -480,7 +498,7 @@ export default function ScanDashboard() {
       {/* ── 2. HERO & HEDEF ARAMA / DENETİM BARI ── */}
       <section className="wg-hero-section">
         <div className="wg-hero-badge">
-          ⚡ {lang === "tr" ? "21 Otonom Güvenlik ve Kalite Modülü Aktif" : "21 Autonomous Security & Quality Modules"}
+          ⚡ {lang === "tr" ? "22 Otonom Güvenlik, Kalite ve Persona Modülü Aktif" : "22 Autonomous Security, Quality & Persona Modules"}
         </div>
         <h1 className="wg-hero-title">
           {lang === "tr" ? "Web Sistemleri İçin Otonom Güvenlik Radarı" : "Autonomous Security & Quality Radar"}
@@ -490,6 +508,72 @@ export default function ScanDashboard() {
             ? "Web sisteminizi DAST exploitleri, WAF zaafları, TLS sertifika zinciri, bellek sızıntıları ve Core Web Vitals performansına karşı saniyeler içinde otonom denetleyin."
             : "Audit any web application for DAST exploits, WAF resilience, TLS ciphers, SPA memory leaks, and Core Web Vitals in seconds."}
         </p>
+
+        {/* ── DENETİM MODU & PERSONA SEÇİCİ ── */}
+        <div className="audit-mode-selector-container">
+          <div className="audit-mode-tabs">
+            <button
+              type="button"
+              className={`mode-tab-btn ${auditMode === "UX_PERSONA" ? "active" : ""}`}
+              onClick={() => setAuditMode("UX_PERSONA")}
+            >
+              <span>🎭</span>
+              <span>{lang === "tr" ? "Kullanıcı Deneyimi & Persona Modu" : "UX & Persona Mode"}</span>
+            </button>
+            <button
+              type="button"
+              className={`mode-tab-btn ${auditMode === "ETHICAL_SECURITY" ? "active" : ""}`}
+              onClick={() => setAuditMode("ETHICAL_SECURITY")}
+              title={lang === "tr" ? "Zararsız WAF, Hız Sınırı ve Güvenlik Denetimi" : "Non-destructive Ethical Red Teaming"}
+            >
+              <span>🛡️</span>
+              <span>{lang === "tr" ? "Etik Güvenlik & Dayanıklılık Modu" : "Ethical Red Teaming"}</span>
+            </button>
+          </div>
+
+          {/* Persona Alt Seçici (UX Persona Modu Seçiliyken) */}
+          {auditMode === "UX_PERSONA" && (
+            <div className="persona-pills-row">
+              <span className="persona-picker-lbl">
+                {lang === "tr" ? "Aktif Otonom Kimlik:" : "Autonomous Persona:"}
+              </span>
+              <div className="persona-pills-list">
+                {[
+                  { id: "SHOPPER", icon: "🛒", labelTr: "Alışverişçi", labelEn: "Shopper", descTr: "Sepet, Arama & Fiyat" },
+                  { id: "RAGE_TESTER", icon: "⚡", labelTr: "Sabırsız Kullanıcı", labelEn: "Rage Tester", descTr: "Rage Click & Hızlı Scroll" },
+                  { id: "ACCESSIBILITY", icon: "👴", labelTr: "Erişilebilirlik", labelEn: "A11y Senior", descTr: "Tab Odak & Kontrast" },
+                  { id: "POWER_EXPLORER", icon: "🔍", labelTr: "Kapsamlı Kaşif", labelEn: "Power Explorer", descTr: "Mega Menü & Hiyerarşi" },
+                ].map((p) => {
+                  const isSel = selectedPersona === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`persona-select-chip ${isSel ? "selected" : ""}`}
+                      onClick={() => setSelectedPersona(p.id as UserPersona)}
+                      title={`${isSel ? "✓ " : ""}${lang === "tr" ? p.labelTr : p.labelEn}: ${p.descTr}`}
+                    >
+                      <span className="chip-emoji">{p.icon}</span>
+                      <span className="chip-name">{lang === "tr" ? p.labelTr : p.labelEn}</span>
+                      {isSel && <span className="chip-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {auditMode === "ETHICAL_SECURITY" && (
+            <div className="security-mode-badge-hint">
+              <span>🛡️</span>
+              <span>
+                {lang === "tr"
+                  ? "Etik Beyaz Şapkalı Modu: Hedef sisteme zarar vermeden WAF bypass direnci, 429 hız sınırı (rate limit) ve açık dizin güvenliğini canlı problarla denetler."
+                  : "White-Hat Mode: Non-destructively audits WAF bypass resilience, rate-limiting headers, and directory exposure."}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Tarama Formu */}
         <form onSubmit={handleScan} className="wg-scan-box" id="scan-form">
@@ -743,7 +827,7 @@ export default function ScanDashboard() {
         {/* B. Tarama Sırasında: Canlı HUD ve Ekran Kaydı */}
         {loading && (
           <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
-            <LiveScreencastPanel targetUrl={url} isActive={true} lang={lang} />
+            <LiveScreencastPanel targetUrl={url} isActive={true} lang={lang} persona={selectedPersona} />
           </div>
         )}
 
@@ -1224,6 +1308,9 @@ export default function ScanDashboard() {
                     )}
                   </div>
                 )}
+                {activeTab === "PERSONA" && (
+                  <UserPersonaReportView report={result.persona_audit_report} lang={lang} />
+                )}
                 {activeTab === "SESSION_REPLAY" && (
                   <SessionReplayHeatmapView report={result.session_replay} lang={lang} />
                 )}
@@ -1307,6 +1394,7 @@ export default function ScanDashboard() {
                     targetUrl={result.target_url}
                     isActive={false}
                     lang={lang}
+                    persona={result.persona || selectedPersona}
                     onClose={() => setShowLiveScreencast(false)}
                   />
                 </div>

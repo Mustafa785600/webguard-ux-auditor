@@ -5,7 +5,10 @@ import uuid
 import httpx
 from app.core.config import settings
 from app.core.security import validate_and_sanitize_target_url
-from app.models.schema import Finding, ScanResult, ScanStatus, Category, SectorType, Severity, RCACategory
+from app.models.schema import (
+    Finding, ScanResult, ScanStatus, Category, SectorType, Severity, RCACategory,
+    AuditMode, UserPersona, PersonaAuditReport
+)
 from app.scanners.security.headers import SecurityHeadersScanner
 from app.scanners.security.ssl_tls import SSLTLSScanner
 from app.scanners.security.exposure import ExposureScanner
@@ -47,7 +50,6 @@ SCANNERS = [
     BasicUXScanner(),
     BrokenLinksScanner(),
     FormsA11yScanner(),
-    PlaywrightQAScanner(),
 ]
 
 def classify_finding_rca_and_team(finding: Finding) -> None:
@@ -115,6 +117,8 @@ async def execute_scan(
     max_pages: int = 5,
     crawl_depth: int = 2,
     sector: Optional[SectorType] = SectorType.AUTO,
+    audit_mode: Optional[AuditMode] = AuditMode.UX_PERSONA,
+    persona: Optional[UserPersona] = UserPersona.SHOPPER,
 ) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
@@ -129,6 +133,8 @@ async def execute_scan(
             status=ScanStatus.FAILED,
             error_message=str(exc),
             selected_sector=sector or SectorType.AUTO,
+            audit_mode=audit_mode or AuditMode.UX_PERSONA,
+            persona=persona or UserPersona.SHOPPER,
             started_at=started_at,
             completed_at=datetime.utcnow()
         )
@@ -142,6 +148,7 @@ async def execute_scan(
             logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
     compliance_scanner = ComplianceScanner(requested_sector=sector or SectorType.AUTO)
+    qa_scanner = PlaywrightQAScanner(persona=persona or UserPersona.SHOPPER)
 
     headers = {"User-Agent": settings.USER_AGENT}
     perf_metrics = None
@@ -151,7 +158,7 @@ async def execute_scan(
         follow_redirects=True,
         verify=False
     ) as client:
-        active_scanners = SCANNERS + [compliance_scanner]
+        active_scanners = SCANNERS + [qa_scanner, compliance_scanner]
         scan_coroutines = [scanner.scan(sanitized_url, client) for scanner in active_scanners]
         scanner_results = await asyncio.gather(*scan_coroutines, return_exceptions=True)
 
@@ -489,6 +496,9 @@ async def execute_scan(
         incident_hub_report=incident_hub_report,
         seo_structured_data_report=seo_report,
         crawled_pages_count=crawled_pages_count,
+        audit_mode=audit_mode or AuditMode.UX_PERSONA,
+        persona=persona or UserPersona.SHOPPER,
+        persona_audit_report=getattr(qa_scanner, "persona_audit_report", None),
         started_at=started_at,
         completed_at=datetime.utcnow()
     )

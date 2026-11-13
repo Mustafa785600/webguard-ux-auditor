@@ -35,6 +35,35 @@ class SectorType(str, Enum):
     SAAS_API = "SAAS_API"
     FINTECH_BANKING = "FINTECH_BANKING"
 
+class AuditMode(str, Enum):
+    UX_PERSONA = "UX_PERSONA"
+    ETHICAL_SECURITY = "ETHICAL_SECURITY"
+
+class UserPersona(str, Enum):
+    SHOPPER = "SHOPPER"              # 🛒 E-Ticaret Alışverişçisi
+    RAGE_TESTER = "RAGE_TESTER"      # ⚡ Sabırsız & Hızlı Kullanıcı
+    ACCESSIBILITY = "ACCESSIBILITY"  # 👴 Erişilebilirlik & Yaşlı Kullanıcı
+    POWER_EXPLORER = "POWER_EXPLORER"# 🔍 Kapsamlı Kaşif
+
+class PersonaInteractionEvent(BaseModel):
+    timestamp: str
+    persona: UserPersona
+    action_type: str
+    target: str
+    description: str
+    outcome: str  # "SUCCESS", "OBSTACLE", "FRUSTRATION", "ACCESSIBILITY_GAP"
+    latency_ms: Optional[float] = None
+
+class PersonaAuditReport(BaseModel):
+    persona: UserPersona
+    persona_title: str
+    persona_icon: str
+    total_actions: int
+    satisfaction_score: int  # 0 - 100
+    friction_points: List[str] = []
+    key_observations: List[str] = []
+    events: List[PersonaInteractionEvent] = []
+
 class NetworkRequestTrace(BaseModel):
     url: str
     method: str
@@ -128,6 +157,8 @@ class PRDAnalyzeRequest(BaseModel):
 class ScanRequest(BaseModel):
     url: str = Field(..., example="https://example.com")
     sector: Optional[SectorType] = SectorType.AUTO
+    audit_mode: Optional[AuditMode] = AuditMode.UX_PERSONA
+    persona: Optional[UserPersona] = UserPersona.SHOPPER
     prd_content: Optional[str] = None
     webhook_url: Optional[str] = None
     enable_crawler: Optional[bool] = False
@@ -192,6 +223,9 @@ class ScanResult(BaseModel):
     tls_crypto_report: Optional['TLSCryptoReport'] = None
     incident_hub_report: Optional['IncidentHubReport'] = None
     seo_structured_data_report: Optional['SEOStructuredDataReport'] = None
+    audit_mode: Optional[AuditMode] = AuditMode.UX_PERSONA
+    persona: Optional[UserPersona] = UserPersona.SHOPPER
+    persona_audit_report: Optional[PersonaAuditReport] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime

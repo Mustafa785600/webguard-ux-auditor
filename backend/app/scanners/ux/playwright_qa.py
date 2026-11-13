@@ -5,7 +5,7 @@ import time
 from typing import List, Optional, Dict, Any, Tuple
 import httpx
 from playwright.async_api import async_playwright, Error as PlaywrightError
-from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace
+from app.models.schema import Finding, Category, Severity, RCACategory, NetworkRequestTrace, UserPersona, PersonaAuditReport
 from app.scanners.base import BaseScanner
 from app.services.self_healing import SelfHealingEngine
 from app.services.cookie_manager import CookieConsentManager
@@ -14,6 +14,7 @@ from app.services.menu_explorer import NavigationMenuExplorer
 from app.services.journey_engine import MultiStepJourneyEngine
 from app.services.challenge_detector import ChallengeDetector
 from app.services.live_screencast import live_hub, CDPScreencastManager
+from app.services.persona_engine import PersonaSimulatorEngine
 
 # ---------------------------------------------------------------------------
 # Boundary Value Analysis — test payloads for autonomous form fill
@@ -50,7 +51,9 @@ class PlaywrightQAScanner(BaseScanner):
     - Ready-to-run Playwright .spec.ts script generation
     """
 
-    def __init__(self):
+    def __init__(self, persona: Optional[UserPersona] = UserPersona.SHOPPER):
+        self.persona: UserPersona = persona or UserPersona.SHOPPER
+        self.persona_audit_report: Optional[PersonaAuditReport] = None
         self.network_traces: List[NetworkRequestTrace] = []
         self.self_healing = SelfHealingEngine()
         self.self_healing_events: List[Dict[str, Any]] = []
@@ -329,6 +332,24 @@ class PlaywrightQAScanner(BaseScanner):
                         pass
                 except Exception:
                     pass
+
+                # ── 6.8. Autonomous User Persona Simulation ─────────────────────────
+                try:
+                    persona_rep, persona_findings = await PersonaSimulatorEngine.simulate(
+                        page, target_url, persona=self.persona
+                    )
+                    self.persona_audit_report = persona_rep
+                    findings.extend(persona_findings)
+                    try:
+                        persona_frame = "data:image/png;base64," + base64.b64encode(
+                            await page.screenshot(type="png", full_page=False)
+                        ).decode()
+                        await live_hub.broadcast_frame(persona_frame)
+                    except Exception:
+                        pass
+                except Exception as p_err:
+                    import logging
+                    logging.error(f"[Persona Simulation Error] {p_err}", exc_info=True)
 
                 page_title = await page.title()
 

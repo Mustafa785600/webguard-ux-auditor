@@ -58,6 +58,8 @@ async def run_scan(request: ScanRequest):
         max_pages=request.max_pages or 5,
         crawl_depth=request.crawl_depth or 2,
         sector=request.sector,
+        audit_mode=request.audit_mode,
+        persona=request.persona,
     )
     if result.status == ScanStatus.FAILED and "SSRF Protection" in (result.error_message or ""):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.error_message)
