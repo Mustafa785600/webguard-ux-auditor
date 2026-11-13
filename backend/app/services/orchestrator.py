@@ -157,6 +157,7 @@ async def execute_scan(
 
         # Virgosol Yük, Stres ve Latency SLA Benchmark Motoru
         try:
+            live_hub.record_action("Performans ve Core Web Vitals SLA yük testi yürütülüyor", action_type="JOURNEY", target="perf_engine")
             perf_engine = PerformanceBenchmarkEngine(concurrency=5, total_requests=10)
             perf_metrics, perf_findings = await perf_engine.benchmark(sanitized_url, client=client)
         except Exception as exc:
@@ -167,6 +168,7 @@ async def execute_scan(
         # Virgosol WAF ve Hata Sızıntısı Direnç Testi Motoru
         waf_report = None
         try:
+            live_hub.record_action("WAF ve Hata Sızıntısı güvenlik direnç canarileri test ediliyor", action_type="GATE", target="waf_engine")
             waf_engine = WAFLeakageProbingEngine(concurrency=4)
             waf_report, waf_findings = await waf_engine.audit_waf_and_error_leakage(sanitized_url, client=client)
         except Exception as exc:
@@ -178,6 +180,7 @@ async def execute_scan(
         rate_limit_report = None
         rate_limit_findings = []
         try:
+            live_hub.record_action("Rate-limiting ve kaba kuvvet direnç analizi (15 burst) yapılıyor", action_type="GATE", target="rate_limiter")
             rate_auditor = RateLimitingAuditor(burst_count=15)
             rate_limit_report, rate_limit_findings = await rate_auditor.audit_rate_limiting(sanitized_url, client=client)
         except Exception as exc:
@@ -188,6 +191,7 @@ async def execute_scan(
         multi_viewport_report = None
         resp_findings = []
         try:
+            live_hub.record_action("Çoklu cihaz ve duyarlı tasarım (Responsive) uyumluluğu taranıyor", action_type="SCROLL", target="viewport_auditor")
             resp_auditor = ResponsiveLayoutAuditor()
             multi_viewport_report, resp_findings = await resp_auditor.audit_multi_viewport(sanitized_url, client=client)
         except Exception as exc:
@@ -198,6 +202,7 @@ async def execute_scan(
         dast_report = None
         dast_findings = []
         try:
+            live_hub.record_action("DAST Exploit Verification: XSS, SQLi ve canary enjeksiyonları deneniyor", action_type="GATE", target="dast_verifier")
             dast_verifier = DASTExploitVerifier()
             dast_report, dast_findings = await dast_verifier.verify_vulnerabilities(sanitized_url, client=client)
         except Exception as exc:
@@ -217,6 +222,7 @@ async def execute_scan(
     # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
     chaos_report = None
     try:
+        live_hub.record_action("Kaos mühendisliği ve ağ hata enjeksiyonu yürütülüyor", action_type="GATE", target="chaos_engine")
         chaos_engine = ChaosFaultInjectionEngine()
         chaos_report, chaos_findings = await chaos_engine.run_chaos_experiments(sanitized_url)
         all_findings.extend(chaos_findings)
@@ -232,6 +238,7 @@ async def execute_scan(
     # Virgosol & OWASP API Sözleşme ve Şema Sapması Denetimi (API Contract & Schema Drift)
     api_contract_report = None
     try:
+        live_hub.record_action("API sözleşme ve şema sapması analizi yapılıyor", action_type="TYPE", target="api_contract")
         api_auditor = APIContractDriftAuditor()
         api_contract_report, api_contract_findings = await api_auditor.audit_contract_and_drift(
             sanitized_url, network_traces=network_traces
@@ -254,6 +261,7 @@ async def execute_scan(
     # Virgosol & Hotjar Kullanıcı Oturum Kaydı ve Isı Haritası Motoru (Session Replay & Heatmap)
     session_replay_report = None
     try:
+        live_hub.record_action("Kullanıcı oturumu ve ısı haritası etkileşimleri simüle ediliyor", action_type="SCROLL", target="heatmap_engine")
         heatmap_engine = SessionHeatmapEngine()
         session_replay_report, heatmap_findings = heatmap_engine.analyze_or_generate_session(
             sanitized_url, user_journeys=user_journeys
@@ -266,6 +274,7 @@ async def execute_scan(
     # Veritabanı ve Yavaş Sorgu Sızıntı Denetimi Motoru (Database Leak & Slow Query Prober)
     db_leak_report = None
     try:
+        live_hub.record_action("Veritabanı sızıntısı ve yavaş sorgu probları test ediliyor", action_type="GATE", target="db_prober")
         db_prober = DatabaseLeakSlowQueryProber()
         db_leak_report, db_findings = await db_prober.audit(
             sanitized_url, network_traces=network_traces
@@ -278,6 +287,7 @@ async def execute_scan(
     # Virgosol Çok Dilli (i18n) ve Lokalizasyon Kusurları Denetimi (Localization & i18n Auditor)
     l10n_report = None
     try:
+        live_hub.record_action("I18n yerelleştirme ve çoklu dil eksiklikleri taranıyor", action_type="TYPE", target="i18n_auditor")
         l10n_auditor = LocalizationI18nAuditor()
         l10n_report, l10n_findings = await l10n_auditor.audit_localization(
             sanitized_url, client=client
@@ -290,6 +300,7 @@ async def execute_scan(
     # Virgosol & Chrome DevTools SPA Bellek ve DOM Sızıntı Radarı (Memory & DOM Leak Profiler)
     memory_report = None
     try:
+        live_hub.record_action("DOM düğüm sızıntısı ve bellek profili çıkarılıyor", action_type="JOURNEY", target="memory_profiler")
         mem_profiler = MemoryLeakProfilerEngine()
         memory_report, mem_findings = await mem_profiler.audit_memory_leaks(
             sanitized_url, client=client
@@ -302,6 +313,7 @@ async def execute_scan(
     # Virgosol & W3C Üçüncü Taraf Script, İzleyici ve CSP Sandbox Denetimi (Third-Party Tracker & CSP Sandbox Auditor)
     third_party_report = None
     try:
+        live_hub.record_action("Üçüncü parti bağımlılıklar ve tedarik zinciri güvenliği inceleniyor", action_type="GATE", target="third_party")
         tp_auditor = ThirdPartySecurityAuditor()
         third_party_report, tp_findings = await tp_auditor.audit_third_party_and_csp(
             sanitized_url, client=client, network_traces=network_traces
@@ -314,6 +326,7 @@ async def execute_scan(
     # Virgosol & NIST/PCI-DSS SSL/TLS Sertifika Zinciri ve Modern Kriptografi Sağlığı (TLS/SSL Handshake & Cipher Suite Auditor)
     tls_report = None
     try:
+        live_hub.record_action("TLS/SSL şifreleme ve kriptografik sertifika sağlığı denetleniyor", action_type="GATE", target="tls_auditor")
         tls_auditor = TLSCryptoAuditor()
         tls_report, tls_findings = await tls_auditor.audit_tls_crypto(
             sanitized_url, client=client
@@ -326,6 +339,7 @@ async def execute_scan(
     # Google Search Central & Schema.org / OpenGraph Yapısal Veri Denetleyicisi
     seo_report = None
     try:
+        live_hub.record_action("SEO ve OpenGraph yapısal veri etiketleri denetleniyor", action_type="NAVIGATE", target="seo_auditor")
         raw_html = None
         for scanner in active_scanners:
             if hasattr(scanner, "last_html_content") and scanner.last_html_content:
@@ -357,6 +371,7 @@ async def execute_scan(
     crawled_pages_count = 1
     if enable_crawler:
         try:
+            live_hub.record_action(f"Otonom Crawler: {sanitized_url} ve alt dizinleri taranıyor", action_type="NAVIGATE", target="crawler")
             crawler = AutonomousCrawler()
             crawl_nodes, crawler_findings = await crawler.crawl_and_explore(
                 sanitized_url,

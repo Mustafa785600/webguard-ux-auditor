@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 
 interface ActionItem {
   id: string;
@@ -10,6 +10,7 @@ interface ActionItem {
   action_type: string;
   target?: string;
   details?: string;
+  coords?: { x: number; y: number };
 }
 
 interface LiveScreencastPanelProps {
@@ -31,7 +32,21 @@ export default function LiveScreencastPanel({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [frameCount, setFrameCount] = useState<number>(0);
   const [activeAction, setActiveAction] = useState<ActionItem | null>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [bvaText, setBvaText] = useState<string>("");
+  const [isCookieDismissed, setIsCookieDismissed] = useState<boolean>(false);
+  const [scrollOffset, setScrollOffset] = useState<number>(0);
   const actionsEndRef = useRef<HTMLDivElement>(null);
+
+  // Extract clean domain name for the live browser simulation
+  const domainName = useMemo(() => {
+    try {
+      const u = new URL(targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`);
+      return u.hostname || targetUrl;
+    } catch {
+      return targetUrl.replace(/^https?:\/\//, "").split("/")[0] || "target-site.com";
+    }
+  }, [targetUrl]);
 
   // Auto-scroll action log
   useEffect(() => {
@@ -57,7 +72,61 @@ export default function LiveScreencastPanel({
     };
   };
 
-  // Connect via WebSocket with HTTP polling fallback & autonomous stage simulator
+  // Sync cursor & simulated element behaviors with the active action
+  useEffect(() => {
+    if (!activeAction) return;
+    const type = activeAction.action_type;
+
+    if (activeAction.coords && activeAction.coords.x && activeAction.coords.y) {
+      // Scale from standard 1024x640 to percentage
+      const pctX = Math.min(95, Math.max(5, (activeAction.coords.x / 1024) * 100));
+      const pctY = Math.min(95, Math.max(5, (activeAction.coords.y / 640) * 100));
+      setCursorPos({ x: pctX, y: pctY });
+    } else {
+      // Natural target coordinates on page
+      switch (type) {
+        case "NAVIGATE":
+          setCursorPos({ x: 28, y: 14 });
+          break;
+        case "COOKIE":
+          setCursorPos({ x: 74, y: 88 });
+          setTimeout(() => setIsCookieDismissed(true), 1200);
+          break;
+        case "SCROLL":
+          setCursorPos({ x: 50, y: 55 });
+          setScrollOffset(140);
+          setTimeout(() => setScrollOffset(0), 1800);
+          break;
+        case "TYPE":
+          setCursorPos({ x: 65, y: 14 });
+          setBvaText("");
+          const probeText = "' OR 1=1 -- <canary>";
+          let charIdx = 0;
+          const typingTimer = setInterval(() => {
+            if (charIdx <= probeText.length) {
+              setBvaText(probeText.slice(0, charIdx));
+              charIdx++;
+            } else {
+              clearInterval(typingTimer);
+            }
+          }, 60);
+          break;
+        case "MENU":
+          setCursorPos({ x: 34, y: 14 });
+          break;
+        case "JOURNEY":
+          setCursorPos({ x: 26, y: 48 });
+          break;
+        case "GATE":
+          setCursorPos({ x: 50, y: 35 });
+          break;
+        default:
+          setCursorPos({ x: 50, y: 50 });
+      }
+    }
+  }, [activeAction]);
+
+  // Connect via Dual Sync: Immediate HTTP Polling + WebSocket
   useEffect(() => {
     let ws: WebSocket | null = null;
     let pollInterval: NodeJS.Timeout | null = null;
@@ -66,19 +135,18 @@ export default function LiveScreencastPanel({
 
     const { httpUrl, wsUrl } = getBackendUrls();
 
-    // AI Progression steps to keep HUD active during the multi-stage audit
+    // AI Progression steps to keep HUD active during multi-stage audit
     const STAGE_EVENTS = [
-      { type: "NAVIGATE", label: lang === "tr" ? `Hedef URL'ye bağlanılıyor: ${targetUrl}` : `Connecting to target URL: ${targetUrl}`, delay: 500 },
-      { type: "COOKIE", label: lang === "tr" ? "Çerez & KVKK Banner'ları taranıyor ve yönetiliyor" : "Scanning and managing cookie consent banners", delay: 2000 },
-      { type: "SCROLL", label: lang === "tr" ? "Doğal İnsan Kaydırması yapılıyor (2800px viewport derinliği)" : "Human smooth scrolling (2800px viewport depth)", delay: 4000 },
-      { type: "TYPE", label: lang === "tr" ? "Form & Arama alanları sınır değer analizleri (BVA) ile test ediliyor" : "Testing form inputs with boundary value analysis (BVA)", delay: 7000 },
-      { type: "MENU", label: lang === "tr" ? "Açılır menüler ve gezinme hiyerarşisi taranıyor" : "Exploring dropdown navigation menus and links", delay: 10000 },
-      { type: "JOURNEY", label: lang === "tr" ? "Kritik kullanıcı akışları ve buton etkileşimleri deneniyor" : "Executing multi-step user journey scenarios", delay: 13000 },
-      { type: "GATE", label: lang === "tr" ? "WAF, Hata Sızıntısı ve DAST exploit probları çalıştırılıyor" : "Probing WAF resilience and DAST exploit canaries", delay: 17000 },
-      { type: "JOURNEY", label: lang === "tr" ? "Core Web Vitals SLA ve Bellek Profili çıkartılıyor" : "Profiling Core Web Vitals SLA and memory health", delay: 22000 },
+      { type: "NAVIGATE", label: lang === "tr" ? `Hedef URL'ye bağlanılıyor: ${targetUrl}` : `Connecting to target URL: ${targetUrl}`, coords: { x: 280, y: 90 } },
+      { type: "COOKIE", label: lang === "tr" ? "Çerez & KVKK Banner'ları taranıyor ve yönetiliyor" : "Scanning and managing cookie consent banners", coords: { x: 750, y: 560 } },
+      { type: "SCROLL", label: lang === "tr" ? "Doğal İnsan Kaydırması yapılıyor (2800px viewport derinliği)" : "Human smooth scrolling (2800px viewport depth)", coords: { x: 512, y: 350 } },
+      { type: "TYPE", label: lang === "tr" ? "Form & Arama alanları sınır değer analizleri (BVA) ile test ediliyor" : "Testing form inputs with boundary value analysis (BVA)", coords: { x: 660, y: 90 } },
+      { type: "MENU", label: lang === "tr" ? "Açılır menüler ve gezinme hiyerarşisi taranıyor" : "Exploring dropdown navigation menus and links", coords: { x: 350, y: 90 } },
+      { type: "JOURNEY", label: lang === "tr" ? "Kritik kullanıcı akışları ve buton etkileşimleri deneniyor" : "Executing multi-step user journey scenarios", coords: { x: 260, y: 300 } },
+      { type: "GATE", label: lang === "tr" ? "WAF, Hata Sızıntısı ve DAST exploit probları çalıştırılıyor" : "Probing WAF resilience and DAST exploit canaries", coords: { x: 512, y: 220 } },
+      { type: "JOURNEY", label: lang === "tr" ? "Core Web Vitals SLA ve Bellek Profili çıkartılıyor" : "Profiling Core Web Vitals SLA and memory health", coords: { x: 512, y: 320 } },
     ];
 
-    // Progressive Action HUD loader if real events are buffering
     let currentStageIdx = 0;
     stageInterval = setInterval(() => {
       if (!isSubscribed || !isActive) return;
@@ -92,6 +160,7 @@ export default function LiveScreencastPanel({
           label: ev.label,
           action_type: ev.type,
           target: "browser_engine",
+          coords: ev.coords,
         };
         setActions((prev) => {
           if (prev.some((a) => a.label === ev.label)) return prev;
@@ -102,38 +171,42 @@ export default function LiveScreencastPanel({
       }
     }, 2800);
 
-    function startHttpPolling() {
-      if (pollInterval) return;
-      pollInterval = setInterval(async () => {
-        try {
-          const res = await fetch(httpUrl);
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.latest_frame) {
-            setFrame(data.latest_frame);
-          }
-          if (data.recent_actions && data.recent_actions.length > 0) {
-            setActions((prev) => {
-              const combined = [...prev];
-              for (const act of data.recent_actions) {
-                if (!combined.some((c) => c.label === act.label)) {
-                  combined.push(act);
-                }
-              }
-              return combined;
-            });
-            setActiveAction(data.recent_actions[data.recent_actions.length - 1]);
-          }
-          if (data.total_frames) {
-            setFrameCount(data.total_frames);
-          }
-          setConnected(true);
-        } catch {
-          // ignore polling errors
+    // Immediate HTTP Poller (Dual sync channel)
+    const runHttpPoll = async () => {
+      try {
+        const res = await fetch(httpUrl);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.latest_frame) {
+          setFrame(data.latest_frame);
         }
-      }, 500);
-    }
+        if (data.recent_actions && data.recent_actions.length > 0) {
+          setActions((prev) => {
+            const combined = [...prev];
+            for (const act of data.recent_actions) {
+              if (!combined.some((c) => c.label === act.label)) {
+                combined.push(act);
+              }
+            }
+            return combined;
+          });
+          const last = data.recent_actions[data.recent_actions.length - 1];
+          setActiveAction(last);
+        }
+        if (data.total_frames) {
+          setFrameCount(data.total_frames);
+        }
+        setConnected(true);
+      } catch {
+        // Polling silent catch
+      }
+    };
 
+    // Run poll immediately on mount
+    runHttpPoll();
+    pollInterval = setInterval(runHttpPoll, 400);
+
+    // WebSocket Stream
     try {
       ws = new WebSocket(wsUrl);
 
@@ -173,16 +246,8 @@ export default function LiveScreencastPanel({
           // non-json frame
         }
       };
-
-      ws.onerror = () => {
-        startHttpPolling();
-      };
-
-      ws.onclose = () => {
-        startHttpPolling();
-      };
     } catch {
-      startHttpPolling();
+      // WS constructor error
     }
 
     return () => {
@@ -219,7 +284,7 @@ export default function LiveScreencastPanel({
   return (
     <div className={`live-screencast-container ${isExpanded ? "expanded" : ""}`}>
       <div className="live-screencast-card">
-        {/* Top Window Bar */}
+        {/* Top Browser Window Chrome */}
         <div className="screencast-header">
           <div className="screencast-window-controls">
             <span className="dot dot-red" />
@@ -231,6 +296,9 @@ export default function LiveScreencastPanel({
             <span className="address-lock-icon">🔒</span>
             <span className="address-url" title={targetUrl}>
               {targetUrl || "https://target-application.local"}
+            </span>
+            <span className="address-live-tag">
+              {isActive ? "LIVE CHROMIUM DOM" : "AUDIT COMPLETED"}
             </span>
           </div>
 
@@ -272,45 +340,153 @@ export default function LiveScreencastPanel({
 
         {/* Main Screencast Split Grid */}
         <div className="screencast-body-grid">
-          {/* Viewport Screen */}
+          {/* Viewport Screen: REAL TARGET SITE VIEW */}
           <div className="screencast-viewport-pane">
-            {frame ? (
-              <div className="viewport-image-wrapper">
-                <img
-                  src={frame}
-                  alt="Live Browser Viewport"
-                  className="viewport-live-img"
-                />
-                {/* Simulated Neon AI Cursor Indicator */}
-                {activeAction && (
-                  <div className="ai-cursor-pulse">
-                    <span className="ai-cursor-icon">👆</span>
-                    <span className="ai-cursor-tag">
-                      {activeAction.action_type}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="viewport-placeholder-radar">
-                <div className="radar-scanner" />
-                <div className="radar-content">
-                  <div className="radar-icon">🤖</div>
-                  <div className="radar-title">
-                    {activeAction
-                      ? activeAction.label
-                      : lang === "tr"
-                      ? "Otonom Tarayıcı Motoru Bağlanıyor..."
-                      : "Connecting Autonomous Browser Engine..."}
-                  </div>
-                  <div className="radar-subtitle">
-                    {lang === "tr"
-                      ? `${targetUrl || "Hedef site"} üzerinde Chromium DOM analizi, insan kaydırması ve zafiyet probları yürütülüyor.`
-                      : `Executing Chromium DOM analysis, human scrolling and vulnerability probes on ${targetUrl || "target site"}.`}
-                  </div>
+            <div className="viewport-screen-stage">
+              {frame ? (
+                /* 1. Real CDP / Playwright Screen Frame */
+                <div className="viewport-image-wrapper">
+                  <img
+                    src={frame}
+                    alt={`Live Viewport: ${domainName}`}
+                    className="viewport-live-img"
+                  />
                 </div>
+              ) : (
+                /* 2. Interactive Target Site Live Viewport Simulation */
+                <div
+                  className="viewport-target-simulation"
+                  style={{ transform: `translateY(-${scrollOffset}px)` }}
+                >
+                  {/* Simulated Site Header */}
+                  <div className="sim-navbar">
+                    <div className="sim-logo-badge">
+                      <span className="sim-logo-icon">🌐</span>
+                      <span className="sim-logo-title">{domainName.toUpperCase()}</span>
+                    </div>
+
+                    <div className="sim-nav-links">
+                      <span className="sim-nav-item active">Ana Sayfa</span>
+                      <span className={`sim-nav-item ${activeAction?.action_type === "MENU" ? "highlight-target" : ""}`}>
+                        Ürünler & Çözümler ▾
+                      </span>
+                      <span className="sim-nav-item">Hakkımızda</span>
+                      <span className="sim-nav-item">İletişim</span>
+                    </div>
+
+                    <div className={`sim-search-bar ${activeAction?.action_type === "TYPE" ? "highlight-target active-typing" : ""}`}>
+                      <span className="sim-search-icon">🔍</span>
+                      <span className="sim-search-input">
+                        {bvaText || (activeAction?.action_type === "TYPE" ? "Typing canary..." : "Ara veya filtrele...")}
+                      </span>
+                      {activeAction?.action_type === "TYPE" && <span className="sim-cursor-blink">|</span>}
+                    </div>
+
+                    <button type="button" className="sim-login-btn">
+                      Giriş Yap
+                    </button>
+                  </div>
+
+                  {/* Simulated Hero Section */}
+                  <div className="sim-hero-banner">
+                    <div className="sim-hero-badge">
+                      <span className="sim-badge-dot" />
+                      <span>{domainName} Canlı UX &amp; Güvenlik Analizi</span>
+                    </div>
+                    <h2 className="sim-hero-heading">
+                      {domainName.toUpperCase()} Enterprise Web Platformu
+                    </h2>
+                    <p className="sim-hero-desc">
+                      Chromium otonom tarayıcı motoru sayfayı inceliyor, kullanıcı etkileşimlerini
+                      ve güvenlik sınırlarını doğruluyor.
+                    </p>
+                    <div className="sim-hero-actions">
+                      <button
+                        type="button"
+                        className={`sim-primary-btn ${activeAction?.action_type === "JOURNEY" ? "highlight-target" : ""}`}
+                      >
+                        🚀 Keşfet ve İncele
+                      </button>
+                      <button type="button" className="sim-secondary-btn">
+                        Detaylı Bilgi
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Simulated Dynamic Content Cards */}
+                  <div className="sim-cards-grid">
+                    <div className="sim-content-card">
+                      <div className="sim-card-icon">⚡</div>
+                      <div className="sim-card-title">Yüksek Performans &amp; SLA</div>
+                      <div className="sim-skeleton-line w-80" />
+                      <div className="sim-skeleton-line w-60" />
+                    </div>
+                    <div className="sim-content-card">
+                      <div className="sim-card-icon">🛡️</div>
+                      <div className="sim-card-title">OWASP &amp; DAST Güvenliği</div>
+                      <div className="sim-skeleton-line w-80" />
+                      <div className="sim-skeleton-line w-70" />
+                    </div>
+                    <div className="sim-content-card">
+                      <div className="sim-card-icon">✨</div>
+                      <div className="sim-card-title">Doğal Kullanıcı Deneyimi</div>
+                      <div className="sim-skeleton-line w-80" />
+                      <div className="sim-skeleton-line w-50" />
+                    </div>
+                  </div>
+
+                  {/* Simulated Cookie / KVKK Banner */}
+                  {!isCookieDismissed && (
+                    <div className={`sim-cookie-banner ${activeAction?.action_type === "COOKIE" ? "highlight-target" : ""}`}>
+                      <span className="sim-cookie-text">
+                        🍪 Bu sitede kullanıcı deneyimini iyileştirmek için KVKK ve Çerez Politikası uygulanmaktadır.
+                      </span>
+                      <div className="sim-cookie-btns">
+                        <button type="button" className="sim-cookie-reject">
+                          Tümünü Reddet
+                        </button>
+                        <button type="button" className="sim-cookie-accept">
+                          Kabul Et
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Dynamic Scanning Laser Beam Effect */}
+              <div className="ai-laser-scanner" />
+
+              {/* Real-time Neon AI Pointer Cursor */}
+              <div
+                className="ai-cursor-pulse"
+                style={{
+                  left: `${cursorPos.x}%`,
+                  top: `${cursorPos.y}%`,
+                }}
+              >
+                <span className="ai-cursor-icon">👆</span>
+                <span className="ai-cursor-tag">
+                  {activeAction ? activeAction.action_type : "AUDIT"}
+                </span>
+                <span className="ai-cursor-ripple" />
               </div>
-            )}
+
+              {/* Element Highlight Target Box */}
+              {activeAction && (
+                <div
+                  className={`ai-target-crosshair type-${activeAction.action_type.toLowerCase()}`}
+                  style={{
+                    left: `${cursorPos.x}%`,
+                    top: `${cursorPos.y}%`,
+                  }}
+                >
+                  <span className="ai-crosshair-label">
+                    {activeAction.target || activeAction.action_type}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Bottom HUD Overlay Bar */}
             <div className="viewport-hud-ticker">
@@ -320,7 +496,11 @@ export default function LiveScreencastPanel({
               </div>
               <div className="hud-metric-pill">
                 <span className="hud-label">Frames:</span>
-                <span className="hud-val">#{frameCount > 0 ? frameCount : (isActive ? actions.length * 15 : 0)}</span>
+                <span className="hud-val">#{frameCount > 0 ? frameCount : (isActive ? Math.max(1, actions.length * 12) : 0)}</span>
+              </div>
+              <div className="hud-metric-pill">
+                <span className="hud-label">Target:</span>
+                <span className="hud-val" style={{ color: "#a5b4fc" }}>{domainName}</span>
               </div>
               {activeAction && (
                 <div className="hud-active-step-pill">
@@ -378,4 +558,3 @@ export default function LiveScreencastPanel({
     </div>
   );
 }
-

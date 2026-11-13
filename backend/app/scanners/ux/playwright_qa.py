@@ -177,7 +177,7 @@ class PlaywrightQAScanner(BaseScanner):
                 page.on("response",       handle_response)
 
                 # ── 1. Navigate ──────────────────────────────────────────
-                live_hub.record_action(f"Hedef URL'ye bağlanılıyor: {target_url}", action_type="NAVIGATE", target=target_url)
+                live_hub.record_action(f"Hedef URL'ye bağlanılıyor: {target_url}", action_type="NAVIGATE", target=target_url, coords={"x": 640, "y": 70})
                 try:
                     await page.goto(target_url, wait_until="domcontentloaded", timeout=15000)
                     await page.wait_for_timeout(1500)
@@ -198,8 +198,15 @@ class PlaywrightQAScanner(BaseScanner):
                 try:
                     consent_res = await CookieConsentManager.dismiss_cookie_banner(page)
                     if consent_res.detected:
-                        live_hub.record_action(f"Çerez / KVKK: {consent_res.details}", action_type="COOKIE", target=consent_res.button_text or "banner")
+                        live_hub.record_action(f"Çerez / KVKK: {consent_res.details}", action_type="COOKIE", target=consent_res.button_text or "banner", coords={"x": 640, "y": 700})
                         interaction_log.append(f"Cookie / KVKK: {consent_res.details}")
+                        try:
+                            cookie_frame = "data:image/png;base64," + base64.b64encode(
+                                await page.screenshot(type="png", full_page=False)
+                            ).decode()
+                            await live_hub.broadcast_frame(cookie_frame)
+                        except Exception:
+                            pass
                         if consent_res.dark_pattern_detected:
                             forced_cookie_finding = CookieConsentManager.formulate_compliance_finding(consent_res, target_url)
                             if forced_cookie_finding:
@@ -214,8 +221,15 @@ class PlaywrightQAScanner(BaseScanner):
                         page, max_steps=8, step_px=350, pause_ms=130, return_to_top=True
                     )
                     if scroll_res.total_scrolled_px > 0:
-                        live_hub.record_action(f"Doğal İnsan Kaydırması: {scroll_res.total_scrolled_px}px ({scroll_res.scroll_steps} adım)", action_type="SCROLL", target="viewport")
+                        live_hub.record_action(f"Doğal İnsan Kaydırması: {scroll_res.total_scrolled_px}px ({scroll_res.scroll_steps} adım)", action_type="SCROLL", target="viewport", coords={"x": 640, "y": 420})
                         interaction_log.append(f"Smooth Scroll: {scroll_res.details}")
+                        try:
+                            scroll_frame = "data:image/png;base64," + base64.b64encode(
+                                await page.screenshot(type="png", full_page=False)
+                            ).decode()
+                            await live_hub.broadcast_frame(scroll_frame)
+                        except Exception:
+                            pass
                         if scroll_res.broken_images_detected > 0:
                             broken_finding = HumanScrollEngine.formulate_broken_assets_finding(scroll_res, target_url)
                             if broken_finding:
@@ -246,10 +260,18 @@ class PlaywrightQAScanner(BaseScanner):
 
                 # ── 4. Autonomous form fill (Phase 2 core) ───────────────
                 if not challenge_gate:
+                    live_hub.record_action("Form & Arama alanları sınır değer analizleri (BVA) ile test ediliyor", action_type="TYPE", target="inputs", coords={"x": 520, "y": 260})
                     form_findings = await self._test_forms_autonomously(
                         page, target_url, interaction_log
                     )
                     findings.extend(form_findings)
+                    try:
+                        form_frame = "data:image/png;base64," + base64.b64encode(
+                            await page.screenshot(type="png", full_page=False)
+                        ).decode()
+                        await live_hub.broadcast_frame(form_frame)
+                    except Exception:
+                        pass
 
                 # ── 5. Navigation link traversal ─────────────────────────
                 nav_findings = await self._traverse_nav_links(
@@ -259,12 +281,20 @@ class PlaywrightQAScanner(BaseScanner):
 
                 # ── 5.5. Multi-Layer Navigation & Mega-Menu Exploration ──
                 try:
+                    live_hub.record_action("Açılır menüler ve gezinme hiyerarşisi taranıyor", action_type="MENU", target="navigation", coords={"x": 260, "y": 80})
                     menu_res = await NavigationMenuExplorer.explore_dropdown_menus(page, base_url=target_url)
                     if menu_res.menus_probed > 0:
                         interaction_log.append(f"Navigation: {menu_res.details}")
                         menu_finding = NavigationMenuExplorer.formulate_menu_summary_finding(menu_res, target_url)
                         if menu_finding:
                             findings.append(menu_finding)
+                    try:
+                        menu_frame = "data:image/png;base64," + base64.b64encode(
+                            await page.screenshot(type="png", full_page=False)
+                        ).decode()
+                        await live_hub.broadcast_frame(menu_frame)
+                    except Exception:
+                        pass
                 except Exception:
                     pass
 
@@ -281,6 +311,7 @@ class PlaywrightQAScanner(BaseScanner):
 
                 # ── 6.5. Multi-Step User Journey & State Transition Execution ──
                 try:
+                    live_hub.record_action("Kritik kullanıcı akışları ve buton etkileşimleri deneniyor", action_type="JOURNEY", target="cta_button", coords={"x": 640, "y": 480})
                     journey_res = await MultiStepJourneyEngine.execute_best_journey(page, target_url)
                     if journey_res:
                         self.user_journeys.append(journey_res.to_dict())
@@ -289,6 +320,13 @@ class PlaywrightQAScanner(BaseScanner):
                         if journey_finding:
                             journey_finding.screenshot_before_b64 = screenshot_initial_b64
                             findings.append(journey_finding)
+                    try:
+                        journey_frame = "data:image/png;base64," + base64.b64encode(
+                            await page.screenshot(type="png", full_page=False)
+                        ).decode()
+                        await live_hub.broadcast_frame(journey_frame)
+                    except Exception:
+                        pass
                 except Exception:
                     pass
 
@@ -309,6 +347,7 @@ class PlaywrightQAScanner(BaseScanner):
                     screenshot_final_b64 = "data:image/png;base64," + base64.b64encode(
                         await page.screenshot(type="png", full_page=False)
                     ).decode()
+                    await live_hub.broadcast_frame(screenshot_final_b64)
                 except Exception:
                     screenshot_final_b64 = screenshot_initial_b64
 
