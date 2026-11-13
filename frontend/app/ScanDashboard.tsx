@@ -597,36 +597,53 @@ export default function ScanDashboard() {
 
         {/* Son Taramalar ve Hızlı Hedef Çipleri */}
         <div className="wg-history-bar">
-          <div className="wg-history-list">
-            <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
-              {recentScans.length > 0 ? t.recentAudits : t.quickTargets}:
+          <div className="wg-history-header-row">
+            <span className="wg-history-label-badge">
+              <span>🕒</span>
+              <span>{recentScans.length > 0 ? t.recentAudits : t.quickTargets}</span>
+              {recentScans.length > 0 && (
+                <span className="wg-history-count-pill">{recentScans.length}</span>
+              )}
             </span>
+            {recentScans.length > 0 && (
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="wg-history-clear-btn"
+                title={lang === "tr" ? "Son taranan siteleri temizle" : "Clear recent targets"}
+              >
+                <span>🗑️</span>
+                <span>{t.clear}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="wg-history-list">
             {(recentScans.length > 0
               ? recentScans
               : ["https://example.com", "https://google.com", "https://github.com"]
-            ).map((hUrl) => (
-              <button
-                key={hUrl}
-                type="button"
-                onClick={() => {
-                  setUrl(hUrl);
-                  runScan(hUrl);
-                }}
-                className="wg-history-chip"
-              >
-                {hUrl}
-              </button>
-            ))}
+            ).map((hUrl) => {
+              const match = hUrl.match(/^(https?:\/\/)(.*)$/i);
+              const proto = match ? match[1] : "";
+              const body = match ? match[2] : hUrl;
+              return (
+                <button
+                  key={hUrl}
+                  type="button"
+                  onClick={() => {
+                    setUrl(hUrl);
+                    runScan(hUrl);
+                  }}
+                  className="wg-history-chip"
+                  title={`${hUrl} - ${lang === "tr" ? "Tek tıkla hemen tara" : "Click to scan"}`}
+                >
+                  <span className="chip-icon">🌐</span>
+                  {proto && <span className="chip-proto">{proto}</span>}
+                  <span className="chip-body">{body}</span>
+                </button>
+              );
+            })}
           </div>
-          {recentScans.length > 0 && (
-            <button
-              type="button"
-              onClick={clearHistory}
-              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}
-            >
-              {t.clear}
-            </button>
-          )}
         </div>
 
         {error && <div className="scan-error" role="alert">{error}</div>}
