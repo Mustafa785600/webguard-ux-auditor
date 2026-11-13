@@ -169,3 +169,4 @@ def test_clean_hardened_seo_perfect_score():
     assert report.schema_entities[0].is_valid is True
     assert len(findings) == 1
     assert findings[0].severity == Severity.INFO
+

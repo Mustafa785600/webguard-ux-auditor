@@ -658,3 +658,4 @@ export default function SEOStructuredDataView({
     </div>
   );
 }
+

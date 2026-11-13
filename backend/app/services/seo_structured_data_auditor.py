@@ -717,3 +717,4 @@ export const metadata: Metadata = {{
             )
 
         return report, findings
+
