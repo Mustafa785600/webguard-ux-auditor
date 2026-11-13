@@ -49,3 +49,13 @@ async def test_screencast_http_state_endpoint():
         assert "recent_actions" in data
         assert "total_frames" in data
 
+
+@pytest.mark.asyncio
+async def test_proxy_viewport_ssrf_blocked():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/proxy/viewport?url=http://127.0.0.1:8000")
+        assert response.status_code == 200
+        assert "SSRF Koruması Devrede" in response.text
+
+

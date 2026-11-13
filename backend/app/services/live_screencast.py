@@ -29,67 +29,12 @@ class LiveStreamHub:
         self.total_frames_emitted: int = 0
         self.started_at: Optional[float] = None
 
-    @staticmethod
-    def _create_initial_placeholder_svg(url: str) -> str:
-        import base64
-        clean = url.replace("https://", "").replace("http://", "").split("/")[0]
-        domain_name = clean if clean else "target-site.com"
-        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="640" viewBox="0 0 1024 640">
-  <rect width="1024" height="640" fill="#0b0f19"/>
-  <rect width="1024" height="44" fill="#111827"/>
-  <circle cx="22" cy="22" r="5" fill="#ef4444"/>
-  <circle cx="38" cy="22" r="5" fill="#f59e0b"/>
-  <circle cx="54" cy="22" r="5" fill="#10b981"/>
-  <rect x="80" y="10" width="720" height="24" rx="4" fill="#1f2937" stroke="#374151" stroke-width="1"/>
-  <text x="95" y="26" fill="#10b981" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="11">🔒 https://{domain_name}/</text>
-  <rect y="44" width="1024" height="56" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
-  <rect x="36" y="58" width="130" height="26" rx="4" fill="#2563eb" opacity="0.9"/>
-  <text x="46" y="75" fill="#ffffff" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" font-size="13">{domain_name.upper()}</text>
-  <rect x="250" y="64" width="60" height="14" rx="3" fill="#334155"/>
-  <rect x="330" y="64" width="60" height="14" rx="3" fill="#334155"/>
-  <rect x="410" y="64" width="60" height="14" rx="3" fill="#334155"/>
-  <rect x="880" y="58" width="100" height="26" rx="5" fill="#6366f1"/>
-  <text x="905" y="75" fill="#ffffff" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="11">Giriş Yap</text>
-  <rect x="36" y="130" width="540" height="28" rx="4" fill="#1e293b"/>
-  <text x="46" y="150" fill="#f8fafc" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" font-size="16">{domain_name} - Otonom UX &amp; Güvenlik Denetimi</text>
-  <rect x="36" y="172" width="420" height="14" rx="3" fill="#334155"/>
-  <rect x="36" y="196" width="340" height="14" rx="3" fill="#334155"/>
-  <rect x="36" y="230" width="120" height="32" rx="5" fill="#2563eb"/>
-  <text x="60" y="251" fill="#ffffff" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" font-size="12">Keşfet</text>
-  <rect x="168" y="230" width="120" height="32" rx="5" fill="#1e293b" stroke="#2563eb" stroke-width="1"/>
-  <text x="195" y="251" fill="#93c5fd" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="12">İncele</text>
-  <rect x="36" y="295" width="295" height="170" rx="8" fill="#111827" stroke="#1f2937" stroke-width="1"/>
-  <rect x="56" y="315" width="46" height="46" rx="6" fill="#1e293b"/>
-  <rect x="56" y="380" width="160" height="16" rx="3" fill="#334155"/>
-  <rect x="56" y="408" width="220" height="11" rx="3" fill="#1e293b"/>
-  <rect x="56" y="426" width="180" height="11" rx="3" fill="#1e293b"/>
-  <rect x="360" y="295" width="295" height="170" rx="8" fill="#111827" stroke="#1f2937" stroke-width="1"/>
-  <rect x="380" y="315" width="46" height="46" rx="6" fill="#1e293b"/>
-  <rect x="380" y="380" width="160" height="16" rx="3" fill="#334155"/>
-  <rect x="380" y="408" width="220" height="11" rx="3" fill="#1e293b"/>
-  <rect x="380" y="426" width="180" height="11" rx="3" fill="#1e293b"/>
-  <rect x="684" y="295" width="295" height="170" rx="8" fill="#111827" stroke="#1f2937" stroke-width="1"/>
-  <rect x="704" y="315" width="46" height="46" rx="6" fill="#1e293b"/>
-  <rect x="704" y="380" width="160" height="16" rx="3" fill="#334155"/>
-  <rect x="704" y="408" width="220" height="11" rx="3" fill="#1e293b"/>
-  <rect x="704" y="426" width="180" height="11" rx="3" fill="#1e293b"/>
-  <rect x="180" y="520" width="664" height="64" rx="8" fill="#0f172a" stroke="#2563eb" stroke-width="1"/>
-  <text x="205" y="555" fill="#e2e8f0" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="11.5">🍪 Bu sitede kullanıcı deneyimini geliştirmek için KVKK ve Çerez Politikası uygulanmaktadır.</text>
-  <rect x="635" y="538" width="95" height="26" rx="4" fill="#ef4444" opacity="0.85"/>
-  <text x="645" y="555" fill="#ffffff" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" font-size="10.5">Tümünü Reddet</text>
-  <rect x="738" y="538" width="85" height="26" rx="4" fill="#10b981" opacity="0.85"/>
-  <text x="752" y="555" fill="#ffffff" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="bold" font-size="10.5">Kabul Et</text>
-  <line x1="0" y1="270" x2="1024" y2="270" stroke="#06b6d4" stroke-width="2" opacity="0.75"/>
-</svg>'''
-        encoded = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-        return f"data:image/svg+xml;base64,{encoded}"
-
     def start_session(self, target_url: str):
         self.is_active = True
         self.target_url = target_url
-        self.latest_frame_b64 = self._create_initial_placeholder_svg(target_url)
+        self.latest_frame_b64 = None
         self.recent_actions.clear()
-        self.total_frames_emitted = 1
+        self.total_frames_emitted = 0
         self.started_at = time.time()
         self.record_action(
             label=f"Canlı tarayıcı oturumu başlatıldı: {target_url}",

@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
+import httpx
 from typing import Optional
 from pydantic import BaseModel
 from app.models.schema import (
@@ -97,5 +99,102 @@ async def analyze_custom_codebase(request: CodebaseAnalyzeRequest):
     """
     engine = CodebaseIntelligenceEngine(root_dir=request.root_path)
     return engine.analyze()
+
+
+@router.get("/proxy/viewport", response_class=HTMLResponse)
+async def proxy_target_viewport(url: str):
+    """
+    Hedef web sitesinin (örn. https://www.dpu.edu.tr/ veya https://tcaree.com/)
+    orijinal HTML ve kaynaklarını canlı proxy ile tarayıcı viewport iframe'ine yansıtır.
+    X-Frame-Options ve CSP kısıtlamalarını aşmak için backend üzerinden çekip
+    <base href="{url}"> enjekte eder.
+    """
+    cleaned_url = url.strip()
+    if not (cleaned_url.startswith("http://") or cleaned_url.startswith("https://")):
+        cleaned_url = f"https://{cleaned_url}"
+
+    try:
+        sanitized_url = validate_and_sanitize_target_url(cleaned_url)
+    except Exception as exc:
+        if "SSRF Protection" in str(exc):
+            return HTMLResponse(
+                content=f"""
+                <!DOCTYPE html><html><body style="background:#0b0f19;color:#f87171;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+                <div style="background:#111827;border:1px solid #ef4444;border-radius:8px;padding:20px;text-align:center;">
+                    <h3>SSRF Koruması Devrede</h3>
+                    <p style="color:#94a3b8;font-size:13px;">Yerel ağ veya özel IP adreslerine proxy erişimi engellendi: <code>{cleaned_url}</code></p>
+                </div></body></html>
+                """,
+                status_code=200
+            )
+        sanitized_url = cleaned_url
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 WebGuard/2.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, verify=False) as client:
+            resp = await client.get(sanitized_url, headers=headers)
+            raw_html = resp.text
+
+            # Base tag injection: Ensure all relative CSS, JS, images load from target
+            base_tag = f'<base href="{sanitized_url}">'
+            # Script to disable target link hijacking so clicks don't navigate out
+            safety_script = """
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('a').forEach(function(el) {
+                    el.setAttribute('target', '_self');
+                });
+            });
+            </script>
+            """
+            
+            import re
+            if re.search(r"<head[^>]*>", raw_html, flags=re.IGNORECASE):
+                injected_html = re.sub(
+                    r"(<head[^>]*>)",
+                    r"\1\n  " + base_tag + "\n  " + safety_script,
+                    raw_html,
+                    count=1,
+                    flags=re.IGNORECASE
+                )
+            else:
+                injected_html = f"{base_tag}\n{safety_script}\n{raw_html}"
+
+            return HTMLResponse(
+                content=injected_html,
+                status_code=resp.status_code,
+                headers={
+                    "Content-Type": "text/html; charset=utf-8",
+                    "X-Robots-Tag": "noindex, nofollow",
+                }
+            )
+    except Exception as err:
+        error_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ background: #0b0f19; color: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }}
+                .err-box {{ background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 24px; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }}
+                h3 {{ color: #f87171; margin-top: 0; font-size: 16px; }}
+                code {{ background: #1e293b; color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="err-box">
+                <h3>Hedef Sayfa Canlı Yansıtılamadı</h3>
+                <p>Hedef Adres: <code>{sanitized_url}</code></p>
+                <p style="font-size: 12px; color: #64748b; margin-top: 12px;">Sebep: {str(err)}</p>
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=error_html, status_code=200)
+
 
 

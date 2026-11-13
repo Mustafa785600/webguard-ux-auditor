@@ -33,9 +33,7 @@ export default function LiveScreencastPanel({
   const [frameCount, setFrameCount] = useState<number>(0);
   const [activeAction, setActiveAction] = useState<ActionItem | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
-  const [bvaText, setBvaText] = useState<string>("");
-  const [isCookieDismissed, setIsCookieDismissed] = useState<boolean>(false);
-  const [scrollOffset, setScrollOffset] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<"web" | "cdp">("web");
   const actionsEndRef = useRef<HTMLDivElement>(null);
 
   // Extract clean domain name for the live browser simulation
@@ -57,6 +55,7 @@ export default function LiveScreencastPanel({
   const getBackendUrls = () => {
     if (typeof window === "undefined") {
       return {
+        baseHttp: "http://localhost:8000",
         httpUrl: "http://localhost:8000/api/v1/screencast/state",
         wsUrl: "ws://localhost:8000/api/v1/ws/screencast",
       };
@@ -67,10 +66,14 @@ export default function LiveScreencastPanel({
     const wsProto = isHttps ? "wss:" : "ws:";
     const baseWs = baseHttp.replace(/^http(s)?:/, wsProto);
     return {
+      baseHttp,
       httpUrl: `${baseHttp}/api/v1/screencast/state`,
       wsUrl: `${baseWs}/api/v1/ws/screencast`,
     };
   };
+
+  const { baseHttp, httpUrl, wsUrl } = getBackendUrls();
+  const proxyViewportUrl = `${baseHttp}/api/v1/proxy/viewport?url=${encodeURIComponent(targetUrl || "https://example.com")}`;
 
   // Sync cursor & simulated element behaviors with the active action
   useEffect(() => {
@@ -90,26 +93,12 @@ export default function LiveScreencastPanel({
           break;
         case "COOKIE":
           setCursorPos({ x: 74, y: 88 });
-          setTimeout(() => setIsCookieDismissed(true), 1200);
           break;
         case "SCROLL":
           setCursorPos({ x: 50, y: 55 });
-          setScrollOffset(140);
-          setTimeout(() => setScrollOffset(0), 1800);
           break;
         case "TYPE":
           setCursorPos({ x: 65, y: 14 });
-          setBvaText("");
-          const probeText = "' OR 1=1 -- <canary>";
-          let charIdx = 0;
-          const typingTimer = setInterval(() => {
-            if (charIdx <= probeText.length) {
-              setBvaText(probeText.slice(0, charIdx));
-              charIdx++;
-            } else {
-              clearInterval(typingTimer);
-            }
-          }, 60);
           break;
         case "MENU":
           setCursorPos({ x: 34, y: 14 });
@@ -303,13 +292,33 @@ export default function LiveScreencastPanel({
           </div>
 
           <div className="screencast-meta-actions">
+            {/* View Mode Toggle: Real Target Web vs Playwright CDP Frame */}
+            <div className="viewport-viewmode-toggles">
+              <button
+                type="button"
+                className={`viewmode-btn ${viewMode === "web" ? "active" : ""}`}
+                onClick={() => setViewMode("web")}
+                title={lang === "tr" ? "Hedef web sitesini canlı yansıt" : "Stream live target website"}
+              >
+                🌐 {lang === "tr" ? "Gerçek Sayfa" : "Live Web"}
+              </button>
+              <button
+                type="button"
+                className={`viewmode-btn ${viewMode === "cdp" ? "active" : ""}`}
+                onClick={() => setViewMode("cdp")}
+                title={lang === "tr" ? "Chromium Playwright ekran karesi" : "Chromium CDP screen capture"}
+              >
+                📷 {lang === "tr" ? "Chromium Ekranı" : "Chromium CDP"} {frame ? "🟢" : ""}
+              </button>
+            </div>
+
             <div className="live-badge-indicator">
               <span className="live-pulse-dot" />
               <span className="live-badge-text">
                 {isActive
                   ? lang === "tr"
-                    ? "CANLI YAYIN (LIVE HUD)"
-                    : "LIVE STREAM (HUD)"
+                    ? "CANLI YAYIN"
+                    : "LIVE STREAM"
                   : lang === "tr"
                   ? "TAMAMLANDI"
                   : "COMPLETED"}
@@ -343,114 +352,33 @@ export default function LiveScreencastPanel({
           {/* Viewport Screen: REAL TARGET SITE VIEW */}
           <div className="screencast-viewport-pane">
             <div className="viewport-screen-stage">
-              {frame ? (
-                /* 1. Real CDP / Playwright Screen Frame */
+              {viewMode === "web" ? (
+                /* 1. Real Target Website rendered live via Proxy Viewport */
+                <iframe
+                  key={targetUrl}
+                  src={proxyViewportUrl}
+                  title={`Live Target Viewport: ${domainName}`}
+                  className="viewport-live-iframe"
+                  sandbox="allow-same-origin allow-scripts allow-forms"
+                />
+              ) : frame ? (
+                /* 2. Real CDP / Playwright Screen Frame */
                 <div className="viewport-image-wrapper">
                   <img
                     src={frame}
-                    alt={`Live Viewport: ${domainName}`}
+                    alt={`Chromium Viewport: ${domainName}`}
                     className="viewport-live-img"
                   />
                 </div>
               ) : (
-                /* 2. Interactive Target Site Live Viewport Simulation */
-                <div
-                  className="viewport-target-simulation"
-                  style={{ transform: `translateY(-${scrollOffset}px)` }}
-                >
-                  {/* Simulated Site Header */}
-                  <div className="sim-navbar">
-                    <div className="sim-logo-badge">
-                      <span className="sim-logo-icon">🌐</span>
-                      <span className="sim-logo-title">{domainName.toUpperCase()}</span>
-                    </div>
-
-                    <div className="sim-nav-links">
-                      <span className="sim-nav-item active">Ana Sayfa</span>
-                      <span className={`sim-nav-item ${activeAction?.action_type === "MENU" ? "highlight-target" : ""}`}>
-                        Ürünler & Çözümler ▾
-                      </span>
-                      <span className="sim-nav-item">Hakkımızda</span>
-                      <span className="sim-nav-item">İletişim</span>
-                    </div>
-
-                    <div className={`sim-search-bar ${activeAction?.action_type === "TYPE" ? "highlight-target active-typing" : ""}`}>
-                      <span className="sim-search-icon">🔍</span>
-                      <span className="sim-search-input">
-                        {bvaText || (activeAction?.action_type === "TYPE" ? "Typing canary..." : "Ara veya filtrele...")}
-                      </span>
-                      {activeAction?.action_type === "TYPE" && <span className="sim-cursor-blink">|</span>}
-                    </div>
-
-                    <button type="button" className="sim-login-btn">
-                      Giriş Yap
-                    </button>
-                  </div>
-
-                  {/* Simulated Hero Section */}
-                  <div className="sim-hero-banner">
-                    <div className="sim-hero-badge">
-                      <span className="sim-badge-dot" />
-                      <span>{domainName} Canlı UX &amp; Güvenlik Analizi</span>
-                    </div>
-                    <h2 className="sim-hero-heading">
-                      {domainName.toUpperCase()} Enterprise Web Platformu
-                    </h2>
-                    <p className="sim-hero-desc">
-                      Chromium otonom tarayıcı motoru sayfayı inceliyor, kullanıcı etkileşimlerini
-                      ve güvenlik sınırlarını doğruluyor.
-                    </p>
-                    <div className="sim-hero-actions">
-                      <button
-                        type="button"
-                        className={`sim-primary-btn ${activeAction?.action_type === "JOURNEY" ? "highlight-target" : ""}`}
-                      >
-                        🚀 Keşfet ve İncele
-                      </button>
-                      <button type="button" className="sim-secondary-btn">
-                        Detaylı Bilgi
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Simulated Dynamic Content Cards */}
-                  <div className="sim-cards-grid">
-                    <div className="sim-content-card">
-                      <div className="sim-card-icon">⚡</div>
-                      <div className="sim-card-title">Yüksek Performans &amp; SLA</div>
-                      <div className="sim-skeleton-line w-80" />
-                      <div className="sim-skeleton-line w-60" />
-                    </div>
-                    <div className="sim-content-card">
-                      <div className="sim-card-icon">🛡️</div>
-                      <div className="sim-card-title">OWASP &amp; DAST Güvenliği</div>
-                      <div className="sim-skeleton-line w-80" />
-                      <div className="sim-skeleton-line w-70" />
-                    </div>
-                    <div className="sim-content-card">
-                      <div className="sim-card-icon">✨</div>
-                      <div className="sim-card-title">Doğal Kullanıcı Deneyimi</div>
-                      <div className="sim-skeleton-line w-80" />
-                      <div className="sim-skeleton-line w-50" />
-                    </div>
-                  </div>
-
-                  {/* Simulated Cookie / KVKK Banner */}
-                  {!isCookieDismissed && (
-                    <div className={`sim-cookie-banner ${activeAction?.action_type === "COOKIE" ? "highlight-target" : ""}`}>
-                      <span className="sim-cookie-text">
-                        🍪 Bu sitede kullanıcı deneyimini iyileştirmek için KVKK ve Çerez Politikası uygulanmaktadır.
-                      </span>
-                      <div className="sim-cookie-btns">
-                        <button type="button" className="sim-cookie-reject">
-                          Tümünü Reddet
-                        </button>
-                        <button type="button" className="sim-cookie-accept">
-                          Kabul Et
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                /* 3. Waiting for Chromium frame */
+                <div className="viewport-waiting-cdp">
+                  <div className="hud-empty-spinner" />
+                  <p>
+                    {lang === "tr"
+                      ? "Chromium ekran karesi bekleniyor... Hedef sitenin kendisini anlık görmek için yukarıdaki 'Gerçek Sayfa' sekmesini seçebilirsiniz."
+                      : "Awaiting Chromium screen capture... Switch to 'Live Web' above to view the actual target site."}
+                  </p>
                 </div>
               )}
 
