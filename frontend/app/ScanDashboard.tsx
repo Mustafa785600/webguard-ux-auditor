@@ -72,6 +72,23 @@ export type DashboardTab =
   | "CRAWL_GRAPH"
   | "INCIDENT_HUB";
 
+export type BadgeVariant = "danger" | "success" | "warning" | "info" | "neutral";
+
+export interface NavigationItem {
+  id: DashboardTab;
+  label: string;
+  icon: string;
+  badge: string | null;
+  badgeVariant?: BadgeVariant;
+}
+
+export interface NavigationHub {
+  id: string;
+  title: string;
+  icon: string;
+  items: NavigationItem[];
+}
+
 export default function ScanDashboard() {
   const [lang, setLang] = useState<Language>("tr");
   const [url, setUrl] = useState("");
@@ -200,7 +217,7 @@ export default function ScanDashboard() {
   }, [result]);
 
   // 5 Tematik Hub Tanımı
-  const NAVIGATION_HUBS = useMemo(() => {
+  const NAVIGATION_HUBS: NavigationHub[] = useMemo(() => {
     if (!result) return [];
     return [
       {
@@ -209,56 +226,52 @@ export default function ScanDashboard() {
         icon: "🛡️",
         items: [
           {
-            id: "DAST" as DashboardTab,
+            id: "DAST",
             label: lang === "tr" ? "DAST Zafiyet Doğrulama" : "DAST Exploit Verification",
             icon: "🎯",
             badge: result.dast_verification?.confirmed_vulnerabilities_count
               ? `${result.dast_verification.confirmed_vulnerabilities_count} Açık`
               : "Temiz",
-            badgeColor: result.dast_verification?.confirmed_vulnerabilities_count
-              ? "bg-rose-950 text-rose-300 border-rose-800"
-              : "bg-emerald-950/60 text-emerald-400 border-emerald-800",
+            badgeVariant: result.dast_verification?.confirmed_vulnerabilities_count ? "danger" : "success",
           },
           {
-            id: "WAF" as DashboardTab,
+            id: "WAF",
             label: lang === "tr" ? "WAF & Hata Direnci" : "WAF & Error Resilience",
             icon: "🛡️",
             badge: result.waf_resilience ? `${result.waf_resilience.waf_protection_score}%` : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: result.waf_resilience && result.waf_resilience.waf_protection_score < 70 ? "warning" : "success",
           },
           {
-            id: "THIRDPARTY" as DashboardTab,
+            id: "THIRDPARTY",
             label: lang === "tr" ? "3. Taraf Script & CSP" : "3rd-Party & CSP Sandbox",
             icon: "🔒",
             badge: result.third_party_security_report
               ? `${result.third_party_security_report.csp_grade} (${result.third_party_security_report.security_score}%)`
               : null,
-            badgeColor: "bg-indigo-950 text-indigo-300 border-indigo-800",
+            badgeVariant: "info",
           },
           {
-            id: "TLS_CRYPTO" as DashboardTab,
+            id: "TLS_CRYPTO",
             label: lang === "tr" ? "SSL/TLS & Kripto" : "TLS/SSL & Cipher Suites",
             icon: "🔐",
             badge: result.tls_crypto_report ? `${result.tls_crypto_report.ssl_labs_grade}` : null,
-            badgeColor: "bg-cyan-950 text-cyan-300 border-cyan-800",
+            badgeVariant: "info",
           },
           {
-            id: "DATABASE" as DashboardTab,
+            id: "DATABASE",
             label: lang === "tr" ? "Veritabanı Sızıntıları" : "Database & Query Leaks",
             icon: "🗄️",
             badge: result.database_leak_report?.total_leaks_count
               ? `${result.database_leak_report.total_leaks_count} Sızıntı`
               : "Temiz",
-            badgeColor: result.database_leak_report?.total_leaks_count
-              ? "bg-rose-950 text-rose-300 border-rose-800"
-              : "bg-emerald-950/60 text-emerald-400 border-emerald-800",
+            badgeVariant: result.database_leak_report?.total_leaks_count ? "danger" : "success",
           },
           {
-            id: "RATELIMIT" as DashboardTab,
+            id: "RATELIMIT",
             label: lang === "tr" ? "Hız Sınırı & Kaba Kuvvet" : "Rate-Limiting & Brute-Force",
             icon: "⏱️",
             badge: result.rate_limit_resilience ? `${result.rate_limit_resilience.resilience_score}%` : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
         ],
       },
@@ -268,40 +281,38 @@ export default function ScanDashboard() {
         icon: "⚡",
         items: [
           {
-            id: "PERFORMANCE" as DashboardTab,
+            id: "PERFORMANCE",
             label: lang === "tr" ? "Web Vitals & SLA" : "Core Web Vitals & SLA",
             icon: "⚡",
             badge: result.performance_metrics?.p95_latency_ms
               ? `${result.performance_metrics.p95_latency_ms}ms`
               : null,
-            badgeColor: "bg-amber-950 text-amber-300 border-amber-800",
+            badgeVariant: result.performance_metrics && result.performance_metrics.p95_latency_ms > 500 ? "warning" : "info",
           },
           {
-            id: "MEMORY" as DashboardTab,
+            id: "MEMORY",
             label: lang === "tr" ? "Bellek & DOM Sızıntısı" : "SPA Memory & DOM Leaks",
             icon: "🧠",
             badge: result.memory_leak_report?.total_leaks_count
               ? `${result.memory_leak_report.total_leaks_count} Sızıntı`
               : `${result.memory_leak_report?.memory_health_score ?? 100}%`,
-            badgeColor: result.memory_leak_report?.total_leaks_count
-              ? "bg-rose-950 text-rose-300 border-rose-800"
-              : "bg-emerald-950/60 text-emerald-400 border-emerald-800",
+            badgeVariant: result.memory_leak_report?.total_leaks_count ? "danger" : "success",
           },
           {
-            id: "CHAOS" as DashboardTab,
+            id: "CHAOS",
             label: lang === "tr" ? "Kaos Mühendisliği" : "Chaos Fault Injection",
             icon: "💥",
             badge: result.chaos_resilience ? `${result.chaos_resilience.chaos_resilience_score}%` : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
           {
-            id: "VIEWPORT" as DashboardTab,
+            id: "VIEWPORT",
             label: lang === "tr" ? "Çoklu Cihaz / Responsive" : "Multi-Viewport Layout",
             icon: "📱",
             badge: result.multi_viewport_report
               ? `${result.multi_viewport_report.overall_responsive_score}%`
               : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
         ],
       },
@@ -311,40 +322,40 @@ export default function ScanDashboard() {
         icon: "🧠",
         items: [
           {
-            id: "CODEBASE" as DashboardTab,
+            id: "CODEBASE",
             label: lang === "tr" ? "Kod Tabanı & AST" : "Codebase & AST Architecture",
             icon: "🧬",
             badge: result.codebase_intelligence
               ? `${result.codebase_intelligence.total_symbols} Sembol`
               : null,
-            badgeColor: "bg-indigo-950 text-indigo-300 border-indigo-800",
+            badgeVariant: "info",
           },
           {
-            id: "APICONTRACT" as DashboardTab,
+            id: "APICONTRACT",
             label: lang === "tr" ? "API Sözleşme (OpenAPI)" : "API Contract Drift",
             icon: "📋",
             badge: result.api_contract_drift
               ? `${result.api_contract_drift.contract_compatibility_score}%`
               : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
           {
-            id: "AUTO_HEAL" as DashboardTab,
+            id: "AUTO_HEAL",
             label: lang === "tr" ? "Auto-Heal (Flaky Tests)" : "Self-Healing E2E Tests",
             icon: "🧪",
             badge: result.self_healing_events?.length
               ? `${result.self_healing_events.length} Onarım`
               : null,
-            badgeColor: "bg-emerald-950/60 text-emerald-400 border-emerald-800",
+            badgeVariant: "success",
           },
           {
-            id: "PRD" as DashboardTab,
+            id: "PRD",
             label: lang === "tr" ? "PRD Zekası & Spec" : "PRD Requirements Spec",
             icon: "📝",
             badge: result.prd_analysis?.scenarios?.length
               ? `${result.prd_analysis.scenarios.length} Senaryo`
               : null,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
         ],
       },
@@ -354,47 +365,45 @@ export default function ScanDashboard() {
         icon: "🌐",
         items: [
           {
-            id: "FINDINGS" as DashboardTab,
+            id: "FINDINGS",
             label: lang === "tr" ? "Tüm Bulgular & Triyaj" : "All Findings & Triage",
             icon: "📋",
             badge: `${result.findings.length} Bulgu`,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
           {
-            id: "SESSION_REPLAY" as DashboardTab,
+            id: "SESSION_REPLAY",
             label: lang === "tr" ? "Isı Haritası & Rage Click" : "Session Replay & Heatmap",
             icon: "🎬",
             badge: result.session_replay?.rage_clicks_count
               ? `${result.session_replay.rage_clicks_count} Rage`
               : "0 Rage",
-            badgeColor: result.session_replay?.rage_clicks_count
-              ? "bg-amber-950 text-amber-300 border-amber-800"
-              : "bg-slate-800 text-slate-400 border-slate-700",
+            badgeVariant: result.session_replay?.rage_clicks_count ? "warning" : "neutral",
           },
           {
-            id: "LOCALIZATION" as DashboardTab,
+            id: "LOCALIZATION",
             label: lang === "tr" ? "Çok Dilli (i18n) & L10n" : "Localization & i18n",
             icon: "🌐",
             badge: result.localization_audit?.total_defects_count
               ? `${result.localization_audit.total_defects_count} Kusur`
               : `${result.localization_audit?.l10n_score ?? 100}%`,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: result.localization_audit?.total_defects_count ? "warning" : "success",
           },
           {
-            id: "SEO_DATA" as DashboardTab,
+            id: "SEO_DATA",
             label: lang === "tr" ? "SEO & Sosyal Paylaşım" : "SEO & Structured Data",
             icon: "🏷️",
             badge: result.seo_structured_data_report
               ? `${result.seo_structured_data_report.seo_health_score}%`
               : null,
-            badgeColor: "bg-cyan-950 text-cyan-300 border-cyan-800",
+            badgeVariant: "info",
           },
           {
-            id: "CRAWL_GRAPH" as DashboardTab,
+            id: "CRAWL_GRAPH",
             label: lang === "tr" ? "Site Keşif Ağacı" : "Autonomous Site Graph",
             icon: "🗺️",
             badge: `${result.crawl_graph?.length ?? result.crawled_pages_count ?? 1} Sayfa`,
-            badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+            badgeVariant: "neutral",
           },
         ],
       },
@@ -404,13 +413,13 @@ export default function ScanDashboard() {
         icon: "📢",
         items: [
           {
-            id: "INCIDENT_HUB" as DashboardTab,
+            id: "INCIDENT_HUB",
             label: lang === "tr" ? "Olay Köprüsü (Webhook)" : "Incident Dispatch Hub",
             icon: "📢",
             badge: result.incident_hub_report
               ? `${result.incident_hub_report.total_incidents_generated} Olay`
               : null,
-            badgeColor: "bg-rose-950 text-rose-300 border-rose-800 font-bold",
+            badgeVariant: result.incident_hub_report && result.incident_hub_report.critical_count > 0 ? "danger" : "info",
           },
         ],
       },
@@ -418,59 +427,47 @@ export default function ScanDashboard() {
   }, [result, lang]);
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-slate-100 font-sans selection:bg-indigo-600 selection:text-white">
-      {/* ── ÜST KURUMSAL HEADER ── */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center font-black text-white text-base shadow-lg shadow-indigo-500/20">
-              WG
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base tracking-tight text-white">
-                  WebGuard
-                </span>
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  v2.0 Enterprise
-                </span>
+    <div style={{ minHeight: "100vh", background: "var(--bg-base)", color: "var(--text-primary)" }}>
+      {/* ── 1. ÜST KURUMSAL GEZİNME ÇUBUĞU ── */}
+      <header className="wg-navbar">
+        <div className="wg-navbar-inner">
+          <div className="wg-brand-group">
+            <div className="wg-brand-icon">🛡️</div>
+            <div className="wg-brand-text">
+              <div className="wg-brand-title">
+                <span>WebGuard</span>
+                <span className="wg-version-badge">v2.0 Enterprise</span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                Otonom Güvenlik, Performans ve UX Kalite Denetleme Platformu
-              </p>
+              <span className="wg-brand-subtitle">
+                {lang === "tr"
+                  ? "Otonom Güvenlik, Performans ve UX Kalite Denetleme Platformu"
+                  : "Autonomous Security, Performance & UX Quality Auditing Platform"}
+              </span>
             </div>
           </div>
 
-          {/* Hızlı Aksiyonlar & Dil Seçici */}
-          <div className="flex items-center gap-2">
+          <div className="wg-nav-actions">
             <button
               type="button"
-              className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold border transition ${
-                showCodebaseStandalone
-                  ? "bg-indigo-600 text-white border-indigo-500"
-                  : "bg-slate-900 text-indigo-300 border-indigo-500/30 hover:bg-slate-850"
-              }`}
+              className={`wg-btn-subtle ${showCodebaseStandalone ? "active" : ""}`}
               onClick={() => setShowCodebaseStandalone(!showCodebaseStandalone)}
-              title="Statik Kod Tabanı ve Mimari Zeka Raporunu İncele"
+              title={lang === "tr" ? "Statik Kod Tabanı ve Mimari Zeka Raporunu İncele" : "Explore Codebase Architecture"}
             >
-              🧠 <span className="hidden sm:inline">{lang === "tr" ? "Kod Mimarisi" : "Codebase"}</span>
+              <span>🧠</span>
+              <span>{lang === "tr" ? "Kod Mimarisi" : "Codebase"}</span>
             </button>
 
-            <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+            <div className="wg-lang-switch">
               <button
                 type="button"
-                className={`px-2 py-1 text-xs font-semibold rounded-md transition ${
-                  lang === "tr" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`wg-lang-btn ${lang === "tr" ? "active" : ""}`}
                 onClick={() => setLang("tr")}
               >
                 🇹🇷 TR
               </button>
               <button
                 type="button"
-                className={`px-2 py-1 text-xs font-semibold rounded-md transition ${
-                  lang === "en" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`wg-lang-btn ${lang === "en" ? "active" : ""}`}
                 onClick={() => setLang("en")}
               >
                 🇬🇧 EN
@@ -480,222 +477,290 @@ export default function ScanDashboard() {
         </div>
       </header>
 
-      {/* ── ARAMA VE HEDEF GİRİŞ BARI ── */}
-      <section className="bg-gradient-to-b from-slate-950 via-slate-900/60 to-transparent pt-8 pb-6 border-b border-slate-800/40">
-        <div className="max-w-4xl mx-auto px-4 space-y-4">
-          <form onSubmit={handleScan} className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-base">
-                🌐
-              </span>
-              <input
-                id="url-input"
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder={t.urlPlaceholder}
-                disabled={loading}
-                autoComplete="url"
-                spellCheck={false}
-                className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-inner"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !url.trim()}
-              className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <span className="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  <span>{t.btnScanning}</span>
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  <span>{t.btnScan}</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowConfigDrawer(!showConfigDrawer)}
-              className={`p-3 rounded-xl border text-sm font-semibold transition ${
-                showConfigDrawer
-                  ? "bg-slate-800 text-cyan-400 border-cyan-500/50 shadow"
-                  : "bg-slate-900 text-slate-400 border-slate-700/80 hover:text-slate-200 hover:bg-slate-800"
-              }`}
-              title="Gelişmiş Tarama ve Sektör Protokolü Ayarları"
-            >
-              ⚙️
-            </button>
-          </form>
-
-          {/* Gelişmiş Ayarlar Çekmecesi (Accordion) */}
-          {showConfigDrawer && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
-                <label className="flex items-center gap-2 cursor-pointer text-xs">
-                  <input
-                    type="checkbox"
-                    checked={enableCrawler}
-                    onChange={(e) => setEnableCrawler(e.target.checked)}
-                    disabled={loading}
-                    className="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="font-semibold text-slate-200">{t.crawlerToggle}</span>
-                  <span className="text-slate-400">({t.crawlerSubtitle})</span>
-                </label>
-
-                {enableCrawler && (
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-slate-400">{t.pageBudget}:</span>
-                    {[3, 5, 10].map((count) => (
-                      <button
-                        type="button"
-                        key={count}
-                        onClick={() => setMaxPages(count)}
-                        disabled={loading}
-                        className={`px-2.5 py-1 rounded-md font-semibold text-xs transition ${
-                          maxPages === count
-                            ? "bg-cyan-500 text-slate-950 font-bold"
-                            : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                        }`}
-                      >
-                        {count} Sayfa
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sektörel Uyumluluk Seçici */}
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                  <span>🏛️</span>
-                  <span>{lang === "tr" ? "Sektörel Uyumluluk Protokolü:" : "Industry Compliance Protocol:"}</span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {(["AUTO", "GENERAL", "ECOMMERCE", "HEALTHCARE", "CORPORATE_GOV", "SAAS_API", "FINTECH_BANKING"] as SectorType[]).map((sec) => {
-                    const info = SECTOR_LABELS[lang][sec];
-                    const isActive = selectedSector === sec;
-                    return (
-                      <button
-                        type="button"
-                        key={sec}
-                        onClick={() => setSelectedSector(sec)}
-                        disabled={loading}
-                        className={`px-2.5 py-1 text-xs rounded-lg border transition flex items-center gap-1 ${
-                          isActive
-                            ? "bg-indigo-600 text-white border-indigo-500 shadow-sm"
-                            : "bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200"
-                        }`}
-                        title={`${info.name} — ${info.standard}`}
-                      >
-                        <span>{info.icon}</span>
-                        <span>{info.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Son Taramalar Çipleri */}
-          <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              <span className="text-slate-500 font-medium whitespace-nowrap">
-                {recentScans.length > 0 ? t.recentAudits : t.quickTargets}:
-              </span>
-              {(recentScans.length > 0
-                ? recentScans
-                : ["https://example.com", "https://google.com", "https://github.com"]
-              ).map((hUrl) => (
-                <button
-                  key={hUrl}
-                  type="button"
-                  onClick={() => {
-                    setUrl(hUrl);
-                    runScan(hUrl);
-                  }}
-                  className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-400 hover:border-slate-700 transition truncate max-w-[200px]"
-                >
-                  {hUrl}
-                </button>
-              ))}
-            </div>
-
-            {recentScans.length > 0 && (
-              <button
-                type="button"
-                onClick={clearHistory}
-                className="text-slate-500 hover:text-rose-400 transition ml-2 whitespace-nowrap"
-              >
-                {t.clear}
-              </button>
-            )}
-          </div>
-
-          {error && (
-            <div className="p-3.5 bg-rose-950/50 border border-rose-800/80 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-              <span>⚠️</span>
-              <span>{error}</span>
-            </div>
-          )}
+      {/* ── 2. HERO & HEDEF ARAMA / DENETİM BARI ── */}
+      <section className="wg-hero-section">
+        <div className="wg-hero-badge">
+          ⚡ {lang === "tr" ? "21 Otonom Güvenlik ve Kalite Modülü Aktif" : "21 Autonomous Security & Quality Modules"}
         </div>
-      </section>
+        <h1 className="wg-hero-title">
+          {lang === "tr" ? "Web Sistemleri İçin Otonom Güvenlik Radarı" : "Autonomous Security & Quality Radar"}
+        </h1>
+        <p className="wg-hero-desc">
+          {lang === "tr"
+            ? "Web sisteminizi DAST exploitleri, WAF zaafları, TLS sertifika zinciri, bellek sızıntıları ve Core Web Vitals performansına karşı saniyeler içinde otonom denetleyin."
+            : "Audit any web application for DAST exploits, WAF resilience, TLS ciphers, SPA memory leaks, and Core Web Vitals in seconds."}
+        </p>
 
-      {/* ── ANA İÇERİK ALANI ── */}
-      <main className="max-w-[1520px] mx-auto px-4 py-6">
-        {!result && !loading && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <PrdIntelligenceCard targetUrl={url} lang={lang} />
-            {showCodebaseStandalone && <CodebaseIntelligenceView />}
+        {/* Tarama Formu */}
+        <form onSubmit={handleScan} className="wg-scan-box" id="scan-form">
+          <span className="wg-scan-icon">🌐</span>
+          <input
+            id="url-input"
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder={t.urlPlaceholder}
+            disabled={loading}
+            autoComplete="url"
+            spellCheck={false}
+            className="wg-scan-input"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfigDrawer(!showConfigDrawer)}
+            className={`wg-config-toggle ${showConfigDrawer ? "active" : ""}`}
+            title={lang === "tr" ? "Gelişmiş Tarama ve Sektör Protokolü Ayarları" : "Scan Configuration"}
+          >
+            ⚙️
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !url.trim()}
+            className="wg-scan-submit"
+            id="btn-scan"
+          >
+            {loading ? (
+              <>
+                <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, margin: 0, display: "inline-block" }}></span>
+                <span>{t.btnScanning}</span>
+              </>
+            ) : (
+              <>
+                <span>🚀</span>
+                <span>{t.btnScan}</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Gelişmiş Ayarlar Çekmecesi (Crawler & Sektörel Protokol) */}
+        {showConfigDrawer && (
+          <div className="wg-config-drawer">
+            <div className="crawler-options-bar" style={{ marginTop: 0 }}>
+              <label className="crawler-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={enableCrawler}
+                  onChange={(e) => setEnableCrawler(e.target.checked)}
+                  disabled={loading}
+                  className="crawler-checkbox"
+                />
+                <span className="crawler-toggle-title">{t.crawlerToggle}</span>
+                <span className="crawler-toggle-subtitle">({t.crawlerSubtitle})</span>
+              </label>
+
+              {enableCrawler && (
+                <div className="crawler-budget-selector">
+                  <span className="budget-label">{t.pageBudget}:</span>
+                  {[3, 5, 10].map((count) => (
+                    <button
+                      type="button"
+                      key={count}
+                      className={`budget-pill ${maxPages === count ? "active" : ""}`}
+                      onClick={() => setMaxPages(count)}
+                      disabled={loading}
+                    >
+                      {count} {lang === "tr" ? "Sayfa" : "Pages"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="sector-selector-bar" style={{ marginTop: 0 }}>
+              <div className="sector-selector-label">
+                🏛️ {lang === "tr" ? "Sektörel Uyumluluk Protokolü:" : "Industry Compliance Protocol:"}
+              </div>
+              <div className="sector-pills-list">
+                {(["AUTO", "GENERAL", "ECOMMERCE", "HEALTHCARE", "CORPORATE_GOV", "SAAS_API", "FINTECH_BANKING"] as SectorType[]).map((sec) => {
+                  const info = SECTOR_LABELS[lang][sec];
+                  const isActive = selectedSector === sec;
+                  return (
+                    <button
+                      type="button"
+                      key={sec}
+                      className={`sector-pill ${isActive ? "active" : ""}`}
+                      onClick={() => setSelectedSector(sec)}
+                      disabled={loading}
+                      title={`${info.name} — ${info.standard}`}
+                    >
+                      <span className="sector-pill-icon">{info.icon}</span>
+                      <span className="sector-pill-name">{info.name}</span>
+                      <span className="sector-pill-std">{info.standard}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
+        {/* Son Taramalar ve Hızlı Hedef Çipleri */}
+        <div className="wg-history-bar">
+          <div className="wg-history-list">
+            <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>
+              {recentScans.length > 0 ? t.recentAudits : t.quickTargets}:
+            </span>
+            {(recentScans.length > 0
+              ? recentScans
+              : ["https://example.com", "https://google.com", "https://github.com"]
+            ).map((hUrl) => (
+              <button
+                key={hUrl}
+                type="button"
+                onClick={() => {
+                  setUrl(hUrl);
+                  runScan(hUrl);
+                }}
+                className="wg-history-chip"
+              >
+                {hUrl}
+              </button>
+            ))}
+          </div>
+          {recentScans.length > 0 && (
+            <button
+              type="button"
+              onClick={clearHistory}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}
+            >
+              {t.clear}
+            </button>
+          )}
+        </div>
+
+        {error && <div className="scan-error" role="alert">{error}</div>}
+      </section>
+
+      {/* ── 3. ANA ÇALIŞMA ALANI (MAIN CONTENT) ── */}
+      <main style={{ paddingBottom: 60 }}>
+        {/* A. Henüz Tarama Başlatılmamışken: 4 Vitrin Kartı + PRD Zekası */}
+        {!result && !loading && (
+          <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
+            <div className="wg-pillars-grid">
+              <div className="wg-pillar-card">
+                <span className="wg-pillar-icon">🛡️</span>
+                <h3 className="wg-pillar-title">
+                  {lang === "tr" ? "Zafiyet & Sızma Kalkanı" : "Vulnerability & Exploits"}
+                </h3>
+                <p className="wg-pillar-desc">
+                  {lang === "tr"
+                    ? "DAST exploit doğrulama, WAF hata direnci, SSL/TLS şifreleme zinciri ve 3. taraf CSP sandbox güvenliği."
+                    : "DAST exploit verification, WAF resilience, SSL/TLS cipher suite and third-party CSP sandboxing."}
+                </p>
+                <div className="wg-pillar-badges">
+                  <span className="wg-pillar-badge">DAST Exploit</span>
+                  <span className="wg-pillar-badge">WAF Bypass</span>
+                  <span className="wg-pillar-badge">TLS / SSL</span>
+                  <span className="wg-pillar-badge">CSP Sandbox</span>
+                </div>
+              </div>
+
+              <div className="wg-pillar-card">
+                <span className="wg-pillar-icon">⚡</span>
+                <h3 className="wg-pillar-title">
+                  {lang === "tr" ? "Performans & Dayanıklılık" : "Performance & Resilience"}
+                </h3>
+                <p className="wg-pillar-desc">
+                  {lang === "tr"
+                    ? "Core Web Vitals SLA, SPA bellek ve DOM sızıntısı tespiti, kaos hata enjeksiyonu ve hız sınırı dayanıklılığı."
+                    : "Core Web Vitals SLA, SPA memory/DOM leak profiler, chaos fault injection and rate-limiting resilience."}
+                </p>
+                <div className="wg-pillar-badges">
+                  <span className="wg-pillar-badge">p95 Latency</span>
+                  <span className="wg-pillar-badge">Memory Leaks</span>
+                  <span className="wg-pillar-badge">Chaos Faults</span>
+                  <span className="wg-pillar-badge">Rate Limit</span>
+                </div>
+              </div>
+
+              <div className="wg-pillar-card">
+                <span className="wg-pillar-icon">🧠</span>
+                <h3 className="wg-pillar-title">
+                  {lang === "tr" ? "Mimari & Test Zekası" : "Architecture & Test Intelligence"}
+                </h3>
+                <p className="wg-pillar-desc">
+                  {lang === "tr"
+                    ? "Statik AST kod tabanı analizi, OpenAPI sözleşme sapması, PRD gereksinim spec ve kendini onaran E2E testler."
+                    : "Static AST codebase analysis, OpenAPI contract drift, PRD requirements spec and self-healing E2E tests."}
+                </p>
+                <div className="wg-pillar-badges">
+                  <span className="wg-pillar-badge">AST Architecture</span>
+                  <span className="wg-pillar-badge">API Drift</span>
+                  <span className="wg-pillar-badge">Auto-Heal</span>
+                  <span className="wg-pillar-badge">PRD Spec</span>
+                </div>
+              </div>
+
+              <div className="wg-pillar-card">
+                <span className="wg-pillar-icon">🌐</span>
+                <h3 className="wg-pillar-title">
+                  {lang === "tr" ? "UX, Telemetri & SEO" : "UX, Telemetry & SEO"}
+                </h3>
+                <p className="wg-pillar-desc">
+                  {lang === "tr"
+                    ? "Isı haritası ve rage click tespiti, çok dilli (i18n) kusurları, Schema.org SEO ve otonom olay köprüsü entegrasyonu."
+                    : "Heatmaps & rage click analysis, localization i18n audit, Schema.org SEO and automated incident webhook hub."}
+                </p>
+                <div className="wg-pillar-badges">
+                  <span className="wg-pillar-badge">Incident Hub</span>
+                  <span className="wg-pillar-badge">Heatmaps</span>
+                  <span className="wg-pillar-badge">i18n Audit</span>
+                  <span className="wg-pillar-badge">SEO Schema</span>
+                </div>
+              </div>
+            </div>
+
+            {/* PRD Intelligence Card */}
+            <PrdIntelligenceCard targetUrl={url} lang={lang} />
+
+            {/* Standalone Codebase View if toggled */}
+            {showCodebaseStandalone && (
+              <div style={{ marginTop: 24 }}>
+                <CodebaseIntelligenceView />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* B. Tarama Sırasında: Canlı HUD ve Ekran Kaydı */}
         {loading && (
-          <div className="max-w-4xl mx-auto">
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
             <LiveScreencastPanel targetUrl={url} isActive={true} lang={lang} />
           </div>
         )}
 
+        {/* C. Tarama Tamamlandığında: Executive Cockpit & 5-Hub Master Workspace */}
         {result && (
-          <div className="space-y-6">
-            {/* ── 1. KOMUTA MERKEZİ (EXECUTIVE COCKPIT) ÜST BARI ── */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-md shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-xl">
-                  ✓
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-200 text-sm">{result.target_url}</span>
-                    <span className="px-2 py-0.5 text-[10px] rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 font-semibold">
-                      Denetim Tamamlandı
+          <div className="cockpit-workspace">
+            {/* 1. Executive Top Bar (Hedef Bilgisi, Sektör ve Rapor Butonları) */}
+            <div className="cockpit-top-bar">
+              <div className="cockpit-target-info">
+                <div className="cockpit-status-icon">✓</div>
+                <div className="cockpit-target-details">
+                  <div className="cockpit-target-row">
+                    <span className="cockpit-target-url">{result.target_url}</span>
+                    <span className="cockpit-pill success">
+                      {lang === "tr" ? "Denetim Tamamlandı" : "Audit Completed"}
                     </span>
                     {result.detected_sector && (
-                      <span className="px-2 py-0.5 text-[10px] rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/30 font-semibold flex items-center gap-1">
-                        <span>{SECTOR_LABELS[lang][result.detected_sector]?.icon}</span>
-                        <span>{SECTOR_LABELS[lang][result.detected_sector]?.name}</span>
+                      <span className="cockpit-pill sector">
+                        {SECTOR_LABELS[lang][result.detected_sector]?.icon} {SECTOR_LABELS[lang][result.detected_sector]?.name}
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    {new Date(result.started_at).toLocaleTimeString("tr-TR")} • {result.crawled_pages_count} Sayfa Taranarak İncelendi
+                  <div className="cockpit-target-meta">
+                    {new Date(result.started_at).toLocaleTimeString("tr-TR")} • {result.crawled_pages_count} {lang === "tr" ? "Sayfa Taranarak İncelendi" : "Pages Crawled & Audited"}
                   </div>
                 </div>
               </div>
 
               {/* Rapor & Dışa Aktarma Eylem Butonları */}
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="cockpit-top-actions">
                 <button
                   type="button"
                   onClick={() => setShowAuditReport(true)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  className="cockpit-action-btn"
                   title="Resmi Yönetici Denetim Raporu"
                 >
                   <span>📄</span>
@@ -705,7 +770,7 @@ export default function ScanDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowExecutiveDeck(true)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  className="cockpit-action-btn"
                   title="C-Level Yönetici Sunumu (16:9 Deck)"
                 >
                   <span>📽️</span>
@@ -715,7 +780,7 @@ export default function ScanDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowLiveScreencast(true)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  className="cockpit-action-btn"
                   title="Canlı Tarayıcı HUD Kaydı"
                 >
                   <span>📺</span>
@@ -725,7 +790,7 @@ export default function ScanDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowGeneralControl(true)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  className="cockpit-action-btn"
                   title="GeneralControl Kontrol Listesi"
                 >
                   <span>🛡️</span>
@@ -735,7 +800,7 @@ export default function ScanDashboard() {
                 <button
                   type="button"
                   onClick={handleExportJson}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  className="cockpit-action-btn"
                   title="JSON Dışa Aktar"
                 >
                   <span>💾</span>
@@ -744,8 +809,8 @@ export default function ScanDashboard() {
               </div>
             </div>
 
-            {/* ── 2. EXECUTIVE COCKPIT SAĞLIK KARTLARI ── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* 2. Executive Cockpit 4 KPI Sağlık Göstergeleri */}
+            <div className="cockpit-scores-grid">
               <ScoreCard label={t.securityScore} score={result.security_score} color="#6366f1" />
               <ScoreCard label={t.uxScore} score={result.ux_score} color="#34d399" />
               <ScoreCard
@@ -760,207 +825,196 @@ export default function ScanDashboard() {
               />
             </div>
 
-            {/* ── 3. KRİTİK EYLEM VE ACİL UYARI ÇUBUĞU ── */}
+            {/* 3. Kritik & Acil Uyarı Çubuğu */}
             {criticalFindings.length > 0 && (
-              <div className="bg-rose-950/30 border border-rose-900/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl animate-pulse">🚨</span>
+              <div className="cockpit-alert-banner">
+                <div className="cockpit-alert-content">
+                  <span className="cockpit-alert-icon">🚨</span>
                   <div>
-                    <div className="text-xs font-bold text-rose-300">
-                      {criticalFindings.length} Kritik & Yüksek Riskli Zafiyet Tespit Edildi!
+                    <div className="cockpit-alert-title">
+                      {criticalFindings.length} {lang === "tr" ? "Kritik & Yüksek Riskli Zafiyet Tespit Edildi!" : "Critical & High Risk Vulnerabilities Detected!"}
                     </div>
-                    <div className="text-[11px] text-rose-400/80">
-                      Öncelikli müdahale gerektiren güvenlik açıkları ve hizmet kesintisi riskleri sistem tarafından işaretlendi.
+                    <div className="cockpit-alert-desc">
+                      {lang === "tr"
+                        ? "Öncelikli müdahale gerektiren güvenlik açıkları ve hizmet kesintisi riskleri sistem tarafından işaretlendi."
+                        : "High-priority security flaws and service disruption risks require immediate remediation."}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="cockpit-alert-actions">
                   <button
                     type="button"
                     onClick={() => setActiveTab("FINDINGS")}
-                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition shadow"
+                    className="cockpit-alert-btn"
                   >
-                    Bulguları İncele →
+                    {lang === "tr" ? "Bulguları İncele →" : "Review Findings →"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab("INCIDENT_HUB")}
-                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-rose-300 border border-rose-800 transition"
+                    className="cockpit-action-btn"
+                    style={{ borderColor: "rgba(239, 68, 68, 0.4)", color: "#fca5a5" }}
                   >
-                    📢 Olay Köprüsü (Slack/Jira)
+                    📢 {lang === "tr" ? "Olay Köprüsü (Slack/Jira)" : "Incident Hub"}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── 4. İKİ SÜTUNLU ÇALIŞMA ALANI: 5-HUB SOL KENAR ÇUBUĞU + SAĞ ÇALIŞMA ALANI ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* ── SOL SÜTUN: 5 TEMATİK HUB MENÜSÜ (260px / 3 COL) ── */}
-              <aside className="lg:col-span-3 space-y-4">
+            {/* 4. İki Sütunlu Çalışma Alanı: Sol 5-Hub Master Sidebar + Sağ İçerik */}
+            <div className="cockpit-grid">
+              {/* ── SOL SÜTUN: 5-HUB MASTER SIDEBAR ── */}
+              <aside className="cockpit-sidebar">
                 {/* Arama / Filtreleme Çubuğu */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
+                <div className="cockpit-search-box">
+                  <span>🔍</span>
                   <input
                     type="text"
                     value={sidebarFilter}
                     onChange={(e) => setSidebarFilter(e.target.value)}
-                    placeholder="Modüllerde ara (WAF, SEO, DAST...)"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                    placeholder={lang === "tr" ? "Modüllerde ara (WAF, SEO, DAST...)" : "Search modules (WAF, SEO...)"}
+                    className="cockpit-search-input"
                   />
                 </div>
 
-                {/* Genel Bakış Butonu (Cockpit Overview) */}
+                {/* Genel Bakış Butonu (Executive Cockpit Overview) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab("OVERVIEW")}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition ${
-                    activeTab === "OVERVIEW"
-                      ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white border-transparent shadow-lg shadow-indigo-600/20"
-                      : "bg-slate-900/80 text-slate-300 border-slate-800 hover:bg-slate-850 hover:text-white"
-                  }`}
+                  className={`cockpit-item-btn ${activeTab === "OVERVIEW" ? "active" : ""}`}
+                  style={{
+                    padding: "12px 14px",
+                    background: activeTab === "OVERVIEW" ? "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)" : undefined,
+                  }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🏠</span>
-                    <span>Genel Bakış & Özet Cockpit</span>
+                  <div className="cockpit-item-label" style={{ fontWeight: 700 }}>
+                    <span style={{ fontSize: 16 }}>🏠</span>
+                    <span>{lang === "tr" ? "Genel Bakış & Cockpit" : "Overview & Cockpit"}</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950/60 text-cyan-300 border border-cyan-800/40">
-                    Cockpit
-                  </span>
+                  <span className="cockpit-item-badge info">Cockpit</span>
                 </button>
 
                 {/* 5 Tematik Hub Grupları */}
-                <div className="space-y-3">
-                  {NAVIGATION_HUBS.map((hub) => {
-                    const filteredItems = hub.items.filter((item) =>
-                      !sidebarFilter || item.label.toLowerCase().includes(sidebarFilter.toLowerCase())
-                    );
-                    if (filteredItems.length === 0) return null;
+                {NAVIGATION_HUBS.map((hub) => {
+                  const filteredItems = hub.items.filter((item) =>
+                    !sidebarFilter || item.label.toLowerCase().includes(sidebarFilter.toLowerCase())
+                  );
+                  if (filteredItems.length === 0) return null;
 
-                    return (
-                      <div
-                        key={hub.id}
-                        className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm"
-                      >
-                        <div className="px-3.5 py-2.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                          <div className="flex items-center gap-1.5">
-                            <span>{hub.icon}</span>
-                            <span>{hub.title}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-500">{filteredItems.length}</span>
+                  return (
+                    <div key={hub.id} className="cockpit-hub-card">
+                      <div className="cockpit-hub-head">
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span>{hub.icon}</span>
+                          <span>{hub.title}</span>
                         </div>
-
-                        <div className="p-1 space-y-0.5">
-                          {filteredItems.map((item) => {
-                            const isActive = activeTab === item.id;
-                            return (
-                              <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => setActiveTab(item.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition ${
-                                  isActive
-                                    ? "bg-indigo-600 text-white font-semibold shadow-sm"
-                                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 truncate pr-2">
-                                  <span>{item.icon}</span>
-                                  <span className="truncate">{item.label}</span>
-                                </div>
-                                {item.badge && (
-                                  <span
-                                    className={`text-[10px] px-1.5 py-0.2 rounded border whitespace-nowrap ${
-                                      isActive
-                                        ? "bg-white/20 text-white border-white/30"
-                                        : item.badgeColor
-                                    }`}
-                                  >
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <span style={{ opacity: 0.6 }}>{filteredItems.length}</span>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      <div className="cockpit-hub-items">
+                        {filteredItems.map((item) => {
+                          const isActive = activeTab === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => setActiveTab(item.id)}
+                              className={`cockpit-item-btn ${isActive ? "active" : ""}`}
+                            >
+                              <div className="cockpit-item-label">
+                                <span>{item.icon}</span>
+                                <span>{item.label}</span>
+                              </div>
+                              {item.badge && (
+                                <span className={`cockpit-item-badge ${isActive ? "" : item.badgeVariant}`}>
+                                  {item.badge}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </aside>
 
-              {/* ── SAĞ SÜTUN: SEÇİLEN MODÜL ÇALIŞMA ALANI (9 COL) ── */}
-              <div className="lg:col-span-9 space-y-4">
-                {/* ── GENEL BAKIŞ & COCKPIT EKRANI (OVERVIEW) ── */}
+              {/* ── SAĞ SÜTUN: SEÇİLEN MODÜL ÇALIŞMA ALANI ── */}
+              <div className="cockpit-main-content">
+                {/* ── A. GENEL BAKIŞ & COCKPIT EKRANI (OVERVIEW) ── */}
                 {activeTab === "OVERVIEW" && (
-                  <div className="space-y-6">
-                    {/* Hızlı Kategori Kartları */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="cockpit-overview-section">
+                    {/* Hızlı Özet Kartları */}
+                    <div className="cockpit-summary-cards">
                       {/* Güvenlik Özeti */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 space-y-3">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">🛡️</span>
-                            <h3 className="font-bold text-slate-200 text-sm">Güvenlik & Tehdit Analizi</h3>
+                      <div className="cockpit-summary-box">
+                        <div className="cockpit-summary-header">
+                          <div className="cockpit-summary-title">
+                            <span>🛡️</span>
+                            <span>{lang === "tr" ? "Güvenlik & Tehdit Analizi" : "Security & Threat Summary"}</span>
                           </div>
                           <button
+                            type="button"
                             onClick={() => setActiveTab("DAST")}
-                            className="text-xs text-cyan-400 hover:underline"
+                            className="cockpit-summary-link"
                           >
-                            İncele →
+                            {lang === "tr" ? "İncele →" : "View →"}
                           </button>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">DAST Açığı</div>
-                            <div className="text-lg font-bold text-rose-400">
+                        <div className="cockpit-kpi-row">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">{lang === "tr" ? "DAST Açığı" : "DAST Flaws"}</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#f87171" }}>
                               {result.dast_verification?.confirmed_vulnerabilities_count ?? 0}
                             </div>
                           </div>
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">WAF Skoru</div>
-                            <div className="text-lg font-bold text-emerald-400">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">{lang === "tr" ? "WAF Koruması" : "WAF Protection"}</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#34d399" }}>
                               {result.waf_resilience?.waf_protection_score ?? 100}%
                             </div>
                           </div>
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">SSL Labs</div>
-                            <div className="text-lg font-bold text-cyan-400">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">SSL Labs</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#38bdf8" }}>
                               {result.tls_crypto_report?.ssl_labs_grade ?? "A+"}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Performans & SLA Özeti */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 space-y-3">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">⚡</span>
-                            <h3 className="font-bold text-slate-200 text-sm">Performans & Sistem Sağlığı</h3>
+                      {/* Performans & Sistem Sağlığı Özeti */}
+                      <div className="cockpit-summary-box">
+                        <div className="cockpit-summary-header">
+                          <div className="cockpit-summary-title">
+                            <span>⚡</span>
+                            <span>{lang === "tr" ? "Performans & Sistem Sağlığı" : "Performance & System Health"}</span>
                           </div>
                           <button
+                            type="button"
                             onClick={() => setActiveTab("PERFORMANCE")}
-                            className="text-xs text-cyan-400 hover:underline"
+                            className="cockpit-summary-link"
                           >
-                            İncele →
+                            {lang === "tr" ? "İncele →" : "View →"}
                           </button>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">p95 Gecikme</div>
-                            <div className="text-lg font-bold text-amber-400">
+                        <div className="cockpit-kpi-row">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">{lang === "tr" ? "p95 Gecikme" : "p95 Latency"}</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#fbbf24" }}>
                               {result.performance_metrics?.p95_latency_ms ?? 120}ms
                             </div>
                           </div>
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">Bellek Sağlığı</div>
-                            <div className="text-lg font-bold text-emerald-400">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">{lang === "tr" ? "Bellek Sağlığı" : "Memory Health"}</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#34d399" }}>
                               {result.memory_leak_report?.memory_health_score ?? 100}%
                             </div>
                           </div>
-                          <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-400">Kaos Direnci</div>
-                            <div className="text-lg font-bold text-indigo-400">
+                          <div className="cockpit-kpi-cell">
+                            <div className="cockpit-kpi-label">{lang === "tr" ? "Kaos Direnci" : "Chaos Resilience"}</div>
+                            <div className="cockpit-kpi-val" style={{ color: "#818cf8" }}>
                               {result.chaos_resilience?.chaos_resilience_score ?? 100}%
                             </div>
                           </div>
@@ -974,25 +1028,28 @@ export default function ScanDashboard() {
                     )}
 
                     {/* Öncelikli İlk 5 Kritik Bulgu */}
-                    <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="cockpit-findings-box">
+                      <div className="cockpit-findings-header">
                         <div>
-                          <h3 className="font-bold text-slate-200 text-sm">
-                            Öncelikli Eylem Gerektiren Bulgular
-                          </h3>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            Sistemdeki toplam {result.findings.length} bulgu arasından en yüksek risk taşıyanlar.
-                          </p>
+                          <div className="cockpit-findings-title">
+                            {lang === "tr" ? "Öncelikli Eylem Gerektiren Bulgular" : "Priority Actionable Findings"}
+                          </div>
+                          <div className="cockpit-findings-subtitle">
+                            {lang === "tr"
+                              ? `Sistemdeki toplam ${result.findings.length} bulgu arasından en yüksek risk taşıyanlar listelenmektedir.`
+                              : `Top high-risk findings among ${result.findings.length} total detected issues.`}
+                          </div>
                         </div>
                         <button
+                          type="button"
                           onClick={() => setActiveTab("FINDINGS")}
-                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition"
+                          className="cockpit-findings-btn"
                         >
-                          Tüm Bulguları Aç ({result.findings.length}) →
+                          {lang === "tr" ? `Tüm Bulguları Aç (${result.findings.length}) →` : `All Findings (${result.findings.length}) →`}
                         </button>
                       </div>
 
-                      <div className="space-y-3">
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {result.findings.slice(0, 5).map((f) => (
                           <FindingCard key={f.id} finding={f} lang={lang} />
                         ))}
@@ -1001,7 +1058,7 @@ export default function ScanDashboard() {
                   </div>
                 )}
 
-                {/* ── MODÜL GÖRÜNÜMLERİ (TAB RENDERING) ── */}
+                {/* ── B. MODÜL GÖRÜNÜMLERİ (TAB RENDERING) ── */}
 
                 {/* 1. GÜVENLİK HUB MODÜLLERİ */}
                 {activeTab === "DAST" && (
@@ -1066,17 +1123,25 @@ export default function ScanDashboard() {
 
                 {/* 4. UX & SEO HUB MODÜLLERİ */}
                 {activeTab === "FINDINGS" && (
-                  <div className="space-y-4">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {selectedRouteUrl && (
-                      <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                      <div className="cockpit-route-filter">
                         <span>
                           {lang === "tr" ? "Filtrelenen Rota:" : "Filtered Route:"}{" "}
-                          <strong className="text-cyan-400">{selectedRouteUrl}</strong>
+                          <strong>{selectedRouteUrl}</strong>
                         </span>
                         <button
                           type="button"
                           onClick={() => setSelectedRouteUrl(null)}
-                          className="text-slate-400 hover:text-slate-200"
+                          style={{
+                            background: "rgba(6, 182, 212, 0.2)",
+                            border: "1px solid rgba(6, 182, 212, 0.4)",
+                            color: "#cffafe",
+                            borderRadius: 6,
+                            padding: "3px 8px",
+                            cursor: "pointer",
+                            fontSize: 11,
+                          }}
                         >
                           ✕ {t.allRoutes}
                         </button>
@@ -1090,17 +1155,15 @@ export default function ScanDashboard() {
                       lang={lang}
                     />
 
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 rounded-xl p-3">
-                      <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
-                        <span className="text-xs text-slate-400 font-semibold pr-1">Kategori:</span>
+                    <div className="cockpit-filter-toolbar">
+                      <div className="cockpit-filter-group">
+                        <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
+                          {lang === "tr" ? "Kategori:" : "Category:"}
+                        </span>
                         {(["ALL", "SECURITY", "UX"] as const).map((cat) => (
                           <button
                             key={cat}
-                            className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition ${
-                              categoryFilter === cat
-                                ? "bg-indigo-600 text-white shadow"
-                                : "bg-slate-800 text-slate-400 hover:text-slate-200"
-                            }`}
+                            className={`cockpit-filter-pill ${categoryFilter === cat ? "active" : ""}`}
                             onClick={() => setCategoryFilter(cat)}
                           >
                             {CATEGORY_LABELS[lang][cat]}
@@ -1108,16 +1171,14 @@ export default function ScanDashboard() {
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto justify-end">
-                        <span className="text-xs text-slate-400 font-semibold pr-1">Seviye:</span>
+                      <div className="cockpit-filter-group">
+                        <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
+                          {lang === "tr" ? "Seviye:" : "Severity:"}
+                        </span>
                         {(["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const).map((sev) => (
                           <button
                             key={sev}
-                            className={`px-2 py-1 text-xs rounded-lg font-semibold transition ${
-                              severityFilter === sev
-                                ? "bg-slate-200 text-slate-950 shadow"
-                                : "bg-slate-800 text-slate-400 hover:text-slate-200"
-                            }`}
+                            className={`cockpit-filter-pill ${severityFilter === sev ? "active" : ""}`}
                             onClick={() => setSeverityFilter(sev)}
                           >
                             {SEVERITY_LABELS[lang][sev]}
@@ -1126,7 +1187,7 @@ export default function ScanDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)" }}>
                       <span>{t.findingsSection}</span>
                       <span>
                         {t.showing} {filteredFindings.length} / {result.findings.length} {t.issues}
@@ -1134,11 +1195,11 @@ export default function ScanDashboard() {
                     </div>
 
                     {filteredFindings.length === 0 ? (
-                      <div className="p-8 text-center text-slate-500 bg-slate-900/60 border border-slate-800 rounded-xl">
+                      <div className="cockpit-summary-box" style={{ textAlign: "center", padding: 48, color: "var(--text-muted)" }}>
                         {t.noIssues}
                       </div>
                     ) : (
-                      <div className="space-y-3" id="findings-list">
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }} id="findings-list">
                         {filteredFindings.map((f) => (
                           <FindingCard key={f.id} finding={f} lang={lang} />
                         ))}
@@ -1211,8 +1272,20 @@ export default function ScanDashboard() {
             />
 
             {showLiveScreencast && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-                <div className="max-w-4xl w-full">
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(10, 11, 16, 0.85)",
+                  backdropFilter: "blur(12px)",
+                  zIndex: 100,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 20,
+                }}
+              >
+                <div style={{ maxWidth: 900, width: "100%" }}>
                   <LiveScreencastPanel
                     targetUrl={result.target_url}
                     isActive={false}
