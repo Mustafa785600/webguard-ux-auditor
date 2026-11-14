@@ -18,6 +18,7 @@ interface LiveScreencastPanelProps {
   isActive: boolean;
   lang?: "tr" | "en";
   persona?: string;
+  auditMode?: "UX_PERSONA" | "ETHICAL_SECURITY";
   onClose?: () => void;
 }
 
@@ -33,6 +34,7 @@ export default function LiveScreencastPanel({
   isActive,
   lang = "tr",
   persona = "SHOPPER",
+  auditMode = "UX_PERSONA",
   onClose,
 }: LiveScreencastPanelProps) {
   const [frame, setFrame] = useState<string | null>(null);
@@ -135,7 +137,14 @@ export default function LiveScreencastPanel({
     const { httpUrl, wsUrl } = getBackendUrls();
 
     // AI Progression steps to keep HUD active during multi-stage audit
-    const STAGE_EVENTS = [
+    const STAGE_EVENTS = auditMode === "ETHICAL_SECURITY" ? [
+      { type: "WAF", label: lang === "tr" ? `🛡️ WAF & Ters Proxy Mimarisi Parmak İzi Taranıyor: ${targetUrl}` : `Fingerprinting WAF & Reverse Proxy: ${targetUrl}`, coords: { x: 280, y: 90 } },
+      { type: "CANARY", label: lang === "tr" ? "🧪 Sentetik SQLi & XSS Kanaryaları ile Hata Yönetimi Test Ediliyor" : "Dispatching synthetic SQLi/XSS canaries (safe probes)", coords: { x: 512, y: 220 } },
+      { type: "BURST", label: lang === "tr" ? "⚡ 15 Mikro-Burst İstek ile DoS / Hız Sınırı Toleransı Ölçülüyor" : "15 micro-burst requests evaluating rate limit resilience", coords: { x: 512, y: 350 } },
+      { type: "OPEN_DOOR", label: lang === "tr" ? "🚪 Kritik Açık Kapılar (/.env, /.git/HEAD, /dump.sql) Taranıyor" : "Scanning attack surface for exposed .env, .git, and DB dumps", coords: { x: 350, y: 90 } },
+      { type: "TLS", label: lang === "tr" ? "🔒 TLS/SSL Sertifika Zinciri, Cipher Güvenliği ve HSTS Doğrulanıyor" : "Validating TLS/SSL ciphers, PFS and HSTS preload", coords: { x: 660, y: 90 } },
+      { type: "GATE", label: lang === "tr" ? "🎯 Siber Dayanıklılık Skoru ve Beyaz Şapkalı Rapor Derleniyor" : "Synthesizing Cyber Resilience Matrix and Hardening Plan", coords: { x: 512, y: 320 } },
+    ] : [
       { type: "NAVIGATE", label: lang === "tr" ? `Hedef URL'ye bağlanılıyor: ${targetUrl}` : `Connecting to target URL: ${targetUrl}`, coords: { x: 280, y: 90 } },
       { type: "COOKIE", label: lang === "tr" ? "Çerez & KVKK Banner'ları taranıyor ve yönetiliyor" : "Scanning and managing cookie consent banners", coords: { x: 750, y: 560 } },
       { type: "SCROLL", label: lang === "tr" ? "Doğal İnsan Kaydırması yapılıyor (2800px viewport derinliği)" : "Human smooth scrolling (2800px viewport depth)", coords: { x: 512, y: 350 } },
@@ -275,6 +284,16 @@ export default function LiveScreencastPanel({
         return "🚀";
       case "GATE":
         return "🛑";
+      case "WAF":
+        return "🏰";
+      case "CANARY":
+        return "🧪";
+      case "BURST":
+        return "⚡";
+      case "OPEN_DOOR":
+        return "🚪";
+      case "TLS":
+        return "🔒";
       default:
         return "⚡";
     }
@@ -299,9 +318,15 @@ export default function LiveScreencastPanel({
             <span className="address-live-tag">
               {isActive ? "LIVE CHROMIUM DOM" : "AUDIT COMPLETED"}
             </span>
-            <span className="address-persona-tag" title="Aktif Kullanıcı Kimliği">
-              {activePersonaBadge.icon} {activePersonaBadge.title}
-            </span>
+            {auditMode === "ETHICAL_SECURITY" ? (
+              <span className="address-persona-tag tag-cyber" title={lang === "tr" ? "Etik Beyaz Şapkalı Güvenlik Modu" : "Ethical White-Hat Security Mode"}>
+                🛡️ {lang === "tr" ? "Etik Siber Denetim" : "White-Hat Audit"}
+              </span>
+            ) : (
+              <span className="address-persona-tag" title="Aktif Kullanıcı Kimliği">
+                {activePersonaBadge.icon} {activePersonaBadge.title}
+              </span>
+            )}
           </div>
 
           <div className="screencast-meta-actions">
@@ -396,19 +421,21 @@ export default function LiveScreencastPanel({
               )}
 
               {/* Dynamic Scanning Laser Beam Effect */}
-              <div className="ai-laser-scanner" />
+              <div className={`ai-laser-scanner ${auditMode === "ETHICAL_SECURITY" ? "cyber-laser-red" : ""}`} />
 
               {/* Real-time Neon AI Pointer Cursor */}
               <div
-                className="ai-cursor-pulse"
+                className={`ai-cursor-pulse ${auditMode === "ETHICAL_SECURITY" ? "cyber-reticle" : ""}`}
                 style={{
                   left: `${cursorPos.x}%`,
                   top: `${cursorPos.y}%`,
                 }}
               >
-                <span className="ai-cursor-icon">👆</span>
+                <span className="ai-cursor-icon">{auditMode === "ETHICAL_SECURITY" ? "🎯" : "👆"}</span>
                 <span className="ai-cursor-tag">
-                  {activePersonaBadge.icon} {activeAction ? activeAction.action_type : activePersonaBadge.title}
+                  {auditMode === "ETHICAL_SECURITY"
+                    ? `🛡️ ${activeAction ? activeAction.action_type : (lang === "tr" ? "ETİK PROB" : "PROBE")}`
+                    : `${activePersonaBadge.icon} ${activeAction ? activeAction.action_type : activePersonaBadge.title}`}
                 </span>
                 <span className="ai-cursor-ripple" />
               </div>

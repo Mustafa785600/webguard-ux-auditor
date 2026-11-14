@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.security import validate_and_sanitize_target_url
 from app.models.schema import (
     Finding, ScanResult, ScanStatus, Category, SectorType, Severity, RCACategory,
-    AuditMode, UserPersona, PersonaAuditReport
+    AuditMode, UserPersona, PersonaAuditReport, EthicalSecurityReport
 )
 from app.scanners.security.headers import SecurityHeadersScanner
 from app.scanners.security.ssl_tls import SSLTLSScanner
@@ -40,6 +40,7 @@ from app.services.third_party_security_auditor import ThirdPartySecurityAuditor
 from app.services.tls_crypto_auditor import TLSCryptoAuditor
 from app.services.incident_dispatcher import IncidentDispatcherHub
 from app.services.seo_structured_data_auditor import SEOStructuredDataAuditor
+from app.services.ethical_security_engine import EthicalSecurityEngine
 
 SCANNERS = [
     SecurityHeadersScanner(),
@@ -216,6 +217,17 @@ async def execute_scan(
             import logging
             logging.error(f"[DAST Verification Error] Failed on {sanitized_url}: {exc}")
 
+        # ── 🛡️ Otonom Beyaz Şapkalı Siber Güvenlik & Dayanıklılık Motoru ──
+        ethical_sec_report = None
+        ethical_findings = []
+        try:
+            ethical_sec_report, ethical_findings = await EthicalSecurityEngine.audit(
+                sanitized_url, client=client
+            )
+        except Exception as exc:
+            import logging
+            logging.error(f"[Ethical Security Engine Error] Failed on {sanitized_url}: {exc}", exc_info=True)
+
     all_findings: list[Finding] = []
     for res in scanner_results:
         if isinstance(res, list):
@@ -225,6 +237,7 @@ async def execute_scan(
     all_findings.extend(rate_limit_findings)
     all_findings.extend(resp_findings)
     all_findings.extend(dast_findings)
+    all_findings.extend(ethical_findings)
 
     # Virgosol & TestSprite Kaos Mühendisliği ve Ağ Hata Enjeksiyonu
     chaos_report = None
@@ -499,6 +512,7 @@ async def execute_scan(
         audit_mode=audit_mode or AuditMode.UX_PERSONA,
         persona=persona or UserPersona.SHOPPER,
         persona_audit_report=getattr(qa_scanner, "persona_audit_report", None),
+        ethical_security_report=ethical_sec_report,
         started_at=started_at,
         completed_at=datetime.utcnow()
     )

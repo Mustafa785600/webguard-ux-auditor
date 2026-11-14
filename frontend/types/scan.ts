@@ -41,6 +41,48 @@ export interface PersonaAuditReport {
   events: PersonaInteractionEvent[];
 }
 
+export type OpenDoorStatus = "SECURE" | "EXPOSED" | "FILTERED";
+
+export interface OpenDoorProbe {
+  path: string;
+  target_type: "CONFIG" | "DATABASE_DUMP" | "VERSION_CONTROL" | "CREDENTIALS" | "ADMIN_PANEL" | string;
+  http_status: number;
+  status: OpenDoorStatus;
+  response_size_bytes: number;
+  latency_ms: number;
+  evidence_snippet?: string;
+  risk_level: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | string;
+}
+
+export interface WAFCanaryProbe {
+  vector: string;
+  payload: string;
+  http_status: number;
+  blocked: boolean;
+  waf_vendor?: string;
+  response_signature: string;
+}
+
+export interface EthicalSecurityReport {
+  target_url: string;
+  scan_timestamp: string;
+  cyber_resilience_score: number;
+  resilience_tier: "FORTRESS" | "RESILIENT" | "VULNERABLE" | "COMPROMISED" | string;
+  waf_detected: boolean;
+  waf_vendor?: string;
+  waf_filtering_score: number;
+  burst_ddos_tolerance_score: number;
+  burst_requests_sent: number;
+  burst_429_received: boolean;
+  open_doors_probed: number;
+  open_doors_exposed_count: number;
+  open_doors: OpenDoorProbe[];
+  canary_probes: WAFCanaryProbe[];
+  key_strengths: string[];
+  critical_vulnerabilities: string[];
+  executive_verdict: string;
+}
+
 export interface NetworkRequestTrace {
   url: string;
   method: string;
@@ -192,6 +234,7 @@ export interface ScanResult {
   audit_mode?: AuditMode;
   persona?: UserPersona;
   persona_audit_report?: PersonaAuditReport;
+  ethical_security_report?: EthicalSecurityReport;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;

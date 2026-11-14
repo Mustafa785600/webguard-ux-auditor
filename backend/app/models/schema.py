@@ -64,6 +64,48 @@ class PersonaAuditReport(BaseModel):
     key_observations: List[str] = []
     events: List[PersonaInteractionEvent] = []
 
+class OpenDoorStatus(str, Enum):
+    SECURE = "SECURE"      # 404/403 ile korumalı
+    EXPOSED = "EXPOSED"    # 200 ile hassas içerik sızdı (Kritik)
+    FILTERED = "FILTERED"  # WAF/CDN tarafından bloklandı
+
+class OpenDoorProbe(BaseModel):
+    path: str
+    target_type: str  # "CONFIG", "DATABASE_DUMP", "VERSION_CONTROL", "CREDENTIALS", "ADMIN_PANEL"
+    http_status: int
+    status: OpenDoorStatus
+    response_size_bytes: int = 0
+    latency_ms: float = 0.0
+    evidence_snippet: Optional[str] = None
+    risk_level: str = "HIGH"  # "CRITICAL", "HIGH", "MEDIUM", "LOW"
+
+class WAFCanaryProbe(BaseModel):
+    vector: str  # "SQL_INJECTION", "XSS_REFLECTED", "PATH_TRAVERSAL", "MALFORMED_BODY"
+    payload: str
+    http_status: int
+    blocked: bool
+    waf_vendor: Optional[str] = None
+    response_signature: str
+
+class EthicalSecurityReport(BaseModel):
+    target_url: str
+    scan_timestamp: datetime
+    cyber_resilience_score: int  # 0 - 100
+    resilience_tier: str  # "FORTRESS", "RESILIENT", "VULNERABLE", "COMPROMISED"
+    waf_detected: bool
+    waf_vendor: Optional[str] = None
+    waf_filtering_score: int = 100  # 0 - 100
+    burst_ddos_tolerance_score: int = 100  # 0 - 100
+    burst_requests_sent: int = 0
+    burst_429_received: bool = False
+    open_doors_probed: int = 0
+    open_doors_exposed_count: int = 0
+    open_doors: List[OpenDoorProbe] = []
+    canary_probes: List[WAFCanaryProbe] = []
+    key_strengths: List[str] = []
+    critical_vulnerabilities: List[str] = []
+    executive_verdict: str
+
 class NetworkRequestTrace(BaseModel):
     url: str
     method: str
@@ -226,6 +268,7 @@ class ScanResult(BaseModel):
     audit_mode: Optional[AuditMode] = AuditMode.UX_PERSONA
     persona: Optional[UserPersona] = UserPersona.SHOPPER
     persona_audit_report: Optional[PersonaAuditReport] = None
+    ethical_security_report: Optional[EthicalSecurityReport] = None
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime

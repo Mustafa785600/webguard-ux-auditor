@@ -8434,6 +8434,773 @@ body {
   color: #94a3b8;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🛡️ ETİK SİBER GÜVENLİK & DAYANIKLILIK MODU (WHITE-HAT REPORT & HUD STYLES)
+═══════════════════════════════════════════════════════════════════════════════ */
+
+.ethical-report-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+.ethical-empty-box {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.ethical-empty-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ── 1. Hero Card ── */
+.ethical-hero-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 27, 75, 0.8) 50%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 18px;
+  padding: 24px 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.ethical-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .ethical-hero-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.ethical-shield-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ethical-shield-outer {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.ethical-shield-outer.tier-fortress {
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
+}
+
+.ethical-shield-outer.tier-resilient {
+  background: rgba(59, 130, 246, 0.15);
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.35);
+}
+
+.ethical-shield-outer.tier-vulnerable {
+  background: rgba(245, 158, 11, 0.15);
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+}
+
+.ethical-shield-outer.tier-compromised {
+  background: rgba(239, 68, 68, 0.2);
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+  animation: pulse-danger 2s infinite ease-in-out;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); }
+}
+
+.ethical-shield-icon {
+  font-size: 38px;
+}
+
+.ethical-score-bubble {
+  margin-top: -10px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.ethical-score-bubble .score-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.ethical-score-bubble .score-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.ethical-hero-info {
+  flex: 1;
+}
+
+.ethical-hero-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ethical-tier-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.ethical-tier-pill.tier-fortress {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.ethical-tier-pill.tier-resilient {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.ethical-tier-pill.tier-vulnerable {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.ethical-tier-pill.tier-compromised {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.ethical-method-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(129, 140, 248, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.ethical-target-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.ethical-hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.ethical-hero-desc {
+  font-size: 13.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.ethical-meta-strip {
+  display: flex;
+  gap: 12px;
+  font-size: 11.5px;
+  color: #64748b;
+  font-family: "JetBrains Mono", monospace;
+  align-items: center;
+}
+
+/* ── 3 Pillars Grid ── */
+.ethical-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 18px;
+}
+
+.pillar-metric-card {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pillar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pillar-icon {
+  font-size: 24px;
+}
+
+.pillar-title-box h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.pillar-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+
+.pillar-bar-wrap {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  margin: 12px 0 10px 0;
+  overflow: hidden;
+}
+
+.pillar-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.fill-waf {
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+}
+
+.fill-burst {
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+}
+
+.fill-sealed {
+  background: #10b981;
+}
+
+.fill-danger {
+  background: #ef4444;
+}
+
+.pillar-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pillar-score-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.pillar-status-chip {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.pillar-status-chip.chip-ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pillar-status-chip.chip-warn {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.pillar-status-chip.chip-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.pillar-status-chip.chip-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* ── 2. Findings Grid ── */
+.ethical-findings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.ethical-finding-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.ethical-finding-card.card-strengths {
+  border-left: 3px solid #10b981;
+}
+
+.ethical-finding-card.card-vulnerabilities {
+  border-left: 3px solid #ef4444;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.card-top h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.strength-list, .vuln-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.strength-item, .vuln-item {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.check-bullet, .warn-bullet {
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.no-vuln-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.no-vuln-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* ── 3. Attack Surface & Canary Tables ── */
+.ethical-section-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 4px 0;
+}
+
+.section-subtitle {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.table-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.table-search-input {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: #f8fafc;
+  font-size: 12px;
+  outline: none;
+  min-width: 180px;
+}
+
+.table-search-input:focus {
+  border-color: #6366f1;
+}
+
+.filter-pill-group {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-btn:hover {
+  color: #f8fafc;
+}
+
+.filter-btn.active {
+  background: rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+}
+
+.filter-btn.btn-danger.active {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.filter-btn.btn-safe.active {
+  background: rgba(16, 185, 129, 0.3);
+  color: #86efac;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ethical-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.ethical-table th {
+  background: rgba(15, 23, 42, 0.85);
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ethical-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.ethical-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ethical-table tbody tr.row-danger {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.code-font code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #e0e7ff;
+}
+
+.type-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+.status-code-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.code-200-ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.code-200-danger {
+  background: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  animation: pulse-danger 1.5s infinite;
+}
+
+.code-403 {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.code-404 {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+}
+
+.code-500 {
+  background: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.verdict-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.chip-exposed {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.chip-filtered {
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.chip-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.chip-clean {
+  background: rgba(6, 182, 212, 0.15);
+  color: #67e8f9;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.metric-cell {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+}
+
+.latency-sub {
+  color: #64748b;
+  margin-left: 4px;
+  font-size: 10.5px;
+}
+
+.risk-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.risk-critical {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.risk-high {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fdba74;
+}
+
+.risk-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde047;
+}
+
+.risk-low {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+}
+
+.vector-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #c7d2fe;
+}
+
+.payload-col code {
+  color: #fca5a5;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+
+.sig-col {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* ── 5. Remediation Card ── */
+.ethical-remediation-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.remediation-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.rem-icon {
+  font-size: 28px;
+}
+
+.remediation-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 3px 0;
+}
+
+.remediation-header p {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.code-blocks-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.code-block-item {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.code-block-title {
+  display: block;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.code-box {
+  padding: 12px;
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: #38bdf8;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+/* ── Live Screencast Cyber Mode Overlay ── */
+.tag-cyber {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+.cyber-reticle {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.7) !important;
+}
+
+.cyber-reticle .ai-cursor-tag {
+  background: rgba(239, 68, 68, 0.9) !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.cyber-reticle .ai-cursor-ripple {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+.cyber-laser-red {
+  background: linear-gradient(180deg, transparent 0%, rgba(239, 68, 68, 0.35) 50%, #ef4444 100%) !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.8) !important;
+}
+
+
 
 
 

@@ -208,3 +208,4 @@ export default function UserPersonaReportView({ report, lang = "tr" }: UserPerso
     </div>
   );
 }
+

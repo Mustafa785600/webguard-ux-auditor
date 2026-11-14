@@ -31,6 +31,7 @@ import TLSCryptoView from "./TLSCryptoView";
 import { IncidentHubView } from "./IncidentHubView";
 import SEOStructuredDataView from "./SEOStructuredDataView";
 import UserPersonaReportView from "./UserPersonaReportView";
+import EthicalSecurityReportView from "./EthicalSecurityReportView";
 import { AuditMode, UserPersona } from "@/types/scan";
 import {
   type Language,
@@ -55,6 +56,7 @@ export type DashboardTab =
   | "OVERVIEW"
   | "FINDINGS"
   | "PERSONA"
+  | "ETHICAL_SECURITY"
   | "DAST"
   | "WAF"
   | "THIRDPARTY"
@@ -183,6 +185,9 @@ export default function ScanDashboard() {
           (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
         );
         setResult({ ...data, findings: sorted });
+        if (auditMode === "ETHICAL_SECURITY" || data.audit_mode === "ETHICAL_SECURITY") {
+          setActiveTab("ETHICAL_SECURITY");
+        }
         saveToHistory(targetUrl.trim());
       }
     } catch (err: unknown) {
@@ -234,6 +239,15 @@ export default function ScanDashboard() {
         title: lang === "tr" ? "Güvenlik & Uyum" : "Security & Compliance",
         icon: "🛡️",
         items: [
+          {
+            id: "ETHICAL_SECURITY",
+            label: lang === "tr" ? "Etik Siber Dayanıklılık" : "Ethical Cyber Resilience",
+            icon: "🛡️",
+            badge: result.ethical_security_report
+              ? `${result.ethical_security_report.cyber_resilience_score}%`
+              : null,
+            badgeVariant: result.ethical_security_report && result.ethical_security_report.cyber_resilience_score < 70 ? "warning" : "success",
+          },
           {
             id: "DAST",
             label: lang === "tr" ? "DAST Zafiyet Doğrulama" : "DAST Exploit Verification",
@@ -827,7 +841,13 @@ export default function ScanDashboard() {
         {/* B. Tarama Sırasında: Canlı HUD ve Ekran Kaydı */}
         {loading && (
           <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
-            <LiveScreencastPanel targetUrl={url} isActive={true} lang={lang} persona={selectedPersona} />
+            <LiveScreencastPanel
+              targetUrl={url}
+              isActive={true}
+              lang={lang}
+              persona={selectedPersona}
+              auditMode={auditMode}
+            />
           </div>
         )}
 
@@ -1162,6 +1182,9 @@ export default function ScanDashboard() {
                 {/* ── B. MODÜL GÖRÜNÜMLERİ (TAB RENDERING) ── */}
 
                 {/* 1. GÜVENLİK HUB MODÜLLERİ */}
+                {activeTab === "ETHICAL_SECURITY" && (
+                  <EthicalSecurityReportView report={result.ethical_security_report} lang={lang} />
+                )}
                 {activeTab === "DAST" && (
                   <DASTVerificationView report={result.dast_verification} lang={lang} />
                 )}
@@ -1395,6 +1418,7 @@ export default function ScanDashboard() {
                     isActive={false}
                     lang={lang}
                     persona={result.persona || selectedPersona}
+                    auditMode={result.audit_mode || auditMode}
                     onClose={() => setShowLiveScreencast(false)}
                   />
                 </div>

@@ -91,3 +91,4 @@ async def test_persona_simulation_power_explorer():
     assert report.persona == UserPersona.POWER_EXPLORER
     assert "Kaşif" in report.persona_title
     assert len(report.events) >= 1
+
