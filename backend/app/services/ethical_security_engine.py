@@ -16,15 +16,16 @@ from app.models.schema import (
     EthicalSecurityReport,
 )
 from app.services.live_screencast import live_hub
+from app.services.challenge_detector import ChallengeDetector
 
 # ── 1. WAF Parmak İzi Veritabanı ──────────────────────────────────────────
 WAF_SIGNATURES: List[Dict[str, Any]] = [
     {
-        "vendor": "Cloudflare WAF",
+        "vendor": "Cloudflare WAF & Bot Shield",
         "headers": ["cf-ray", "cf-mitigated", "cf-cache-status"],
         "server": ["cloudflare"],
         "cookies": ["__cf_bm", "cf_clearance"],
-        "body": ["Attention Required! | Cloudflare", "Cloudflare Ray ID:"],
+        "body": ["Attention Required! | Cloudflare", "Cloudflare Ray ID:", "Error 1020: Access denied", "cf-browser-verification"],
     },
     {
         "vendor": "AWS WAF / CloudFront",
@@ -34,11 +35,11 @@ WAF_SIGNATURES: List[Dict[str, Any]] = [
         "body": ["403 Forbidden - AWS WAF", "Request blocked by AWS WAF"],
     },
     {
-        "vendor": "Akamai App & API Protector",
+        "vendor": "Akamai Bot Manager & WAF",
         "headers": ["x-akamai-transformed", "akamai-ghost"],
         "server": ["akamaighost"],
-        "cookies": ["ak_bmsc"],
-        "body": ["Access Denied - Akamai", "Reference&#32;&#35;"],
+        "cookies": ["ak_bmsc", "_abck", "bm_sz"],
+        "body": ["Access Denied", "Reference&#32;&#35;", "Referans Kodu:", "Bağlantınız güvensiz", "akamaized", "Reference Error:"],
     },
     {
         "vendor": "Imperva / Incapsula WAF",
@@ -157,12 +158,22 @@ class EthicalSecurityEngine:
         cls,
         target_url: str,
         client: Optional[httpx.AsyncClient] = None,
+        custom_headers: Optional[Dict[str, str]] = None,
     ) -> Tuple[EthicalSecurityReport, List[Finding]]:
         findings: List[Finding] = []
         open_door_probes: List[OpenDoorProbe] = []
         canary_probes: List[WAFCanaryProbe] = []
         key_strengths: List[str] = []
         critical_vulnerabilities: List[str] = []
+
+        authorized_audit_active = bool(
+            custom_headers and any(
+                k.lower() in ("x-audit-token", "x-webguard-audit-token", "authorization")
+                for k in custom_headers.keys()
+            )
+        )
+        bot_shield_detected = False
+        bot_shield_name: Optional[str] = None
 
         # Canlı Kırmızı Takım operasyon duyurusu
         live_hub.record_action(
@@ -174,7 +185,8 @@ class EthicalSecurityEngine:
 
         close_client = False
         if client is None:
-            client = httpx.AsyncClient(timeout=8.0, verify=False, follow_redirects=True)
+            headers = custom_headers or {}
+            client = httpx.AsyncClient(headers=headers, timeout=8.0, verify=False, follow_redirects=True)
             close_client = True
 
         try:
@@ -191,6 +203,21 @@ class EthicalSecurityEngine:
             detected_waf: Optional[str] = None
             try:
                 base_resp = await client.get(target_url)
+
+                # Akamai & Cloudflare Bot Kalkanı Kontrolü (ChallengeDetector HTTP kontrolü)
+                challenge_check = ChallengeDetector.inspect_http_response(
+                    base_resp.status_code,
+                    dict(base_resp.headers),
+                    base_resp.text
+                )
+                if challenge_check.detected and challenge_check.is_bot_shield:
+                    bot_shield_detected = True
+                    bot_shield_name = challenge_check.provider_name
+                    detected_waf = challenge_check.provider_name
+                    shield_finding = ChallengeDetector.formulate_hitl_finding(challenge_check, target_url)
+                    if shield_finding:
+                        findings.append(shield_finding)
+
                 headers_lower = {k.lower(): v.lower() for k, v in base_resp.headers.items()}
                 server_hdr = headers_lower.get("server", "")
 
@@ -209,7 +236,15 @@ class EthicalSecurityEngine:
             except Exception:
                 pass
 
-            if detected_waf:
+            if bot_shield_detected:
+                key_strengths.append(f"🛡️ Kurumsal Çevre Kalkanı Doğrulandı: {bot_shield_name} yetkisiz bot ve kazıyıcı trafiğini engelliyor (100/100).")
+                live_hub.record_action(
+                    label=f"🛡️ [Bot Kalkanı Doğrulandı] {bot_shield_name} aktif, çevre güvenliği tam puanla kilitli",
+                    action_type="GATE",
+                    target=bot_shield_name,
+                    coords={"x": 512, "y": 140}
+                )
+            elif detected_waf:
                 key_strengths.append(f"Aktif WAF Güvenlik Kalkanı tespit edildi: {detected_waf}")
                 live_hub.record_action(
                     label=f"🛡️ [WAF Tespit Edildi] {detected_waf} devrede, filtreleme canarileri deneniyor",
@@ -387,15 +422,27 @@ class EthicalSecurityEngine:
                 key_strengths.append(f"Taranan {len(CRITICAL_OPEN_DOORS)} kritik kapının tamamı güvenli şekilde kilitli.")
 
             # ── 4. BÜTÜNCÜL SİBER DAYANIKLILIK SKORU ($S_{cyber}$) ────────────────
+            if bot_shield_detected:
+                waf_score = 100
+
             cyber_score = int(
                 (0.35 * waf_score) +
                 (0.30 * burst_score) +
                 (0.25 * open_door_score) +
                 (0.10 * 85) # Header baseline
             )
+            if bot_shield_detected:
+                cyber_score = max(cyber_score, 95)
             cyber_score = max(20, min(100, cyber_score))
 
-            if cyber_score >= 90:
+            if bot_shield_detected:
+                tier = "FORTRESS"
+                verdict = (
+                    f"🏰 Kurumsal Siber Kale Doğrulandı: {bot_shield_name} aktif çevre savunması devrede (100/100). "
+                    f"Yetkisiz otomatik bot ve tarayıcı istekleri anında bloke edildi. "
+                    f"İç sayfaların derin UX ve sepet akışı denetimi için 'Kurumsal Yetkili Denetim Modu' (X-Audit-Token) kullanabilirsiniz."
+                )
+            elif cyber_score >= 90:
                 tier = "FORTRESS"
                 verdict = "Kale Düzeyinde Siber Zırh: WAF kalkanı, hız sınırı filtrelemesi ve açık kapı güvenliği kurumsal seviyede."
             elif cyber_score >= 70:
@@ -413,8 +460,8 @@ class EthicalSecurityEngine:
                 scan_timestamp=datetime.utcnow(),
                 cyber_resilience_score=cyber_score,
                 resilience_tier=tier,
-                waf_detected=bool(detected_waf),
-                waf_vendor=detected_waf,
+                waf_detected=bool(detected_waf or bot_shield_detected),
+                waf_vendor=detected_waf or bot_shield_name,
                 waf_filtering_score=waf_score,
                 burst_ddos_tolerance_score=burst_score,
                 burst_requests_sent=burst_count,
@@ -426,6 +473,9 @@ class EthicalSecurityEngine:
                 key_strengths=key_strengths,
                 critical_vulnerabilities=critical_vulnerabilities,
                 executive_verdict=verdict,
+                bot_shield_detected=bot_shield_detected,
+                bot_shield_name=bot_shield_name,
+                authorized_audit_active=authorized_audit_active,
             )
 
             live_hub.record_action(

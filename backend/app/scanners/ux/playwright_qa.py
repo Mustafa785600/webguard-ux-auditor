@@ -51,8 +51,13 @@ class PlaywrightQAScanner(BaseScanner):
     - Ready-to-run Playwright .spec.ts script generation
     """
 
-    def __init__(self, persona: Optional[UserPersona] = UserPersona.SHOPPER):
+    def __init__(
+        self,
+        persona: Optional[UserPersona] = UserPersona.SHOPPER,
+        custom_headers: Optional[Dict[str, str]] = None
+    ):
         self.persona: UserPersona = persona or UserPersona.SHOPPER
+        self.custom_headers: Optional[Dict[str, str]] = custom_headers
         self.persona_audit_report: Optional[PersonaAuditReport] = None
         self.network_traces: List[NetworkRequestTrace] = []
         self.self_healing = SelfHealingEngine()
@@ -89,7 +94,8 @@ class PlaywrightQAScanner(BaseScanner):
                 context = await browser.new_context(
                     viewport={"width": 1280, "height": 800},
                     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebGuard-AutonomousQA/3.0",
-                    ignore_https_errors=True
+                    ignore_https_errors=True,
+                    extra_http_headers=self.custom_headers or {}
                 )
                 page = await context.new_page()
 

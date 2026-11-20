@@ -81,6 +81,9 @@ export interface EthicalSecurityReport {
   key_strengths: string[];
   critical_vulnerabilities: string[];
   executive_verdict: string;
+  bot_shield_detected?: boolean;
+  bot_shield_name?: string;
+  authorized_audit_active?: boolean;
 }
 
 export interface NetworkRequestTrace {
@@ -235,6 +238,12 @@ export interface ScanResult {
   persona?: UserPersona;
   persona_audit_report?: PersonaAuditReport;
   ethical_security_report?: EthicalSecurityReport;
+  custom_headers?: Record<string, string>;
+  audit_token?: string;
+  auth_cookie?: string;
+  authorized_audit_active?: boolean;
+  bot_shield_detected?: boolean;
+  bot_shield_name?: string;
   crawled_pages_count?: number;
   error_message?: string;
   started_at: string;

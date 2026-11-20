@@ -105,6 +105,9 @@ class EthicalSecurityReport(BaseModel):
     key_strengths: List[str] = []
     critical_vulnerabilities: List[str] = []
     executive_verdict: str
+    bot_shield_detected: bool = False
+    bot_shield_name: Optional[str] = None
+    authorized_audit_active: bool = False
 
 class NetworkRequestTrace(BaseModel):
     url: str
@@ -206,6 +209,9 @@ class ScanRequest(BaseModel):
     enable_crawler: Optional[bool] = False
     max_pages: Optional[int] = 5
     crawl_depth: Optional[int] = 1
+    custom_headers: Optional[Dict[str, str]] = None
+    audit_token: Optional[str] = None
+    auth_cookie: Optional[str] = None
 
 class PerformanceMetrics(BaseModel):
     total_requests: int
@@ -269,6 +275,9 @@ class ScanResult(BaseModel):
     persona: Optional[UserPersona] = UserPersona.SHOPPER
     persona_audit_report: Optional[PersonaAuditReport] = None
     ethical_security_report: Optional[EthicalSecurityReport] = None
+    custom_headers: Optional[Dict[str, str]] = None
+    audit_token: Optional[str] = None
+    authorized_audit_active: bool = False
     crawled_pages_count: int = 1
     error_message: Optional[str] = None
     started_at: datetime

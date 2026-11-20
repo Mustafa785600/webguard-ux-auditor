@@ -12,6 +12,9 @@ export async function startScan(
     sector?: SectorType;
     auditMode?: AuditMode;
     persona?: UserPersona;
+    custom_headers?: Record<string, string>;
+    audit_token?: string;
+    auth_cookie?: string;
   }
 ): Promise<ScanResult> {
   const res = await fetch(`${API_BASE}/scan`, {
@@ -26,6 +29,9 @@ export async function startScan(
       sector: crawlerOptions?.sector ?? "AUTO",
       audit_mode: crawlerOptions?.auditMode ?? "UX_PERSONA",
       persona: crawlerOptions?.persona ?? "SHOPPER",
+      custom_headers: crawlerOptions?.custom_headers,
+      audit_token: crawlerOptions?.audit_token,
+      auth_cookie: crawlerOptions?.auth_cookie,
     }),
   });
   if (!res.ok) {

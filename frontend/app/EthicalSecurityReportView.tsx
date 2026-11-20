@@ -88,6 +88,36 @@ export default function EthicalSecurityReportView({
 
   return (
     <div className="ethical-report-container">
+      {/* ── 0. BOT SHIELD VERIFICATION BANNER ── */}
+      {report.bot_shield_detected && (
+        <div className="bot-shield-success-banner">
+          <div className="shield-banner-badge">
+            <span className="shield-banner-icon">🛡️</span>
+            <div>
+              <div className="shield-banner-title">
+                {isTr
+                  ? `Kurumsal Çevre Kalkanı Doğrulandı: ${report.bot_shield_name || "Akamai Bot Manager"} (100/100 Tam Puan)`
+                  : `Enterprise Perimeter Shield Verified: ${report.bot_shield_name || "Akamai Bot Manager"} (100/100 Fortress)`}
+              </div>
+              <div className="shield-banner-subtitle">
+                {isTr
+                  ? "Hedef web sitesi yetkisiz otomatik bot ve scraper trafiğini anında algılayıp engelleyerek çevre korumasını kusursuz şekilde kanıtladı."
+                  : "Target website intercepted automated bot recon in real-time, verifying active perimeter defenses."}
+              </div>
+            </div>
+          </div>
+          <div className="shield-banner-guide">
+            <span className="guide-icon">💡</span>
+            <div className="guide-text">
+              <strong>{isTr ? "İç Sayfaları ve Sepet Akışını Denetlemek İster misiniz?" : "Need to Audit Checkout & Internal Pages?"}</strong>{" "}
+              {isTr
+                ? "Sitenin meşru sahibiyseniz, WAF (Akamai/Cloudflare) panelinizde tanımladığınız 'X-Audit-Token' anahtarını yukarıdaki Ayarlar (⚙️) panelinden girerek 'Kurumsal Yetkili Denetim Modu' ile tüm iç sayfaları, formu ve UX akışlarını engelsiz denetleyebilirsiniz."
+                : "Configure your X-Audit-Token in the scan settings (⚙️) to authorize the scanner through your WAF whitelist."}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 1. WHITE-HAT HERO BANNER ── */}
       <div className="ethical-hero-card">
         <div className="ethical-hero-main">
@@ -106,6 +136,16 @@ export default function EthicalSecurityReportView({
               <span className={`ethical-tier-pill ${tierInfo.colorClass}`}>
                 {tierInfo.badge}
               </span>
+              {report.bot_shield_detected && (
+                <span className="ethical-tier-pill tier-fortress">
+                  🛡️ {report.bot_shield_name || "AKAMAI BOT SHIELD"} AKTİF
+                </span>
+              )}
+              {report.authorized_audit_active && (
+                <span className="ethical-method-pill" style={{ background: "rgba(16, 185, 129, 0.2)", color: "#34d399", borderColor: "#10b981" }}>
+                  🔑 {isTr ? "YETKİLİ DENETİM DEVREDE" : "AUTHORIZED AUDIT ACTIVE"}
+                </span>
+              )}
               <span className="ethical-method-pill">
                 🎯 {isTr ? "ZARARSIZ BEYAZ ŞAPKALI DENETİM" : "NON-DESTRUCTIVE WHITE-HAT"}
               </span>

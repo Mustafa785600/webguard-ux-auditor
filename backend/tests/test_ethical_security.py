@@ -79,7 +79,7 @@ async def test_ethical_security_audit_with_mock_client():
     assert isinstance(report, EthicalSecurityReport)
     assert report.target_url == "https://example.com"
     assert report.waf_detected is True
-    assert report.waf_vendor == "Cloudflare WAF"
+    assert "Cloudflare WAF" in report.waf_vendor
     assert report.cyber_resilience_score >= 70
     assert report.open_doors_probed >= len(CRITICAL_OPEN_DOORS)
     assert report.open_doors_exposed_count == 0

@@ -116,6 +116,11 @@ export default function ScanDashboard() {
   const [auditMode, setAuditMode] = useState<AuditMode>("UX_PERSONA");
   const [selectedPersona, setSelectedPersona] = useState<UserPersona>("SHOPPER");
 
+  // Authorized Audit Mode (X-Audit-Token & Custom Headers)
+  const [auditToken, setAuditToken] = useState<string>("");
+  const [authCookie, setAuthCookie] = useState<string>("");
+  const [customHeadersStr, setCustomHeadersStr] = useState<string>("");
+
   // Autonomous Crawler state
   const [enableCrawler, setEnableCrawler] = useState<boolean>(true);
   const [maxPages, setMaxPages] = useState<number>(5);
@@ -170,6 +175,23 @@ export default function ScanDashboard() {
     setSelectedRouteUrl(null);
     setActiveTab("OVERVIEW");
 
+    let parsedHeaders: Record<string, string> | undefined = undefined;
+    if (customHeadersStr.trim()) {
+      try {
+        parsedHeaders = JSON.parse(customHeadersStr);
+      } catch {
+        parsedHeaders = {};
+        customHeadersStr.split("\n").forEach((line) => {
+          const idx = line.indexOf(":");
+          if (idx > -1) {
+            const k = line.substring(0, idx).trim();
+            const v = line.substring(idx + 1).trim();
+            if (k) parsedHeaders![k] = v;
+          }
+        });
+      }
+    }
+
     try {
       const data = await startScan(targetUrl.trim(), undefined, {
         enableCrawler,
@@ -177,6 +199,9 @@ export default function ScanDashboard() {
         sector: selectedSector,
         auditMode,
         persona: selectedPersona,
+        custom_headers: parsedHeaders,
+        audit_token: auditToken.trim() || undefined,
+        auth_cookie: authCookie.trim() || undefined,
       });
       if (data.status === "FAILED") {
         setError(data.error_message ?? "Scan failed.");
@@ -606,10 +631,10 @@ export default function ScanDashboard() {
           <button
             type="button"
             onClick={() => setShowConfigDrawer(!showConfigDrawer)}
-            className={`wg-config-toggle ${showConfigDrawer ? "active" : ""}`}
-            title={lang === "tr" ? "Gelişmiş Tarama ve Sektör Protokolü Ayarları" : "Scan Configuration"}
+            className={`wg-config-toggle ${showConfigDrawer ? "active" : ""} ${auditToken.trim() || authCookie.trim() ? "auth-configured" : ""}`}
+            title={lang === "tr" ? "Gelişmiş Tarama & Kurumsal Yetkili Denetim Ayarları" : "Scan Configuration & Authorized Audit"}
           >
-            ⚙️
+            ⚙️ {auditToken.trim() || authCookie.trim() ? "🟢" : ""}
           </button>
           <button
             type="submit"
@@ -631,10 +656,65 @@ export default function ScanDashboard() {
           </button>
         </form>
 
-        {/* Gelişmiş Ayarlar Çekmecesi (Crawler & Sektörel Protokol) */}
+        {/* Gelişmiş Ayarlar Çekmecesi (Crawler, Sektörel Protokol & Kurumsal Yetkili Denetim) */}
         {showConfigDrawer && (
           <div className="wg-config-drawer">
-            <div className="crawler-options-bar" style={{ marginTop: 0 }}>
+            {/* 1. Kurumsal Yetkili Denetim Modu (X-Audit-Token & Başlık Enjeksiyonu) */}
+            <div className="auth-audit-config-box">
+              <div className="auth-audit-header">
+                <span className="auth-audit-icon">🔑</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="auth-audit-title">
+                      {lang === "tr" ? "Kurumsal Yetkili Denetim Modu (Authorized Audit Mode)" : "Authorized Enterprise Audit Mode"}
+                    </span>
+                    {(auditToken.trim() || authCookie.trim()) && (
+                      <span className="auth-active-chip">
+                        ✓ {lang === "tr" ? "Yetki Aktif" : "Active"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="auth-audit-desc">
+                    {lang === "tr"
+                      ? "Hedef sitenizin WAF/CDN (Akamai Bot Manager, Cloudflare vb.) panelinde tanımladığınız test anahtarını girin. Bu sayede çevre kalkanı test trafiğine geçiş izni tanır ve iç sayfalar (sepet, sipariş akışı, formlar) eksiksiz denetlenir."
+                      : "Provide a test bypass token configured in your Akamai/Cloudflare WAF to inspect internal pages and checkout funnels without being blocked."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="auth-inputs-grid">
+                <div className="auth-input-group">
+                  <label className="auth-label">
+                    <span>🛡️ X-Audit-Token / Test Anahtarı</span>
+                    <span className="auth-label-hint">({lang === "tr" ? "WAF kuralı ile eşleşir" : "Matches WAF bypass rule"})</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={auditToken}
+                    onChange={(e) => setAuditToken(e.target.value)}
+                    placeholder="örn. hb_sec_audit_token_2026"
+                    className="auth-text-input"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="auth-input-group">
+                  <label className="auth-label">
+                    <span>🍪 {lang === "tr" ? "Oturum Çerezi (Session Cookie)" : "Session Cookie / Auth"}</span>
+                    <span className="auth-label-hint">({lang === "tr" ? "Giriş yapılmış oturum" : "Pre-authenticated session"})</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={authCookie}
+                    onChange={(e) => setAuthCookie(e.target.value)}
+                    placeholder="örn. session_id=xyz987; token=auth_jwt_token"
+                    className="auth-text-input"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="crawler-options-bar" style={{ marginTop: 12 }}>
               <label className="crawler-toggle-label">
                 <input
                   type="checkbox"
@@ -665,7 +745,7 @@ export default function ScanDashboard() {
               )}
             </div>
 
-            <div className="sector-selector-bar" style={{ marginTop: 0 }}>
+            <div className="sector-selector-bar" style={{ marginTop: 10 }}>
               <div className="sector-selector-label">
                 🏛️ {lang === "tr" ? "Sektörel Uyumluluk Protokolü:" : "Industry Compliance Protocol:"}
               </div>

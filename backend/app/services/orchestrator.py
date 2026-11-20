@@ -120,9 +120,36 @@ async def execute_scan(
     sector: Optional[SectorType] = SectorType.AUTO,
     audit_mode: Optional[AuditMode] = AuditMode.UX_PERSONA,
     persona: Optional[UserPersona] = UserPersona.SHOPPER,
+    custom_headers: Optional[Dict[str, str]] = None,
+    audit_token: Optional[str] = None,
+    auth_cookie: Optional[str] = None,
 ) -> ScanResult:
     scan_id = str(uuid.uuid4())
     started_at = datetime.utcnow()
+    
+    # ── Kurumsal Yetkili Denetim Başlıkları & Token Birleştirme ──────────
+    effective_headers: Dict[str, str] = {"User-Agent": settings.USER_AGENT}
+    if custom_headers:
+        effective_headers.update(custom_headers)
+    if audit_token:
+        effective_headers["X-Audit-Token"] = audit_token
+        effective_headers["X-WebGuard-Audit-Token"] = audit_token
+    if auth_cookie:
+        effective_headers["Cookie"] = auth_cookie
+
+    authorized_audit_active = bool(
+        audit_token or (
+            custom_headers and any("audit" in k.lower() or "auth" in k.lower() for k in custom_headers.keys())
+        )
+    )
+
+    if authorized_audit_active:
+        live_hub.record_action(
+            "🔑 [Kurumsal Yetkili Denetim] X-Audit-Token & Özel Başlıklar enjekte edildi",
+            action_type="GATE",
+            target="auth_headers",
+            coords={"x": 512, "y": 60}
+        )
     
     try:
         sanitized_url = validate_and_sanitize_target_url(target_url)
@@ -136,6 +163,9 @@ async def execute_scan(
             selected_sector=sector or SectorType.AUTO,
             audit_mode=audit_mode or AuditMode.UX_PERSONA,
             persona=persona or UserPersona.SHOPPER,
+            custom_headers=custom_headers,
+            audit_token=audit_token,
+            authorized_audit_active=authorized_audit_active,
             started_at=started_at,
             completed_at=datetime.utcnow()
         )
@@ -149,9 +179,12 @@ async def execute_scan(
             logging.error(f"[Crawler Error] Failed to crawl {sanitized_url}: {exc}", exc_info=True)
 
     compliance_scanner = ComplianceScanner(requested_sector=sector or SectorType.AUTO)
-    qa_scanner = PlaywrightQAScanner(persona=persona or UserPersona.SHOPPER)
+    qa_scanner = PlaywrightQAScanner(
+        persona=persona or UserPersona.SHOPPER,
+        custom_headers=effective_headers
+    )
 
-    headers = {"User-Agent": settings.USER_AGENT}
+    headers = effective_headers
     perf_metrics = None
     async with httpx.AsyncClient(
         headers=headers,
@@ -222,7 +255,7 @@ async def execute_scan(
         ethical_findings = []
         try:
             ethical_sec_report, ethical_findings = await EthicalSecurityEngine.audit(
-                sanitized_url, client=client
+                sanitized_url, client=client, custom_headers=effective_headers
             )
         except Exception as exc:
             import logging
@@ -513,6 +546,9 @@ async def execute_scan(
         persona=persona or UserPersona.SHOPPER,
         persona_audit_report=getattr(qa_scanner, "persona_audit_report", None),
         ethical_security_report=ethical_sec_report,
+        custom_headers=custom_headers,
+        audit_token=audit_token,
+        authorized_audit_active=authorized_audit_active,
         started_at=started_at,
         completed_at=datetime.utcnow()
     )
