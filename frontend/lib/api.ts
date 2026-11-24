@@ -17,23 +17,30 @@ export async function startScan(
     auth_cookie?: string;
   }
 ): Promise<ScanResult> {
-  const res = await fetch(`${API_BASE}/scan`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      url,
-      prd_content: prdContent,
-      enable_crawler: crawlerOptions?.enableCrawler ?? true,
-      max_pages: crawlerOptions?.maxPages ?? 5,
-      crawl_depth: crawlerOptions?.crawlDepth ?? 2,
-      sector: crawlerOptions?.sector ?? "AUTO",
-      audit_mode: crawlerOptions?.auditMode ?? "UX_PERSONA",
-      persona: crawlerOptions?.persona ?? "SHOPPER",
-      custom_headers: crawlerOptions?.custom_headers,
-      audit_token: crawlerOptions?.audit_token,
-      auth_cookie: crawlerOptions?.auth_cookie,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        prd_content: prdContent,
+        enable_crawler: crawlerOptions?.enableCrawler ?? true,
+        max_pages: crawlerOptions?.maxPages ?? 5,
+        crawl_depth: crawlerOptions?.crawlDepth ?? 2,
+        sector: crawlerOptions?.sector ?? "AUTO",
+        audit_mode: crawlerOptions?.auditMode ?? "UX_PERSONA",
+        persona: crawlerOptions?.persona ?? "SHOPPER",
+        custom_headers: crawlerOptions?.custom_headers,
+        audit_token: crawlerOptions?.audit_token,
+        auth_cookie: crawlerOptions?.auth_cookie,
+      }),
+    });
+  } catch {
+    throw new Error(
+      `WebGuard Backend API sunucusuna (${API_BASE}) erişilemiyor. Lütfen FastAPI arka uç servisinin çalıştığından emin olun (start.bat).`
+    );
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? "Scan request failed.");
