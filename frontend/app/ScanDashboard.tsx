@@ -980,6 +980,28 @@ export default function ScanDashboard() {
 
                 <button
                   type="button"
+                  onClick={() => setActiveTab("PRD")}
+                  className={`cockpit-action-btn ${activeTab === "PRD" ? "active" : ""}`}
+                  style={{ borderColor: "rgba(168, 85, 247, 0.4)", color: "#d8b4fe" }}
+                  title="PRD Zekası & Otomatik Test Üretimi"
+                >
+                  <span>📝</span>
+                  <span>PRD Zekası</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("AUTO_HEAL")}
+                  className={`cockpit-action-btn ${activeTab === "AUTO_HEAL" ? "active" : ""}`}
+                  style={{ borderColor: "rgba(52, 211, 153, 0.4)", color: "#6ee7b7" }}
+                  title="Auto-Heal Kendi Kendini Onaran Testler"
+                >
+                  <span>🧪</span>
+                  <span>Auto-Heal</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setShowLiveScreencast(true)}
                   className="cockpit-action-btn"
                   title="Canlı Tarayıcı HUD Kaydı"
